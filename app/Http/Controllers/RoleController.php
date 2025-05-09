@@ -7,65 +7,121 @@ use Illuminate\Http\Request;
 
 class RoleController extends Controller
 {
-    // Menampilkan daftar semua role
+    public function search(Request $request)
+    {
+        if (!$request->ajax()) {
+            return response('', 204);
+        }
+
+        $search = $request->query('q');
+
+        $roles = Role::where('nama_role', 'like', '%' . $search . '%')->get();
+
+        $html = '';
+        foreach ($roles as $role) {
+            $html .= '
+                <tr>
+                    <td class="center">' . $role->id_role . '</td>
+                    <td style="' . (!$role->is_active ? 'color: #E53E3E; font-weight: bold;' : '') . '">' . $role->nama_role . '</td>
+                    <td class="action-cell" style="background-color:rgb(255, 245, 220)">
+                        <a href="' . route('admin.roles.edit', $role->id_role) . '" class="edit-btn">✏️</a>';
+
+            if ($role->is_active) {
+                $html .= '
+                        <form action="' . route('admin.roles.deactivate', $role->id_role) . '" method="POST" class="form-nonaktif" style="display:inline;">' . csrf_field() . method_field('PUT') . '
+                            <button type="submit" class="redeactivate-btn" title="Deactivate Role">🛑</button>
+                        </form>';
+            } else {
+                $html .= '
+                        <form action="' . route('admin.roles.reactivate', $role->id_role) . '" method="POST" class="form-reactivate" style="display:inline;">' . csrf_field() . method_field('PUT') . '
+                            <button type="submit" class="redeactivate-btn" title="Reactivate Role">♻️</button>
+                        </form>';
+            }
+
+            $html .= '</td></tr>';
+        }
+
+        if ($roles->isEmpty()) {
+            $html = '<tr><td colspan="3" class="center">No roles found.</td></tr>';
+        }
+
+        return response($html);
+    }
+
+    // Tampilkan semua role (View)
     public function index()
     {
         $roles = Role::all();
-        return response()->json($roles);
+        return view('Admin.Roles.roles', compact('roles'));
     }
 
-    // Menampilkan role berdasarkan ID
-    public function show($id)
+    // Tampilkan form tambah role
+    public function create()
     {
-        $role = Role::find($id);
-        if (!$role) {
-            return response()->json(['message' => 'Role not found'], 404);
-        }
-        return response()->json($role);
+        return view('Admin.Roles.add_role');
     }
 
-    // Menambahkan role baru
+    // Simpan role baru
     public function store(Request $request)
     {
         $request->validate([
             'nama_role' => 'required|string|max:255',
         ]);
 
-        $role = Role::create([
+        Role::create([
             'nama_role' => $request->nama_role,
         ]);
 
-        return response()->json($role, 201);
+        return redirect()->route('admin.roles.index')->with('success', 'Role berhasil ditambahkan.');
     }
 
-    // Mengupdate role berdasarkan ID
+    // Tampilkan form edit role
+    public function edit($id)
+    {
+        $role = Role::findOrFail($id);
+        return view('Admin.Roles.edit_role', compact('role'));
+    }
+
+    // Update role
     public function update(Request $request, $id)
     {
-        $role = Role::find($id);
-        if (!$role) {
-            return response()->json(['message' => 'Role not found'], 404);
-        }
+        $role = Role::findOrFail($id);
 
         $request->validate([
-            'nama_role' => 'nullable|string|max:255',
+            'nama_role' => 'required|string|max:255',
         ]);
 
         $role->update([
-            'nama_role' => $request->nama_role ?? $role->nama_role,
+            'nama_role' => $request->nama_role,
         ]);
 
-        return response()->json($role);
+        return redirect()->route('admin.roles.index')->with('success', 'Role berhasil diupdate.');
     }
 
-    // Menghapus role berdasarkan ID
     public function destroy($id)
     {
-        $role = Role::find($id);
-        if (!$role) {
-            return response()->json(['message' => 'Role not found'], 404);
-        }
-
+        $role = Role::findOrFail($id);
         $role->delete();
-        return response()->json(['message' => 'Role deleted successfully']);
+
+        return redirect()->route('admin.roles.index')->with('success', 'Role berhasil dihapus.');
     }
+
+    public function deactivate($id)
+    {
+        $role = Role::findOrFail($id);
+        $role->is_active = false;
+        $role->save();
+
+        return redirect()->route('admin.roles.index')->with('success', 'Role berhasil dinonaktifkan.');
+    }
+
+    public function reactivate($id)
+    {
+        $role = Role::findOrFail($id);
+        $role->is_active = true;
+        $role->save();
+
+        return redirect()->route('admin.roles.index')->with('success', 'Role berhasil diaktifkan kembali.');
+    }
+
 }

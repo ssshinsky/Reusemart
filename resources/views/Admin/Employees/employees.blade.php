@@ -74,13 +74,14 @@
     function rebindEditToggle() {
         const actionCells = document.querySelectorAll('.action-cell');
         const headerAction = document.querySelector('.header-action');
-        const isActive = document.getElementById('editToggle')?.classList.contains('active');
+        const toggleBtn = document.getElementById('editToggle');
+        const isActive = toggleBtn?.classList.contains('active');
 
         if (isActive) {
-            headerAction.style.display = 'table-cell';
+            headerAction?.style && (headerAction.style.display = 'table-cell');
             actionCells.forEach(cell => cell.classList.add('visible'));
         } else {
-            headerAction.style.display = 'none';
+            headerAction?.style && (headerAction.style.display = 'none');
             actionCells.forEach(cell => cell.classList.remove('visible'));
         }
     }
@@ -159,9 +160,8 @@
 
     toggleButton.addEventListener('click', function () {
         const isVisible = toggleButton.classList.toggle('active');
-        actionCells.forEach(cell => cell.classList.toggle('visible'));
+        rebindEditToggle(); // penting
         addButton.classList.remove('active');
-        headerAction.style.display = isVisible ? 'table-cell' : 'none';
     });
 </script>
 

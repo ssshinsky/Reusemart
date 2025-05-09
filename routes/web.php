@@ -25,8 +25,6 @@ Route::prefix('admin')->group(function () {
     Route::get('/employees/add', [PegawaiController::class, 'create'])->name('admin.employees.create');
     Route::get('/employees/search', [PegawaiController::class, 'search'])->name('admin.employees.search');
     Route::post('/employees', [PegawaiController::class, 'store'])->name('admin.employees.store');
-
-    //Edit & Non-active Employees
     Route::get('/employees/{id}/edit', [PegawaiController::class, 'edit'])->name('admin.employees.edit');
     Route::put('/employees/{id}', [PegawaiController::class, 'update'])->name('admin.employees.update');
     Route::put('/employees/{id}/reset-password', [PegawaiController::class, 'resetPassword'])->name('admin.employees.reset-password');
@@ -36,6 +34,14 @@ Route::prefix('admin')->group(function () {
 
     // =================== ROLES ===================
     Route::get('/roles', [RoleController::class, 'index'])->name('admin.roles.index');
+    Route::get('/roles/add', [RoleController::class, 'create'])->name('admin.roles.create');
+    Route::post('/roles', [RoleController::class, 'store'])->name('admin.roles.store');
+    Route::get('/roles/{id}/edit', [RoleController::class, 'edit'])->name('admin.roles.edit');
+    Route::put('/roles/{id}', [RoleController::class, 'update'])->name('admin.roles.update');
+    Route::put('/roles/{id}/deactivate', [RoleController::class, 'deactivate'])->name('admin.roles.deactivate');
+    Route::put('/roles/{id}/reactivate', [RoleController::class, 'reactivate'])->name('admin.roles.reactivate');
+    Route::get('/roles/search', [RoleController::class, 'search'])->name('admin.roles.search');
+
 
     // =================== ITEM OWNERS ===================
     Route::get('/item-owners', [PenitipController::class, 'index'])->name('admin.penitip.index');

@@ -59,9 +59,9 @@ class PegawaiController extends Controller
         if (!$request->ajax()) {
             return response('', 204);
         }
-
+    
         $search = $request->query('q');
-
+    
         $pegawais = Pegawai::with('role')
             ->when($search, function ($query, $search) {
                 $query->where('nama_pegawai', 'like', '%' . $search . '%')
@@ -69,37 +69,46 @@ class PegawaiController extends Controller
                     ->orWhere('nomor_telepon', 'like', '%' . $search . '%');
             })
             ->get();
-
+    
         $html = '';
-
+    
         foreach ($pegawais as $pegawai) {
             $html .= '
             <tr>
                 <td class="center">'.$pegawai->id_pegawai.'</td>
                 <td>'.($pegawai->id_role == 3 ? 'CS' : ($pegawai->role->nama_role ?? '-')).'</td>
-                <td>'.$pegawai->nama_pegawai.'</td>
+                <td style="'.(!$pegawai->is_active ? 'color: #E53E3E; font-weight: bold;' : '').'">'.$pegawai->nama_pegawai.'</td>
                 <td>'.$pegawai->email_pegawai.'</td>
                 <td class="nowrap center">Rp '.number_format($pegawai->gaji_pegawai, 0, ',', '.').'</td>
                 <td class="nowrap center">'.\Carbon\Carbon::parse($pegawai->tanggal_lahir)->format('d-m-Y').'</td>
                 <td class="center">'.$pegawai->nomor_telepon.'</td>
                 <td>'.$pegawai->alamat_pegawai.'</td>
                 <td class="action-cell" style="background-color:rgb(255, 245, 220)">
-                    <a href="'.route('admin.employees.edit', $pegawai->id_pegawai).'" class="edit-btn">✏️</a>
-                    <form action="'.route('admin.employees.destroy', $pegawai->id_pegawai).'" method="POST" style="display:inline;">'.csrf_field().method_field('DELETE').'
-                        <button type="submit" class="delete-btn" onclick="return confirm(\'Are you sure to delete this employee?\')">🗑️</button>
-                    </form>
-                </td>
-            </tr>';
+                    <a href="'.route('admin.employees.edit', $pegawai->id_pegawai).'" class="edit-btn">✏️</a>';
+    
+            if ($pegawai->is_active) {
+                $html .= '
+                    <form action="'.route('admin.employees.deactivate', $pegawai->id_pegawai).'" method="POST" class="form-nonaktif" style="display:inline;">
+                        '.csrf_field().method_field('PUT').'
+                        <button type="submit" class="redeactivate-btn" title="Deactivate Pegawai">🛑</button>
+                    </form>';
+            } else {
+                $html .= '
+                    <form action="'.route('admin.employees.reactivate', $pegawai->id_pegawai).'" method="POST" class="form-reactivate" style="display:inline;">
+                        '.csrf_field().method_field('PUT').'
+                        <button type="submit" class="redeactivate-btn" title="Reactivate Pegawai">♻️</button>
+                    </form>';
+            }
+    
+            $html .= '</td></tr>';
         }
-
+    
         if (count($pegawais) === 0) {
             $html = '<tr><td colspan="9" class="center">Employee Not Found.</td></tr>';
         }
-
+    
         return response($html);
     }
-
-
 
     // Simpan pegawai baru
     public function store(Request $request)

@@ -44,6 +44,10 @@ class OrganisasiController extends Controller
             'password' => Hash::make($request->password),
         ]);
 
+        if (!$request->expectsJson()) {
+            return redirect('/')->with('success', 'Register organisasi berhasil. Silakan login.');
+        }
+
         return response()->json($organisasi, 201);
     }
 

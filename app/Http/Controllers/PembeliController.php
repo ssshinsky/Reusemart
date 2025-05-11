@@ -8,24 +8,21 @@ use Illuminate\Support\Facades\Hash;
 
 class PembeliController extends Controller
 {
-    // Menampilkan daftar semua pembeli
+    // Web: Menampilkan halaman daftar pembeli (admin panel)
     public function index()
     {
-        $pembelis = Pembeli::all();
-        return response()->json($pembelis);
+        $pembelis = Pembeli::with('alamatDefault')->get();
+        return view('Admin.Pembeli.pembeli', compact('pembelis'));
     }
 
-    // Menampilkan pembeli berdasarkan ID
-    public function show($id)
+
+    // Web: Halaman form tambah
+    public function create()
     {
-        $pembeli = Pembeli::find($id);
-        if (!$pembeli) {
-            return response()->json(['message' => 'Pembeli not found'], 404);
-        }
-        return response()->json($pembeli);
+        return view('Admin.Pembeli.add_pembeli');
     }
 
-    // Menambahkan pembeli baru
+    // Web: Menyimpan data pembeli baru
     public function store(Request $request)
     {
         $request->validate([
@@ -34,59 +31,146 @@ class PembeliController extends Controller
             'tanggal_lahir' => 'required|date',
             'nomor_telepon' => 'required|string',
             'password' => 'required|string|min:6',
-            'profil_pict' => 'nullable|string',
         ]);
 
-        $pembeli = Pembeli::create([
+        Pembeli::create([
             'nama_pembeli' => $request->nama_pembeli,
             'email_pembeli' => $request->email_pembeli,
             'tanggal_lahir' => $request->tanggal_lahir,
             'nomor_telepon' => $request->nomor_telepon,
             'password' => Hash::make($request->password),
             'profil_pict' => $request->profil_pict,
+            'status_pembeli' => 'Active',
+            'poin_pembeli' => 0,
         ]);
 
-        return response()->json($pembeli, 201);
+        return redirect()->route('admin.pembeli.index')->with('success', 'Pembeli berhasil ditambahkan');
     }
 
-    // Mengupdate pembeli berdasarkan ID
+    // Web: Form edit pembeli
+    public function edit($id)
+    {
+        $pembeli = Pembeli::findOrFail($id);
+        return view('Admin.Pembeli.edit_pembeli', compact('pembeli'));
+    }
+
+    // Web: Update pembeli
     public function update(Request $request, $id)
+    {
+        $pembeli = Pembeli::findOrFail($id);
+
+        $request->validate([
+            'nama_pembeli' => 'required|string',
+            'email_pembeli' => 'required|email|unique:pembeli,email_pembeli,' . $id . ',id_pembeli',
+            'tanggal_lahir' => 'required|date',
+            'nomor_telepon' => 'required|string',
+        ]);
+
+        $pembeli->update($request->only(['nama_pembeli', 'email_pembeli', 'tanggal_lahir', 'nomor_telepon']));
+
+        return redirect()->route('admin.pembeli.index')->with('success', 'Data pembeli diperbarui');
+    }
+
+    // Web: Nonaktifkan akun
+    public function deactivate($id)
+    {
+        $pembeli = Pembeli::findOrFail($id);
+        $pembeli->update(['status_pembeli' => 'Non Active']);
+
+        return redirect()->route('admin.pembeli.index')->with('success', 'Akun pembeli dinonaktifkan');
+    }
+
+    // Web: Aktifkan kembali akun
+    public function reactivate($id)
+    {
+        $pembeli = Pembeli::findOrFail($id);
+        $pembeli->update(['status_pembeli' => 'Active']);
+
+        return redirect()->route('admin.pembeli.index')->with('success', 'Akun pembeli diaktifkan kembali');
+    }
+
+    public function search(Request $request)
+    {
+        if (!$request->ajax()) {
+            return response('', 204);
+        }
+
+        $keyword = $request->query('q');
+
+        $pembelis = Pembeli::with('alamatDefault')
+            ->where('nama_pembeli', 'like', '%' . $keyword . '%')
+            ->orWhere('email_pembeli', 'like', '%' . $keyword . '%')
+            ->get();
+
+        $html = '';
+
+        foreach ($pembelis as $pembeli) {
+            $status = strtolower(trim($pembeli->status_pembeli));
+
+            $html .= '
+            <tr>
+                <td class="center">'.$pembeli->id_pembeli.'</td>
+                <td>'.$pembeli->nama_pembeli.'</td>
+                <td>'.ucwords($pembeli->status_pembeli).'</td>
+                <td>'.$pembeli->email_pembeli.'</td>
+                <td>'.$pembeli->nomor_telepon.'</td>
+                <td class="center">'.$pembeli->poin_pembeli.'</td>
+                <td class="center">'.\Carbon\Carbon::parse($pembeli->tanggal_lahir)->format('Y-m-d').'</td>
+                <td>'.($pembeli->alamatDefault->alamat_lengkap ?? '-').'</td>
+                <td class="action-cell" style="background-color:rgb(255, 245, 220)">
+                    <a href="'.route('admin.pembeli.edit', $pembeli->id_pembeli).'" class="edit-btn">✏️</a>';
+
+            if ($status === 'active') {
+                $html .= '
+                    <form action="'.route('admin.pembeli.deactivate', $pembeli->id_pembeli).'" method="POST" class="form-nonaktif" style="display:inline;">
+                        '.csrf_field().method_field('PUT').'
+                        <button type="submit" class="redeactivate-btn" title="Nonaktifkan">🛑</button>
+                    </form>';
+            } else {
+                $html .= '
+                    <form action="'.route('admin.pembeli.reactivate', $pembeli->id_pembeli).'" method="POST" class="form-reactivate" style="display:inline;">
+                        '.csrf_field().method_field('PUT').'
+                        <button type="submit" class="redeactivate-btn" title="Aktifkan kembali">♻️</button>
+                    </form>';
+            }
+
+            $html .= '</td></tr>';
+        }
+
+        if ($pembelis->isEmpty()) {
+            $html = '<tr><td colspan="9" class="center">Customer not found.</td></tr>';
+        }
+
+        return response($html);
+    }
+
+    // ====== API ======
+    public function apiIndex()
+    {
+        return response()->json(Pembeli::all());
+    }
+
+    public function apiShow($id)
     {
         $pembeli = Pembeli::find($id);
         if (!$pembeli) {
             return response()->json(['message' => 'Pembeli not found'], 404);
         }
-
-        $request->validate([
-            'nama_pembeli' => 'nullable|string',
-            'email_pembeli' => 'nullable|email|unique:pembeli,email_pembeli,' . $id . ',id_pembeli',
-            'tanggal_lahir' => 'nullable|date',
-            'nomor_telepon' => 'nullable|string',
-            'password' => 'nullable|string|min:6',
-            'profil_pict' => 'nullable|string',
-        ]);
-
-        $pembeli->update([
-            'nama_pembeli' => $request->nama_pembeli ?? $pembeli->nama_pembeli,
-            'email_pembeli' => $request->email_pembeli ?? $pembeli->email_pembeli,
-            'tanggal_lahir' => $request->tanggal_lahir ?? $pembeli->tanggal_lahir,
-            'nomor_telepon' => $request->nomor_telepon ?? $pembeli->nomor_telepon,
-            'password' => $request->password ? Hash::make($request->password) : $pembeli->password,
-            'profil_pict' => $request->profil_pict ?? $pembeli->profil_pict,
-        ]);
-
         return response()->json($pembeli);
     }
 
-    // Menghapus pembeli berdasarkan ID
-    public function destroy($id)
+    public function apiStore(Request $request)
     {
-        $pembeli = Pembeli::find($id);
-        if (!$pembeli) {
-            return response()->json(['message' => 'Pembeli not found'], 404);
-        }
+        return $this->store($request);
+    }
 
-        $pembeli->delete();
-        return response()->json(['message' => 'Pembeli deleted successfully']);
+    public function apiUpdate(Request $request, $id)
+    {
+        return $this->update($request, $id);
+    }
+
+    public function apiDestroy($id)
+    {
+        return $this->destroy($id);
     }
 }

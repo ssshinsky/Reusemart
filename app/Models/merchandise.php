@@ -32,4 +32,15 @@ class Merchandise extends Model
     {
         return $this->hasMany(TransaksiMerchandise::class, 'id_merchandise', 'id_merchandise');
     }
+
+    public function addedBy()
+    {
+        return $this->belongsTo(Pegawai::class, 'id_pegawai', 'id_pegawai');
+    }
+
+    public function modifiedBy()
+    {
+        return $this->belongsTo(Pegawai::class, 'id_pegawai_terakhir', 'id_pegawai');
+    }
+
 }

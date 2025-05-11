@@ -3,18 +3,104 @@
 namespace App\Http\Controllers;
 
 use App\Models\Barang;
+use App\Models\Kategori;
 use Illuminate\Http\Request;
 
 class BarangController extends Controller
 {
-    // Menampilkan daftar semua barang
+    // Halaman utama admin (produk.blade.php)
     public function index()
     {
-        $barang = Barang::all();
-        return response()->json($barang);
+        $barangs = Barang::with(['transaksiPenitipan.penitip', 'kategori'])->get();
+        return view('Admin.Produk.produk', compact('barangs'));
     }
 
-    // Menampilkan barang berdasarkan ID
+    public function search(Request $request)
+    {
+        if (!$request->ajax()) {
+            return response('', 204);
+        }
+
+        $keyword = $request->query('q');
+
+        $barangs = Barang::with(['transaksiPenitipan.penitip', 'kategori'])
+            ->where(function ($query) use ($keyword) {
+                $query->where('nama_barang', 'like', "%{$keyword}%")
+                    ->orWhere('kode_barang', 'like', "%{$keyword}%")
+                    ->orWhere('status_barang', 'like', "%{$keyword}%");
+            })
+            ->get();
+
+        $html = '';
+
+        foreach ($barangs as $barang) {
+            $kategori = $barang->kategori->nama_kategori ?? '-';
+            $penitip = $barang->transaksiPenitipan->penitip->nama_penitip ?? '-';
+            $harga = 'Rp ' . number_format($barang->harga_barang, 0, ',', '.');
+            $berat = $barang->berat_barang . ' kg';
+            $garansi = $barang->status_garansi === 'garansi' ? 'Valid' : 'No';
+
+            // Status Barang Icon
+            switch ($barang->status_barang) {
+                case 'Sold': $status = '<span title="Sold">💰 Sold</span>'; break;
+                case 'Available': $status = '<span title="Available">🟢 Available</span>'; break;
+                case 'Returned': $status = '<span title="Returned">♻️ Returned</span>'; break;
+                case 'Donated': $status = '<span title="Donated">🎁 Donated</span>'; break;
+                case 'Reserved': $status = '<span title="Reserved">🎁 Donated</span>'; break;
+                default: $status = '<span>❓ ' . $barang->status_barang . '</span>';
+            }
+
+            $html .= '
+            <tr>
+                <td class="center">'.$barang->id_barang.'</td>
+                <td>'.$barang->kode_barang.'</td>
+                <td>'.$barang->nama_barang.'</td>
+                <td class="center">'.$status.'</td>
+                <td class="center">'.$harga.'</td>
+                <td>'.$kategori.'</td>
+                <td class="center">'.$berat.'</td>
+                <td class="center">'.$garansi.'</td>
+                <td>'.$penitip.'</td>
+                <td>'.$barang->deskripsi_barang.'</td>
+                <td class="action-cell" style="background-color:rgb(255, 245, 220)">
+                    <a href="'.route('admin.produk.edit', $barang->id_barang).'" class="edit-btn">✏️</a>
+                </td>
+            </tr>';
+        }
+
+        if ($barangs->isEmpty()) {
+            $html = '<tr><td colspan="11" class="center">Product not found.</td></tr>';
+        }
+
+        return response($html);
+    }
+
+
+    // Ubah status jadi Donated
+    public function deactivate($id)
+    {
+        $barang = Barang::findOrFail($id);
+        $barang->update(['status_barang' => 'Donated']);
+
+        return redirect()->route('admin.produk.index')->with('success', 'Produk ditandai sebagai Donated');
+    }
+
+    // Ubah status jadi Available
+    public function reactivate($id)
+    {
+        $barang = Barang::findOrFail($id);
+        $barang->update(['status_barang' => 'Available']);
+
+        return redirect()->route('admin.produk.index')->with('success', 'Produk ditandai sebagai Available');
+    }
+
+    // ====================== API ======================
+
+    public function apiIndex()
+    {
+        return response()->json(Barang::all());
+    }
+
     public function show($id)
     {
         $barang = Barang::find($id);
@@ -24,7 +110,6 @@ class BarangController extends Controller
         return response()->json($barang);
     }
 
-    // Menambahkan barang baru
     public function store(Request $request)
     {
         $request->validate([
@@ -40,23 +125,11 @@ class BarangController extends Controller
             'tanggal_garansi' => 'nullable|date',
         ]);
 
-        $barang = Barang::create([
-            'id_kategori' => $request->id_kategori,
-            'id_transaksi_penitipan' => $request->id_transaksi_penitipan,
-            'kode_barang' => $request->kode_barang,
-            'nama_barang' => $request->nama_barang,
-            'harga_barang' => $request->harga_barang,
-            'berat_barang' => $request->berat_barang,
-            'deskripsi_barang' => $request->deskripsi_barang,
-            'status_garansi' => $request->status_garansi,
-            'status_barang' => $request->status_barang,
-            'tanggal_garansi' => $request->tanggal_garansi,
-        ]);
+        $barang = Barang::create($request->all());
 
         return response()->json($barang, 201);
     }
 
-    // Mengupdate barang berdasarkan ID
     public function update(Request $request, $id)
     {
         $barang = Barang::find($id);
@@ -77,31 +150,8 @@ class BarangController extends Controller
             'tanggal_garansi' => 'nullable|date',
         ]);
 
-        $barang->update([
-            'id_kategori' => $request->id_kategori,
-            'id_transaksi_penitipan' => $request->id_transaksi_penitipan,
-            'kode_barang' => $request->kode_barang,
-            'nama_barang' => $request->nama_barang,
-            'harga_barang' => $request->harga_barang,
-            'berat_barang' => $request->berat_barang,
-            'deskripsi_barang' => $request->deskripsi_barang,
-            'status_garansi' => $request->status_garansi,
-            'status_barang' => $request->status_barang,
-            'tanggal_garansi' => $request->tanggal_garansi,
-        ]);
+        $barang->update($request->all());
 
         return response()->json($barang);
-    }
-
-    // Menghapus barang berdasarkan ID
-    public function destroy($id)
-    {
-        $barang = Barang::find($id);
-        if (!$barang) {
-            return response()->json(['message' => 'Barang not found'], 404);
-        }
-
-        $barang->delete();
-        return response()->json(['message' => 'Barang deleted successfully']);
     }
 }

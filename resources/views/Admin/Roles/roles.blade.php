@@ -11,7 +11,7 @@
 </div>
 
 <div style="margin-bottom: 1rem; display: flex; gap: 0.5rem; align-items: center;">
-    <input type="text" id="searchInput" placeholder="🔍 Search Roles" class="input-search" style="width: 100%;">
+    <input type="text" id="searchInput" placeholder="🔍 Search Roles" class="input-search" style="width: 50%;">
 </div>
 
 <div class="table-container">
@@ -24,7 +24,7 @@
                     <th class="col-action sticky-action header-action action-cell" style="display: none; background-color: #ffce53; text-align: center">Edit</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody id="roleTableBody">
                 @foreach($roles as $role)
                 <tr>
                     <td class="center">{{ $role->id_role }}</td>
@@ -53,96 +53,69 @@
 </div>
 
 <script>
-    function rebindEditToggle() {
-        const actionCells = document.querySelectorAll('.action-cell');
-        const headerAction = document.querySelector('.header-action');
-        const toggleBtn = document.getElementById('editToggle');
-        const isActive = toggleBtn?.classList.contains('active');
-
-        if (isActive) {
-            headerAction?.style && (headerAction.style.display = 'table-cell');
-            actionCells.forEach(cell => cell.classList.add('visible'));
-        } else {
-            headerAction?.style && (headerAction.style.display = 'none');
-            actionCells.forEach(cell => cell.classList.remove('visible'));
-        }
-    }
-
-    const toggleButton = document.getElementById('editToggle');
-    const addButton = document.getElementById('addBtn');
+function rebindEditToggle() {
     const actionCells = document.querySelectorAll('.action-cell');
     const headerAction = document.querySelector('.header-action');
+    const toggleBtn = document.getElementById('editToggle');
+    const isActive = toggleBtn?.classList.contains('active');
 
-    toggleButton.addEventListener('click', function () {
-        this.classList.toggle('active');
-        rebindEditToggle(); // <== ini wajib dipanggil ulang
-        addButton.classList.remove('active');
-    });
+    if (isActive) {
+        headerAction?.style && (headerAction.style.display = 'table-cell');
+        actionCells.forEach(cell => cell.classList.add('visible'));
+    } else {
+        headerAction?.style && (headerAction.style.display = 'none');
+        actionCells.forEach(cell => cell.classList.remove('visible'));
+    }
+}
 
+const toggleButton = document.getElementById('editToggle');
+const addButton = document.getElementById('addBtn');
 
-    document.querySelectorAll('.form-nonaktif').forEach(form => {
+toggleButton.addEventListener('click', function () {
+    toggleButton.classList.toggle('active');
+    addButton.classList.remove('active');
+    rebindEditToggle();
+});
+
+const searchInput = document.getElementById('searchInput');
+let timeout = null;
+
+searchInput.addEventListener('input', function () {
+    clearTimeout(timeout);
+    const query = this.value;
+
+    timeout = setTimeout(() => {
+        fetch(`{{ route('admin.roles.search') }}?q=${encodeURIComponent(query)}`, {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(res => res.text())
+        .then(html => {
+            const tbody = document.getElementById('roleTableBody');
+            if (tbody) {
+                tbody.innerHTML = html;
+                rebindEditToggle();
+            }
+        })
+        .catch(err => console.error('Live search error:', err));
+    }, 300);
+});
+
+['form-nonaktif', 'form-reactivate'].forEach(cls => {
+    document.querySelectorAll(`.${cls}`).forEach(form => {
         form.addEventListener('submit', function(e) {
             e.preventDefault();
             Swal.fire({
-                title: 'Are you sure?',
-                text: 'This role will be deactivated!',
-                icon: 'warning',
+                title: cls === 'form-nonaktif' ? 'Nonaktifkan role?' : 'Aktifkan kembali role?',
+                text: cls === 'form-nonaktif' ? 'Role ini akan dinonaktifkan!' : 'Role ini akan kembali aktif.',
+                icon: cls === 'form-nonaktif' ? 'warning' : 'question',
                 showCancelButton: true,
-                confirmButtonColor: '#d33',
+                confirmButtonColor: cls === 'form-nonaktif' ? '#d33' : '#28a745',
                 cancelButtonColor: '#aaa',
-                confirmButtonText: 'Yes, deactivate!'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    form.submit();
-                }
-            });
+                confirmButtonText: cls === 'form-nonaktif' ? 'Ya, nonaktifkan!' : 'Ya, aktifkan!'
+            }).then(result => { if (result.isConfirmed) form.submit(); });
         });
     });
-
-    const searchInput = document.getElementById('searchInput');
-    let timeout = null;
-
-    searchInput.addEventListener('input', function () {
-        clearTimeout(timeout);
-        const query = this.value;
-
-        timeout = setTimeout(() => {
-            fetch(`{{ route('admin.roles.search') }}?q=${encodeURIComponent(query)}`, {
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            })
-            .then(res => res.text())
-            .then(html => {
-                const tbody = document.querySelector('.table-roles
- tbody');
-                if (tbody) {
-                    tbody.innerHTML = html;
-                    rebindEditToggle(); // penting agar tombol edit tetap aktif
-                }
-            })
-            .catch(err => console.error('Live search error:', err));
-        }, 300);
-    });
-
-    document.querySelectorAll('.form-reactivate').forEach(form => {
-        form.addEventListener('submit', function(e) {
-            e.preventDefault();
-            Swal.fire({
-                title: 'Reactivate this role?',
-                text: 'This role will regain access.',
-                icon: 'question',
-                showCancelButton: true,
-                confirmButtonColor: '#28a745',
-                cancelButtonColor: '#aaa',
-                confirmButtonText: 'Yes, reactivate!'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    form.submit();
-                }
-            });
-        });
-    });
+});
 </script>
 
 <style>
@@ -151,41 +124,33 @@
         padding: 10px;
         border: 1px solid #ccc;
         border-radius: 6px;
+        font-size: 16px;
     }
 
-    input.input-search{
-        text-decoration: none;
-        display: inline-block;
+    input.input-search {
         color: black;
         font-family: inherit;
         font-size: 16px;
         font-weight: 400;
     }
-    
+
     .table-container {
         margin-top: 1rem;
         width: 100%;
         border: 1px solid #ccc;
         border-radius: 6px;
         overflow-x: auto;
-        max-height: 500px
+        max-height: 500px;
     }
 
-    .table-roles
- {
+    .table-roles {
         width: auto;
         border-collapse: collapse;
         background-color: #F9FAFB;
     }
 
-    .table-scroll-x {
-        overflow-x: auto;
-    }
-
-    .table-roles
- th,
-    .table-roles
- td {
+    .table-roles th,
+    .table-roles td {
         padding: 10px 16px;
         height: 50px;
         border: 1px solid black;
@@ -193,10 +158,8 @@
         text-align: center;
     }
 
-    .table-roles
- th {
+    .table-roles th {
         background-color: #A7F3D0;
-        text-align: center;
     }
 
     .action-cell {

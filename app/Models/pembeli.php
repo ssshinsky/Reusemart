@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use App\Models\Alamat;
 
 class Pembeli extends Model
 {
@@ -47,6 +48,14 @@ class Pembeli extends Model
     {
         return $this->hasMany(Alamat::class, 'id_pembeli', 'id_pembeli');
     }
+
+    // Alamat Default
+    public function alamatDefault()
+    {
+        return $this->hasOne(Alamat::class, 'id_pembeli', 'id_pembeli')
+                    ->where('is_default', 1);
+    }
+
 
     // Relasi ke DiskusiProduk
     public function diskusiProduk()

@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Barang;
 use Illuminate\Http\Request;
+use App\Models\DiskusiProduk;
+use Carbon\Carbon;
 
 class BarangController extends Controller
 {
@@ -17,11 +19,31 @@ class BarangController extends Controller
     // Menampilkan barang berdasarkan ID
     public function show($id)
     {
-        $barang = Barang::find($id);
-        if (!$barang) {
-            return response()->json(['message' => 'Barang not found'], 404);
+        try {
+            $barang = Barang::with(['kategori', 'gambar'])->findOrFail($id);
+
+            // dd($barang->gambar);
+
+            $diskusi = DiskusiProduk::with(['pembeli', 'pegawai'])
+                ->where('id_barang', $id)
+                ->orderBy('created_at', 'desc')
+                ->get();
+
+            $statusGaransi = $barang->status_garansi;
+            $garansiBerlaku = false;
+            if ($statusGaransi === 'garansi' && $barang->tanggal_garansi) {
+                $tanggalGaransi = Carbon::parse($barang->tanggal_garansi);
+                $tanggalSekarang = Carbon::now();
+                $garansiBerlaku = $tanggalGaransi->gte($tanggalSekarang);
+            }
+
+            $diskusi = $diskusi->isEmpty() ? collect([]) : $diskusi;
+
+            return view('umum.show', compact('barang', 'diskusi', 'statusGaransi', 'garansiBerlaku'));
+        } catch (\Exception $e) {
+            \Log::error('Error in BarangController@show: ' . $e->getMessage() . ' | Stack: ' . $e->getTraceAsString());
+            dd($e->getMessage(), $e->getTraceAsString()); // Tampilkan error di browser
         }
-        return response()->json($barang);
     }
 
     // Menambahkan barang baru

@@ -4,9 +4,12 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PegawaiController;
 use App\Http\Controllers\RoleController;
+use App\Http\Controllers\BarangController;
 
 Route::post('/pegawai/register', [PegawaiController::class, 'register']);
 Route::post('/pegawai/login', [PegawaiController::class, 'login']);
+Route::get('/barang/{id}', [BarangController::class, 'show'])->name('barang.show');
+// Route::post('/diskusi/store', [DiskusiProdukController::class, 'store'])->name('diskusi.store')->middleware('auth:pembeli');
 
 Route::middleware('auth:api')->group(function () {
     // Logout Pegawai

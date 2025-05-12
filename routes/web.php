@@ -14,6 +14,9 @@ use App\Http\Controllers\MerchandiseController;
 // Redirect root ke dashboard
 Route::get('/', [DashboardController::class, 'index'])->name('admin.dashboard');
 
+Route::get('/barang/{id}', [BarangController::class, 'show'])->name('umum.show');
+// Route::post('/diskusi/store', [DiskusiProdukController::class, 'store'])->name('diskusi.store')->middleware('auth:pembeli');
+
 // Admin routes
 Route::prefix('admin')->group(function () {
 

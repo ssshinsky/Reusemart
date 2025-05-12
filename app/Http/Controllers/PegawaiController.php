@@ -228,19 +228,6 @@ class PegawaiController extends Controller
         return redirect()->route('admin.employees.index')->with('success', 'Pegawai berhasil direaktivasi.');
     }
 
-
-    // Hapus pegawai
-    public function destroy($id)
-    {
-        $pegawai = Pegawai::find($id);
-        if (!$pegawai) {
-            return response()->json(['message' => 'Pegawai not found'], 404);
-        }
-
-        $pegawai->delete();
-        return response()->json(['message' => 'Pegawai deleted successfully']);
-    }
-
     // Login pegawai (API)
     public function login(Request $request)
     {

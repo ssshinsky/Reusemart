@@ -8,6 +8,12 @@ use Illuminate\Support\Facades\Hash;
 
 class PembeliController extends Controller
 {
+    public function profile()
+    {
+        $user = session('user');
+        return view('pembeli.profile', compact('user'));
+    }
+
     // Web: Menampilkan halaman daftar pembeli (admin panel)
     public function index()
     {

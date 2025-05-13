@@ -13,7 +13,7 @@ class Penitip extends Authenticatable
 
     protected $table = 'penitip';
     protected $primaryKey = 'id_penitip';
-
+    
     protected $fillable = [
         'nik_penitip',
         'nama_penitip',

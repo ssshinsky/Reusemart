@@ -11,16 +11,48 @@ use App\Http\Controllers\BarangController;
 use App\Http\Controllers\KategoriController;
 use App\Http\Controllers\MerchandiseController;
 use App\Http\Controllers\AuthController;
-
-Route::post('/login', [AuthController::class, 'login'])->name('login');
-Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+use App\Http\Controllers\KeranjangController;
 
 Route::get('/', function () {
-    return view('welcome');
-})->name('welcome');
+    return view('welcome', [
+        'role' => session('role'),
+        'user' => session('user')
+]);
 
+Route::get('/home', function () {return view('welcome');})->name('welcome');
+Route::get('/about', function () {return view('about');})->name('about');
+Route::post('/logout', function () {session()->flush();return redirect('/');})->name('logout');
+Route::post('/login', [AuthController::class, 'login'])->name('login.submit');
+Route::post('/admin/logout', function () {
+    session()->flush();
+    return redirect('/login');
+})->name('admin.logout');
+  
 Route::post('/pembeli', [PembeliController::class, 'store']);
 Route::post('/organisasi', [OrganisasiController::class, 'store']);
+Route::get('/', [BarangController::class, 'indexLanding'])->name('welcome');
+Route::get('/keranjang', [\App\Http\Controllers\KeranjangController::class, 'index'])->name('cart');
+Route::get('/produk/allProduct', [BarangController::class, 'allProduct'])->name('produk.allproduct'); 
+
+    // =================== PENITIP ROUTES ===================
+Route::prefix('penitip')->group(function () {
+    Route::get('/profile', [PenitipController::class, 'profile'])->name('penitip.profile');
+    Route::get('/{id}/edit', [PenitipController::class, 'editProfile'])->name('penitip.edit');
+    Route::put('/{id}/update', [PenitipController::class, 'updateProfile'])->name('penitip.update');
+    Route::get('/reward', [PenitipController::class, 'rewards'])->name('penitip.rewards');
+    Route::get('/product', [PenitipController::class, 'product'])->name('penitip.product');
+    Route::get('/myproduct', [PenitipController::class, 'myproduct'])->name('penitip.myproduct');
+    Route::get('/transaction', [PenitipController::class, 'transaction'])->name('penitip.transaction');
+    Route::get('/transaction/filter/{type}', [PenitipController::class, 'filterTransaction'])->name('penitip.transaction.filter');
+});
+
+    // =================== PEMBELI ROUTES ===================
+Route::prefix('pembeli')->group(function () {
+    Route::get('/profile', [PembeliController::class, 'profile'])->name('pembeli.profile');
+    Route::get('/purchase', [PembeliController::class, 'purchase'])->name('pembeli.purchase');
+    Route::get('/reward', [PembeliController::class, 'reward'])->name('pembeli.reward');
+    Route::get('/password', function () {return view('password');})->name('pembeli.password');
+});
 
 // Admin routes
 Route::prefix('admin')->group(function () {

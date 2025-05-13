@@ -3,58 +3,74 @@
 @section('title', 'Organization Management')
 
 @section('content')
-<h2>Organization Management</h2>
+    <h2>Organization Management</h2>
 
-<div style="margin: 1rem 0; display: flex; gap: 1rem;">
-    <a href="{{ route('admin.organisasi.create') }}" class="btn-action" id="addBtn">➕ Add Organization</a>
-    <button class="btn-action" id="editToggle">✏️ Edit Organization</button>
-</div>
+    <div style="margin: 1rem 0; display: flex; gap: 1rem;">
+        <a href="{{ route('admin.organisasi.create') }}" class="btn-action" id="addBtn">➕ Add Organization</a>
+        <button class="btn-action" id="editToggle">✏️ Edit Organization</button>
+    </div>
 
-<div style="margin-bottom: 1rem; display: flex; gap: 0.5rem; align-items: center;">
-    <input type="text" id="searchInput" placeholder="🔍 Search Organizations" class="input-search" style="width: 100%;">
-</div>
+    <div style="margin-bottom: 1rem; display: flex; gap: 0.5rem; align-items: center;">
+        <input type="text" id="searchInput" placeholder="🔍 Search Organizations" class="input-search" style="width: 100%;">
+    </div>
 
-<div class="table-container">
-    <div class="table-scroll-x">
-        <table class="table-org">
-            <thead>
-                <tr>
-                    <th class="col-id">ID</th>
-                    <th class="col-nama">Name</th>
-                    <th class="col-email">Email</th>
-                    <th class="col-kontak">Contact Person</th>
-                    <th class="col-alamat">Address</th>
-                    <th class="col-status">Status</th>
-                    <th class="col-action sticky-action header-action action-cell" style="display: none; background-color: #ffce53;">Edit</th>
-                </tr>
-            </thead>
-            <tbody id="organisasiTableBody">
-                @foreach($organisasis as $organisasi)
-                <tr>
-                    <td class="center">{{ $organisasi->id_organisasi }}</td>
-                    <td style="{{ $organisasi->status_organisasi !== 'Active' ? 'color: #E53E3E; font-weight: bold;' : '' }}">{{ $organisasi->nama_organisasi }}</td>
-                    <td>{{ $organisasi->email_organisasi }}</td>
-                    <td>{{ $organisasi->kontak }}</td>
-                    <td>{{ $organisasi->alamat }}</td>
-                    <td class="center">{{ $organisasi->status_organisasi }}</td>
-                    <td class="action-cell" style="background-color:rgb(255, 245, 220)">
-                        <a href="{{ route('admin.organisasi.edit', $organisasi->id_organisasi) }}" class="edit-btn">✏️</a>
-                        @if($organisasi->status_organisasi === 'Active')
-                        <form action="{{ route('admin.organisasi.deactivate', $organisasi->id_organisasi) }}" method="POST" class="form-nonaktif" style="display:inline;">
-                            @csrf @method('PUT')
-                            <button type="submit" class="redeactivate-btn">🛑</button>
-                        </form>
-                        @else
-                        <form action="{{ route('admin.organisasi.reactivate', $organisasi->id_organisasi) }}" method="POST" class="form-reactivate" style="display:inline;">
-                            @csrf @method('PUT')
-                            <button type="submit" class="redeactivate-btn">♻️</button>
-                        </form>
-                        @endif
-                    </td>
-                </tr>
-                @endforeach
-            </tbody>
-        </table>
+    <div class="table-container">
+        <div class="table-scroll-x">
+            <table class="table-org">
+                <thead>
+                    <tr>
+                        <th class="col-id">ID</th>
+                        <th class="col-nama">Name</th>
+                        <th class="col-email">Email</th>
+                        <th class="col-kontak">Contact Person</th>
+                        <th class="col-alamat">Address</th>
+                        <th class="col-status">Status</th>
+                        <th class="col-action sticky-action header-action action-cell"
+                            style="display: none; background-color: #ffce53;">Edit</th>
+                    </tr>
+                </thead>
+                <tbody id="organisasiTableBody">
+                    @foreach ($organisasis as $organisasi)
+                        <tr>
+                            <td class="center">{{ $organisasi->id_organisasi }}</td>
+                            <td
+                                style="{{ $organisasi->status_organisasi !== 'Active' ? 'color: #E53E3E; font-weight: bold;' : '' }}">
+                                {{ $organisasi->nama_organisasi }}</td>
+                            <td>{{ $organisasi->email_organisasi }}</td>
+                            <td>{{ $organisasi->kontak }}</td>
+                            <td>{{ $organisasi->alamat }}</td>
+                            <td class="center">{{ $organisasi->status_organisasi }}</td>
+                            <td class="action-cell" style="background-color:rgb(253, 253, 253)">
+                                <a href="{{ route('admin.organisasi.edit', $organisasi->id_organisasi) }}"
+                                    class="edit-btn">✏️</a>
+
+                                @if ($organisasi->status_organisasi === 'Active')
+                                    <form action="{{ route('admin.organisasi.deactivate', $organisasi->id_organisasi) }}"
+                                        method="POST" class="form-nonaktif" style="display:inline;">
+                                        @csrf @method('PUT')
+                                        <button type="submit" class="redeactivate-btn">🛑</button>
+                                    </form>
+                                @else
+                                    <form action="{{ route('admin.organisasi.reactivate', $organisasi->id_organisasi) }}"
+                                        method="POST" class="form-reactivate" style="display:inline;">
+                                        @csrf @method('PUT')
+                                        <button type="submit" class="redeactivate-btn">♻️</button>
+                                    </form>
+                                @endif
+
+                                <form action="{{ route('admin.organisasi.destroy', $organisasi->id_organisasi) }}"
+                                    method="POST" style="display:inline;"
+                                    onsubmit="return confirm('Yakin ingin menghapus organisasi ini?');">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="delete-btn">🗑️</button>
+                                </form>
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 

@@ -1,23 +1,43 @@
+@extends('layouts.app')
+
 @section('content')
     <div class="container mt-5">
         <div class="row">
+            <!-- Sidebar -->
             <div class="col-md-3">
                 <div class="text-center mb-4">
                     <img src="{{ asset('images/default-avatar.png') }}" alt="Avatar" class="rounded-circle" width="80">
-                    <h6 class="mt-2">{{ auth()->user()->nama }}</h6>
+                    <h6 class="mt-2">{{ $user['nama'] ?? 'User' }}</h6>
                     <a href="#" class="text-muted text-decoration-none">✏️ Edit Profile</a>
                 </div>
                 <ul class="nav flex-column">
                     <li class="nav-item fw-bold">My Account</li>
-                    <li class="nav-item"><a href="#" class="nav-link ps-3">Profile</a></li>
-                    <li class="nav-item"><a href="#" class="nav-link ps-3">Addresses</a></li>
-                    <li class="nav-item"><a href="#" class="nav-link ps-3">Change Password</a></li>
+                    <li class="nav-item">
+                        <a href="{{ route('pembeli.profile') }}" class="nav-link ps-3">Profile</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link ps-3" data-bs-toggle="modal"
+                            data-bs-target="#addAddressModal">Addresses</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ route('pembeli.password') }}" class="nav-link ps-3">Change Password</a>
+                    </li>
+
                     <li class="nav-item mt-3 fw-bold">My Purchase</li>
+                    <li class="nav-item">
+                        <a href="{{ route('pembeli.purchase') }}" class="nav-link ps-3">Purchase History</a>
+                    </li>
+
                     <li class="nav-item mt-2 fw-bold">My ReuseMart Coins</li>
+                    <li class="nav-item">
+                        <a href="{{ route('pembeli.reward') }}" class="nav-link ps-3">Reward Coins</a>
+                    </li>
                 </ul>
             </div>
 
+            <!-- Main content -->
             <div class="col-md-9">
+                <!-- Profile Card -->
                 <div class="card shadow-sm mb-4">
                     <div class="card-body">
                         <h5 class="text-success fw-bold">My Profile</h5>
@@ -27,14 +47,15 @@
                                 <div class="col-md-6">
                                     <label>Username</label>
                                     <input type="text" class="form-control" placeholder="Username"
-                                        value="{{ auth()->user()->username }}">
+                                        value="{{ $user['nama'] ?? 'User' }}">
                                 </div>
                                 <div class="col-md-6">
                                     <label>Name</label>
                                     <input type="text" class="form-control" placeholder="Full Name"
-                                        value="{{ auth()->user()->nama }}">
+                                        value="{{ $user['nama'] ?? 'User' }}">
                                 </div>
                             </div>
+
                             <div class="row mb-3">
                                 <div class="col-md-6">
                                     <label>Email</label>
@@ -48,7 +69,6 @@
                                 </div>
                             </div>
 
-                            {{-- Profile image section --}}
                             <div class="row mb-3 align-items-center">
                                 <div class="col-md-6 d-flex align-items-center">
                                     <img src="{{ asset('images/default-avatar.png') }}" alt="Avatar"
@@ -65,6 +85,7 @@
                     </div>
                 </div>
 
+                <!-- Address Card -->
                 <div class="card shadow-sm">
                     <div class="card-body">
                         <h5 class="text-success fw-bold">Alamat Pengiriman</h5>
@@ -95,6 +116,7 @@
         </div>
     </div>
 
+    <!-- Modal Tambah Alamat -->
     <div class="modal fade" id="addAddressModal" tabindex="-1" aria-labelledby="addAddressModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <form id="addAddressForm" class="modal-content">
@@ -148,6 +170,7 @@
         </div>
     </div>
 
+    <!-- Script Tambah Alamat -->
     <script>
         document.getElementById('addAddressForm').addEventListener('submit', function(e) {
             e.preventDefault();
@@ -165,11 +188,10 @@
                         id_pembeli: formData.get("id_pembeli"),
                         nama_orang: formData.get("nama_orang"),
                         label_alamat: formData.get("label_alamat"),
-                        alamat_lengkap: formData.get("alamat_lengkap") + ', ' + formData.get(
-                            "alamat_detail") + ', ' + formData.get("keterangan"),
+                        alamat_lengkap: `${formData.get("alamat_lengkap")}, ${formData.get("alamat_detail")}, ${formData.get("keterangan")}`,
                         nomor_telepon: formData.get("nomor_telepon"),
                         kode_pos: '00000',
-                        is_default: isDefault,
+                        is_default: isDefault
                     }),
                 })
                 .then(response => response.json())

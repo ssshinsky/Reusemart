@@ -40,6 +40,26 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
+
+        // Ini guard untuk untuk login
+        'pegawai' => [
+            'driver' => 'session',
+            'provider' => 'pegawai',
+        ],
+        'pembeli' => [
+            'driver' => 'session',
+            'provider' => 'pembeli',
+        ],
+        'penitip' => [
+            'driver' => 'session',
+            'provider' => 'penitip',
+        ],
+        'organisasi' => [
+            'driver' => 'session',
+            'provider' => 'organisasi',
+        ],
+
+        // Ini guard untuk REST API
         'api_pegawai' => [
             'driver' => 'sanctum', // Gunakan 'sanctum' untuk Sanctum, atau 'jwt' untuk JWT
             'provider' => 'pegawai',

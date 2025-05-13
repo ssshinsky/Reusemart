@@ -10,22 +10,24 @@ use App\Http\Controllers\OrganisasiController;
 use App\Http\Controllers\BarangController;
 use App\Http\Controllers\KategoriController;
 use App\Http\Controllers\MerchandiseController;
+use App\Http\Controllers\AuthController;
 
-Route::get('/', [DashboardController::class, 'index'])->name('admin.dashboard');
+Route::post('/login', [AuthController::class, 'login'])->name('login');
+Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
-// Route::get('/', function () {
-//     return view('welcome');
-// })->name('welcome');
+Route::get('/', function () {
+    return view('welcome');
+})->name('welcome');
+
+Route::post('/pembeli', [PembeliController::class, 'store']);
+Route::post('/organisasi', [OrganisasiController::class, 'store']);
 
 // Admin routes
 Route::prefix('admin')->group(function () {
+    //Dashboard
+    Route::get('/', [DashboardController::class, 'index'])->name('admin.dashboard');
 
-    // =================== DASHBOARD ===================
-    // Route::get('/', function () {
-    //     return view('welcome');
-    // })->name('dash');
-
-    // =================== EMPLOYEES ===================
+    // EMPLOYEES
     Route::get('/employees', [PegawaiController::class, 'indexView'])->name('admin.employees.index');
     Route::get('/employees/add', [PegawaiController::class, 'create'])->name('admin.employees.create');
     Route::get('/employees/search', [PegawaiController::class, 'search'])->name('admin.employees.search');
@@ -36,8 +38,7 @@ Route::prefix('admin')->group(function () {
     Route::put('/employees/{id}/deactivate', [PegawaiController::class, 'deactivate'])->name('admin.employees.deactivate');
     Route::put('/employees/{id}/reactivate', [PegawaiController::class, 'reactivate'])->name('admin.employees.reactivate');
 
-
-    // =================== ROLES ===================
+    // ROLES
     Route::get('/roles', [RoleController::class, 'index'])->name('admin.roles.index');
     Route::get('/roles/add', [RoleController::class, 'create'])->name('admin.roles.create');
     Route::post('/roles', [RoleController::class, 'store'])->name('admin.roles.store');
@@ -47,8 +48,7 @@ Route::prefix('admin')->group(function () {
     Route::put('/roles/{id}/reactivate', [RoleController::class, 'reactivate'])->name('admin.roles.reactivate');
     Route::get('/roles/search', [RoleController::class, 'search'])->name('admin.roles.search');
 
-
-    // =================== ITEM OWNERS ===================
+    // ITEM OWNERS
     Route::get('/item-owners', [PenitipController::class, 'index'])->name('admin.penitip.index');
     Route::get('/item-owners/add', [PenitipController::class, 'create'])->name('admin.penitip.create');
     Route::post('/item-owners', [PenitipController::class, 'store'])->name('admin.penitip.store');
@@ -58,7 +58,7 @@ Route::prefix('admin')->group(function () {
     Route::put('/item-owners/{id}/deactivate', [PenitipController::class, 'deactivate'])->name('admin.penitip.deactivate');
     Route::put('/item-owners/{id}/reactivate', [PenitipController::class, 'reactivate'])->name('admin.penitip.reactivate');
 
-    // =================== CUSTOMERS ===================
+    // CUSTOMERS
     Route::get('/customers', [PembeliController::class, 'index'])->name('admin.pembeli.index');
     Route::get('/customers/add', [PembeliController::class, 'create'])->name('admin.pembeli.create');
     Route::post('/customers', [PembeliController::class, 'store'])->name('admin.pembeli.store');
@@ -68,7 +68,7 @@ Route::prefix('admin')->group(function () {
     Route::put('/customers/{id}/deactivate', [PembeliController::class, 'deactivate'])->name('admin.pembeli.deactivate');
     Route::put('/customers/{id}/reactivate', [PembeliController::class, 'reactivate'])->name('admin.pembeli.reactivate');
 
-    // =================== ORGANIZATIONS ===================
+    // ORGANIZATIONS
     Route::get('/organizations', [OrganisasiController::class, 'index'])->name('admin.organisasi.index');
     Route::get('/organizations/add', [OrganisasiController::class, 'create'])->name('admin.organisasi.create');
     Route::post('/organizations', [OrganisasiController::class, 'store'])->name('admin.organisasi.store');
@@ -78,8 +78,7 @@ Route::prefix('admin')->group(function () {
     Route::put('/organizations/{id}/deactivate', [OrganisasiController::class, 'deactivate'])->name('admin.organisasi.deactivate');
     Route::put('/organizations/{id}/reactivate', [OrganisasiController::class, 'reactivate'])->name('admin.organisasi.reactivate');
 
-
-    // =================== PRODUCTS ===================
+    // PRODUCTS
     Route::get('/products', [BarangController::class, 'index'])->name('admin.produk.index');
     Route::get('/products/add', [BarangController::class, 'create'])->name('admin.produk.create');
     Route::post('/products', [BarangController::class, 'store'])->name('admin.produk.store');
@@ -89,15 +88,11 @@ Route::prefix('admin')->group(function () {
     Route::put('/products/{id}/deactivate', [BarangController::class, 'deactivate'])->name('admin.produk.deactivate');
     Route::put('/products/{id}/reactivate', [BarangController::class, 'reactivate'])->name('admin.produk.reactivate');
 
-    // =================== MERCHANDISE ===================
+    // MERCHANDISE
     Route::get('/merchandise', [MerchandiseController::class, 'index'])->name('admin.merch.index');
     Route::get('/merchandise/add', [MerchandiseController::class, 'create'])->name('admin.merchandise.create');
     Route::post('/merchandise', [MerchandiseController::class, 'store'])->name('admin.merchandise.store');
     Route::get('/merchandise/search', [MerchandiseController::class, 'search'])->name('admin.merchandise.search');
     Route::get('/merchandise/{id}/edit', [MerchandiseController::class, 'edit'])->name('admin.merchandise.edit');
     Route::put('/merchandise/{id}', [MerchandiseController::class, 'update'])->name('admin.merchandise.update');
-
 });
-
-Route::post('/pembeli', [PembeliController::class, 'store']);
-Route::post('/organisasi', [OrganisasiController::class, 'store']);

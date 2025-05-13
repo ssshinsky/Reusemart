@@ -1,6 +1,6 @@
 <nav class="navbar navbar-light bg-white border-bottom shadow-sm px-4 py-3">
     <a class="navbar-brand d-flex align-items-center" href="#">
-        <img src="/assets/images/logo.png" width="100" height="100" class="me-2">
+        <img src="/assets/images/logoNoBg.png" width="100" height="100" class="me-2">
         <strong>ReUseMart</strong>
     </a>
     <form class="d-flex w-50">

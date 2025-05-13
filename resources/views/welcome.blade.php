@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>ReUseMart</title>
+    <link rel="icon" type="image/png" href="{{ asset('assets/images/logo.png') }}">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
@@ -207,7 +208,7 @@
             <div class="modal-content">
                 <form>
                     <div class="text-center mb-3">
-                        <img src="/assets/images/logo.png" alt="Logo" style="width: 80px;">
+                        <img src="/assets/images/logoNoBg.png" alt="Logo" style="width: 80px;">
                     </div>
 
                     <div class="mb-3">
@@ -235,7 +236,7 @@
                     @csrf
                     <!-- Tombol Pilih -->
                     <div class="text-center mb-3">
-                        <img src="/assets/images/logo.png" alt="Logo" style="width: 80px;">
+                        <img src="/assets/images/logoNoBg.png" alt="Logo" style="width: 80px;">
                     </div>
                     <div class="d-flex justify-content-center mb-4">
                         <button type="button" class="btn btn-outline-success me-2"

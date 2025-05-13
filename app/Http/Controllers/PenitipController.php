@@ -8,6 +8,109 @@ use Illuminate\Support\Facades\Hash;
 
 class PenitipController extends Controller
 {
+    public function create()
+    {
+        return view('Admin.Penitip.add_penitip'); // sesuaikan dengan view yang kamu miliki
+    }
+
+    public function store(Request $request)
+    {
+        $request->validate([
+            'nik_penitip' => 'required|string|unique:penitip,nik_penitip',
+            'nama_penitip' => 'required|string',
+            'email_penitip' => 'required|email|unique:penitip,email_penitip',
+            'no_telp' => 'required|string',
+            'alamat' => 'required|string',
+        ]);
+
+        Penitip::create([
+            'nik_penitip' => $request->nik_penitip,
+            'nama_penitip' => $request->nama_penitip,
+            'email_penitip' => $request->email_penitip,
+            'no_telp' => $request->no_telp,
+            'alamat' => $request->alamat,
+            'password' => Hash::make($request->password),
+            'status_penitip' => 'Active',
+            'saldo_penitip' => 0,
+            'rata_rating'     => 0,
+        ]);
+
+        return redirect()->route('admin.penitip.index')->with('success', 'Penitip berhasil ditambahkan.');
+    }
+
+    // Tampilkan profil penitip yang sedang login
+    public function profile()
+    {
+        if (session('role') !== 'penitip') {
+            return redirect('/login')->with('error', 'Unauthorized');
+        }
+
+        $id = session('user.id');
+        $penitip = Penitip::find($id);
+
+        if (!$penitip) {
+            abort(404, 'Data penitip tidak ditemukan.');
+        }
+
+        return view('penitip.profile', compact('penitip'));
+    }
+
+
+    // Tampilkan halaman produk yang tersedia
+    public function product()
+    {
+        $produk = \App\Models\Barang::with('kategori')->where('id_penitip', auth()->id())->get();
+        return view('Penitip.product', compact('produk'));
+    }
+
+    // Tampilkan riwayat transaksi penitip
+    public function transaction()
+    {
+        $transaksis = \App\Models\TransaksiPenitipan::with('barang')->where('id_penitip', auth()->id())->get();
+        return view('Penitip.transaction', compact('transaksis'));
+    }
+
+    public function filterTransaction($type)
+    {
+        $query = \App\Models\TransaksiPenitipan::with('barang')
+            ->where('id_penitip', auth()->id());
+
+        switch ($type) {
+            case 'sold':
+                $query->where('status_transaksi', 'COMPLETED');
+                break;
+            case 'expired':
+                $query->where('status_transaksi', 'EXPIRED');
+                break;
+            case 'donated':
+                $query->where('status_transaksi', 'DONATED');
+                break;
+            case 'all':
+            default:
+                break;
+        }
+
+        $transaksis = $query->get();
+
+        // Kembalikan view partial untuk AJAX
+        return view('Penitip.partials.table', compact('transaksis'));
+    }
+
+    // Tampilkan produk milik penitip sendiri
+    public function myproduct()
+    {
+        $produkSaya = \App\Models\Barang::where('id_penitip', auth()->id())->get();
+        return view('Penitip.myproduct', compact('produkSaya'));
+    }
+
+    // Tampilkan saldo dan reward penitip
+    public function rewards()
+    {
+        $penitip = auth()->user();
+        return view('Penitip.rewards', compact('penitip'));
+    }
+
+
     // Menampilkan halaman daftar penitip (item owners)
     public function index()
     {
@@ -21,6 +124,32 @@ class PenitipController extends Controller
         $penitip = Penitip::findOrFail($id);
         return view('Admin.Penitip.edit_penitip', compact('penitip'));
     }
+
+    public function editProfile($id)
+    {
+        $penitip = Penitip::findOrFail($id);
+        return view('penitip.edit', compact('penitip'));
+    }
+
+    public function updateProfile(Request $request, $id)
+{
+    $penitip = Penitip::findOrFail($id);
+
+    $request->validate([
+        'nik_penitip' => 'required|string|unique:penitip,nik_penitip,' . $id . ',id_penitip',
+        'nama_penitip' => 'required|string',
+        'email_penitip' => 'required|email|unique:penitip,email_penitip,' . $id . ',id_penitip',
+        'no_telp' => 'required|string',
+        'alamat' => 'required|string',
+    ]);
+
+    $penitip->update($request->only([
+        'nik_penitip', 'nama_penitip', 'email_penitip', 'no_telp', 'alamat'
+    ]));
+
+    return redirect()->route('penitip.profile')->with('success', 'Profil berhasil diperbarui.');
+}
+
 
     // Update data penitip
     public function update(Request $request, $id)

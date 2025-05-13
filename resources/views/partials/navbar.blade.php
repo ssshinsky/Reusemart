@@ -1,21 +1,74 @@
-<nav class="navbar navbar-light bg-white border-bottom shadow-sm px-4 py-3">
-    <a class="navbar-brand d-flex align-items-center" href="#">
-        <img src="/assets/images/logo.png" width="100" height="100" class="me-2">
-        <strong>ReUseMart</strong>
-    </a>
-    <form class="d-flex w-50">
-        <input class="form-control me-2" type="search" placeholder="What are you looking for?" aria-label="Search">
-        <button class="btn btn-outline-success" type="submit">Search</button>
-    </form>
-    <div class="d-flex align-items-center justify-content-between">
-        <nav class="me-3">
-            <a href="index.html" class="me-3 text-decoration-none">Home</a>
-            <a href="about.blade.php" class="text-decoration-none">About</a>
-        </nav>
-        <div>
-            <a href="#" class="btn btn-success me-2" data-bs-toggle="modal"
-                data-bs-target="#registerModal">Register</a>
-            <a href="#" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#loginModal">Login</a>
+<nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm px-4 py-3">
+    <div class="container-fluid d-flex justify-content-between align-items-center">
+        <a class="navbar-brand d-flex align-items-center" href="{{ route('welcome') }}">
+            <img src="/assets/images/logo.png" width="100" height="100" class="me-2" alt="Logo">
+            <strong>ReUseMart</strong>
+        </a>
+
+        <form class="d-flex w-50 mx-4">
+            <input class="form-control me-2" type="search" placeholder="What are you looking for?" aria-label="Search">
+            <button class="btn btn-outline-success" type="submit">Search</button>
+        </form>
+
+        <div class="d-flex align-items-center">
+
+            @php
+                $role = $role ?? session('role');
+                $user = $user ?? session('user');
+            @endphp
+
+
+            @if ($role && $user)
+                <nav class="me-3">
+                    <a href="{{ route('welcome') }}" class="me-3 text-decoration-none text-dark">Home</a>
+                    <a href="{{ route('about') }}" class="text-decoration-none text-dark">About</a>
+                </nav>
+                <a href="{{ route('cart') }}" class="text-success position-relative me-3">
+                    <i class="bi bi-cart-fill fs-4"></i>
+                </a>
+
+                <div class="dropdown">
+                    <button class="btn dropdown-toggle d-flex align-items-center" type="button"
+                        data-bs-toggle="dropdown" aria-expanded="false">
+                        <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center me-2"
+                            style="width: 32px; height: 32px;">
+                            <i class="bi bi-person-fill"></i>
+                        </div>
+                        {{ $user['nama'] ?? 'User' }}
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        @if ($role === 'pembeli')
+                            <li><a class="dropdown-item" href="{{ route('pembeli.profile') }}">My Account</a></li>
+                            <li><a class="dropdown-item" href="{{ route('pembeli.purchase') }}">My Order</a></li>
+                        @elseif ($role === 'penitip')
+                            <li><a class="dropdown-item" href="{{ route('penitip.profile') }}">My Account</a></li>
+                            <li><a class="dropdown-item" href="{{ route('penitip.myproduct') }}">My Product</a></li>
+                        @elseif ($role === 'organisasi')
+                            <li><a class="dropdown-item" href="{{ route('organisasi.profile') }}">My Account</a></li>
+                            <li><a class="dropdown-item" href="{{ route('organisasi.request') }}">Request Donasi
+                                    Saya</a></li>
+                        @endif
+
+                        <li>
+                            <a class="dropdown-item" href="#"
+                                onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+                                Log Out
+                            </a>
+                        </li>
+
+                    </ul>
+                </div>
+            @else
+                <div>
+                    <a href="#" class="btn btn-success me-2" data-bs-toggle="modal"
+                        data-bs-target="#registerModal">Register</a>
+                    <a href="#" class="btn btn-success" data-bs-toggle="modal"
+                        data-bs-target="#loginModal">Login</a>
+                </div>
+            @endif
         </div>
     </div>
 </nav>
+<form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
+    @csrf
+</form>

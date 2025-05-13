@@ -7,6 +7,18 @@ use Illuminate\Http\Request;
 
 class TransaksiPenitipanController extends Controller
 {
+    public function myProduct()
+    {
+        $penitipId = session('user.id');
+
+        // Ambil semua barang yang berasal dari penitip ini
+        $products = Barang::whereHas('transaksiPenitipan', function ($query) use ($penitipId) {
+            $query->where('id_penitip', $penitipId);
+        })->with(['gambar', 'kategori'])->get();
+
+        return view('penitip.my-product', compact('products'));
+    }
+
     // Menampilkan daftar semua transaksi penitipan
     public function index()
     {

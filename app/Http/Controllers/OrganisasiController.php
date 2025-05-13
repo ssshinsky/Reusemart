@@ -52,6 +52,17 @@ class OrganisasiController extends Controller
         return response()->json($organisasi, 201);
     }
 
+    public function edit($id)
+    {
+        $organisasi = Organisasi::find($id);
+
+        if (!$organisasi) {
+            return redirect()->route('admin.organisasi.index')->with('error', 'Organisasi tidak ditemukan.');
+        }
+
+        return view('admin.organisasi.edit_organisasi', compact('organisasi'));
+    }
+
     // Mengupdate organisasi berdasarkan ID
     public function update(Request $request, $id)
     {
@@ -64,7 +75,7 @@ class OrganisasiController extends Controller
             'nama_organisasi' => 'nullable|string',
             'alamat' => 'nullable|string',
             'kontak' => 'nullable|string',
-            'email_organisasi' => 'nullable|email|unique:organisasi,email_organisasi,' . $id . ',id_organisasi',
+            'email_organisasi' => 'nullable|email|unique:organisasi,email_organisasi,' . $organisasi->id_organisasi . ',id_organisasi',
             'password' => 'nullable|string|min:6',
         ]);
 
@@ -76,8 +87,23 @@ class OrganisasiController extends Controller
             'password' => $request->password ? Hash::make($request->password) : $organisasi->password,
         ]);
 
-        return response()->json($organisasi);
+        return redirect()->route('admin.organisasi.index');
+
     }
+
+    public function destroy($id)
+    {
+        $organisasi = Organisasi::find($id);
+
+        if (!$organisasi) {
+            return redirect()->route('admin.organisasi.index')->with('error', 'Organisasi tidak ditemukan.');
+        }
+
+        $organisasi->delete();
+
+        return redirect()->route('admin.organisasi.index')->with('success', 'Organisasi berhasil dihapus.');
+    }
+
 
     public function search(Request $request)
     {

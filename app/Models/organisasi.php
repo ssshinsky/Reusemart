@@ -15,6 +15,7 @@ class Organisasi extends Model
 
     // Nama tabel yang digunakan oleh model
     protected $table = 'organisasi';
+    protected $primaryKey = 'id_organisasi';
 
     // Kolom yang dapat diisi (Mass Assignment)
     protected $fillable = [

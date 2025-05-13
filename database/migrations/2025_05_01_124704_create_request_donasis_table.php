@@ -18,6 +18,9 @@ class CreateRequestDonasisTable extends Migration
 
             $table->string('request');
             $table->timestamps();
+
+            $table->string('status_request')->default('belum di proses');
+            $table->timestamps();
         });
     }
 

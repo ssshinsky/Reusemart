@@ -31,12 +31,14 @@ class RequestDonasiController extends Controller
             'id_organisasi' => 'required|exists:organisasi,id_organisasi',
             'id_pegawai' => 'required|exists:pegawai,id_pegawai',
             'request' => 'required|string',
+            'status_request' => 'nullable|in:belum di proses,sudah di donasikan',
         ]);
 
         $requestDonasi = RequestDonasi::create([
             'id_organisasi' => $request->id_organisasi,
             'id_pegawai' => $request->id_pegawai,
             'request' => $request->request,
+            'status_request' => $request->status_request ?? 'belum di proses',
         ]);
 
         return response()->json($requestDonasi, 201);
@@ -54,12 +56,13 @@ class RequestDonasiController extends Controller
             'id_organisasi' => 'nullable|exists:organisasi,id_organisasi',
             'id_pegawai' => 'nullable|exists:pegawai,id_pegawai',
             'request' => 'nullable|string',
+            'status_request' => 'nullable|in:belum di proses,sudah di donasikan',
         ]);
 
         $requestDonasi->update([
             'id_organisasi' => $request->id_organisasi ?? $requestDonasi->id_organisasi,
             'id_pegawai' => $request->id_pegawai ?? $requestDonasi->id_pegawai,
-            'request' => $request->request ?? $requestDonasi->request,
+            'request' => $request->request ?? $requestDonasi->request,'status_request' => $request->status_request ?? $requestDonasi->status_request,
         ]);
 
         return response()->json($requestDonasi);

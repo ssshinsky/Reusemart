@@ -56,6 +56,10 @@ return [
             'driver' => 'sanctum',
             'provider' => 'organisasi',
         ],
+        'owner' => [
+            'driver' => 'session',
+            'provider' => 'pegawai',
+        ],
     ],
 
     /*
@@ -95,6 +99,10 @@ return [
         'organisasi' => [
             'driver' => 'eloquent',
             'model' => App\Models\Organisasi::class,
+        ],
+        'owners' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\Pegawai::class,  // Adjust as needed
         ],
 
         // 'users' => [

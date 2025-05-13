@@ -9,13 +9,14 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
-class Pegawai extends Model
+class Pegawai extends Authenticatable
 {
     use HasApiTokens, Notifiable, HasFactory;
 
     // Nama tabel yang digunakan oleh model
     protected $table = 'pegawai';
     protected $primaryKey = 'id_pegawai';
+    protected $guard = 'owner';
 
     // Kolom yang dapat diisi (Mass Assignment)
     protected $fillable = [
@@ -30,10 +31,37 @@ class Pegawai extends Model
         'profil_pict',
     ];
 
+    public function isOwner()
+    {
+        return $this->id_role == 1;
+    }
+
+    // Override method untuk autentikasi
+    public function getAuthIdentifierName()
+    {
+        return 'id_pegawai'; // Harus mengembalikan kolom primary key
+    }
+
+    public function getAuthIdentifier()
+    {
+        return $this->id_pegawai; // Mengembalikan nilai id_pegawai
+    }
+
     // Kolom yang harus disembunyikan dalam array / response
     protected $hidden = [
         'password', // Menyembunyikan password dari JSON output
     ];
+
+    // Override method untuk autentikasi
+    // public function getAuthIdentifierName()
+    // {
+    //     return 'email_pegawai'; // Sesuaikan dengan kolom email di tabel
+    // }
+
+    public function getAuthPassword()
+    {
+        return $this->password; // Kolom password
+    }
 
     // Kolom yang akan di-cast ke tipe tertentu
     protected $casts = [

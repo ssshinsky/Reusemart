@@ -23,12 +23,11 @@ Route::get('/home', function () {return view('welcome');})->name('welcome');
 Route::get('/about', function () {return view('about');})->name('about');
 Route::post('/logout', function () {session()->flush();return redirect('/');})->name('logout');
 Route::post('/login', [AuthController::class, 'login'])->name('login.submit');
-
 Route::post('/admin/logout', function () {
     session()->flush();
     return redirect('/login');
 })->name('admin.logout');
- 
+  
 Route::post('/pembeli', [PembeliController::class, 'store']);
 Route::post('/organisasi', [OrganisasiController::class, 'store']);
 Route::get('/', [BarangController::class, 'indexLanding'])->name('welcome');

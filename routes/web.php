@@ -13,14 +13,14 @@ use App\Http\Controllers\MerchandiseController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\KeranjangController;
 
-Route::get('/', function () {
-    return view('welcome', [
-        'role' => session('role'),
-        'user' => session('user')
-    ]);
-});
+// Route::get('/', function () {
+//     return view('welcome', [
+//         'role' => session('role'),
+//         'user' => session('user')
+//     ]);
+// });
 
-Route::get('/home', function () {return view('welcome');})->name('welcome');
+Route::get('/', [BarangController::class, 'indexLanding'])->name('welcome');
 Route::get('/about', function () {return view('about');})->name('about');
 Route::post('/logout', function () {session()->flush();return redirect('/');})->name('logout');
 Route::post('/login', [AuthController::class, 'login'])->name('login.submit');
@@ -31,7 +31,6 @@ Route::post('/admin/logout', function () {
   
 Route::post('/pembeli', [PembeliController::class, 'store']);
 Route::post('/organisasi', [OrganisasiController::class, 'store']);
-Route::get('/', [BarangController::class, 'indexLanding'])->name('welcome');
 Route::get('/keranjang', [\App\Http\Controllers\KeranjangController::class, 'index'])->name('cart');
 Route::get('/produk/allProduct', [BarangController::class, 'allProduct'])->name('produk.allproduct'); 
 
@@ -110,6 +109,7 @@ Route::prefix('admin')->group(function () {
     Route::put('/organizations/{id}', [OrganisasiController::class, 'update'])->name('admin.organisasi.update');
     Route::put('/organizations/{id}/deactivate', [OrganisasiController::class, 'deactivate'])->name('admin.organisasi.deactivate');
     Route::put('/organizations/{id}/reactivate', [OrganisasiController::class, 'reactivate'])->name('admin.organisasi.reactivate');
+    Route::delete('/organizations/{id}', [OrganisasiController::class, 'destroy'])->name('admin.organisasi.destroy');
 
     // PRODUCTS
     Route::get('/products', [BarangController::class, 'index'])->name('admin.produk.index');

@@ -1,7 +1,7 @@
 <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm px-4 py-3">
     <div class="container-fluid d-flex justify-content-between align-items-center">
         <a class="navbar-brand d-flex align-items-center" href="{{ route('welcome') }}">
-            <img src="/assets/images/logo.png" width="100" height="100" class="me-2" alt="Logo">
+            <img src="/assets/images/logoNoBg.png" width="100" height="100" class="me-2" alt="Logo">
             <strong>ReUseMart</strong>
         </a>
 

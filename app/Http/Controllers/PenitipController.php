@@ -118,41 +118,6 @@ class PenitipController extends Controller
         return view('Admin.Penitip.penitip', compact('penitips'));
     }
 
-    // Menambahkan data
-    public function create()
-    {
-        return view('Admin.Penitip.add_penitip');
-    }
-
-    public function store(Request $request)
-    {
-        $request->validate([
-            'nik_penitip' => 'required|string|unique:penitip,nik_penitip',
-            'nama_penitip' => 'required|string|min:3',
-            'email_penitip' => 'required|email|unique:penitip,email_penitip',
-            'no_telp' => 'required|regex:/^[0-9]{10,15}$/',
-            'alamat' => 'required|string',
-            'password' => 'nullable|string|min:6',
-        ]);
-
-        $password = $request->password;
-
-        Penitip::create([
-            'nik_penitip' => $request->nik_penitip,
-            'nama_penitip' => $request->nama_penitip,
-            'email_penitip' => $request->email_penitip,
-            'no_telp' => $request->no_telp,
-            'alamat' => $request->alamat,
-            'password' => Hash::make($password),
-            'status_penitip' => 'Active',
-            'saldo_penitip' => 0,
-            'rata_rating' => 0,
-        ]);
-
-        return redirect()->route('admin.penitip.index')->with('success', 'Penitip berhasil ditambahkan.');
-    }
-
-
     // Menampilkan form edit penitip
     public function edit($id)
     {

@@ -21,11 +21,12 @@ class AuthController extends Controller
         if ($pegawai && Hash::check($password, $pegawai->password)) {
             Auth::guard('pegawai')->login($pegawai);
             return match ($pegawai->id_role) {
-                1 => redirect('/admin'),
-                2 => redirect('/cs'),
-                3 => redirect('/hunter'),
+                1 => redirect('/owner'),    
+                2 => redirect('/admin'),    
+                3 => redirect('/cs'),       
                 4 => redirect('/gudang'),
                 5 => redirect('/kurir'),
+                6 => redirect('/hunter'),
                 default => redirect('/pegawai'),
             };
         }

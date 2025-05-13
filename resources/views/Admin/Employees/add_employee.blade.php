@@ -216,8 +216,8 @@
         .form-group input,
         .form-group select,
         .form-group textarea {
-            padding: 0.6rem;
             font-family: inherit;
+            padding: 0.6rem;
             font-size: 16px;
             font-weight: 400;
             border: 1px solid #ccc;

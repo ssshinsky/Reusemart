@@ -159,7 +159,7 @@
             <img src="{{ asset('images/avatar.png') }}" alt="avatar" height="40"
                 style="border-radius: 50%; margin-right: 5px;">
             <span style="font-weight: 400;">
-                {{ session('user')->nama_pegawai ?? 'Admin' }} ⏷
+                {{ Auth::guard('pegawai')->user()->nama_pegawai }} ⏷
             </span>
 
             <!-- DROPDOWN CONTENT -->

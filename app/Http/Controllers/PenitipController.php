@@ -8,105 +8,125 @@ use Illuminate\Support\Facades\Hash;
 
 class PenitipController extends Controller
 {
-    // Menampilkan daftar semua penitip
+    // Menampilkan halaman daftar penitip (item owners)
     public function index()
     {
         $penitips = Penitip::all();
-        return response()->json($penitips);
+        return view('Admin.Penitip.penitip', compact('penitips'));
     }
 
-    // Menampilkan penitip berdasarkan ID
-    public function show($id)
+    // Menampilkan form edit penitip
+    public function edit($id)
     {
-        $penitip = Penitip::find($id);
-        if (!$penitip) {
-            return response()->json(['message' => 'Penitip not found'], 404);
-        }
-        return response()->json($penitip);
+        $penitip = Penitip::findOrFail($id);
+        return view('Admin.Penitip.edit_penitip', compact('penitip'));
     }
 
-    // Menambahkan penitip baru
-    public function store(Request $request)
-    {
-        $request->validate([
-            'nik_penitip' => 'required|string|unique:penitip,nik_penitip',
-            'nama_penitip' => 'required|string',
-            'email_penitip' => 'required|email|unique:penitip,email_penitip',
-            'password' => 'required|string|min:6',
-            'no_telp' => 'required|string',
-            'alamat' => 'required|string',
-            'rata_rating' => 'required|numeric',
-            'status_penitip' => 'required|string',
-            'saldo_penitip' => 'required|numeric',
-            'profil_pict' => 'nullable|string',
-            'badge' => 'nullable|boolean',
-        ]);
-
-        $penitip = Penitip::create([
-            'nik_penitip' => $request->nik_penitip,
-            'nama_penitip' => $request->nama_penitip,
-            'email_penitip' => $request->email_penitip,
-            'password' => Hash::make($request->password),
-            'no_telp' => $request->no_telp,
-            'alamat' => $request->alamat,
-            'rata_rating' => $request->rata_rating,
-            'status_penitip' => $request->status_penitip,
-            'saldo_penitip' => $request->saldo_penitip,
-            'profil_pict' => $request->profil_pict,
-            'badge' => $request->badge,
-        ]);
-
-        return response()->json($penitip, 201);
-    }
-
-    // Mengupdate penitip berdasarkan ID
+    // Update data penitip
     public function update(Request $request, $id)
     {
-        $penitip = Penitip::find($id);
-        if (!$penitip) {
-            return response()->json(['message' => 'Penitip not found'], 404);
-        }
+        $penitip = Penitip::findOrFail($id);
 
         $request->validate([
-            'nik_penitip' => 'nullable|string|unique:penitip,nik_penitip,' . $id . ',id_penitip',
-            'nama_penitip' => 'nullable|string',
-            'email_penitip' => 'nullable|email|unique:penitip,email_penitip,' . $id . ',id_penitip',
-            'password' => 'nullable|string|min:6',
-            'no_telp' => 'nullable|string',
-            'alamat' => 'nullable|string',
-            'rata_rating' => 'nullable|numeric',
-            'status_penitip' => 'nullable|string',
-            'saldo_penitip' => 'nullable|numeric',
-            'profil_pict' => 'nullable|string',
-            'badge' => 'nullable|boolean',
+            'nik_penitip' => 'required|string|unique:penitip,nik_penitip,' . $id . ',id_penitip',
+            'nama_penitip' => 'required|string',
+            'email_penitip' => 'required|email|unique:penitip,email_penitip,' . $id . ',id_penitip',
+            'no_telp' => 'required|string',
+            'alamat' => 'required|string',
         ]);
 
         $penitip->update([
-            'nik_penitip' => $request->nik_penitip ?? $penitip->nik_penitip,
-            'nama_penitip' => $request->nama_penitip ?? $penitip->nama_penitip,
-            'email_penitip' => $request->email_penitip ?? $penitip->email_penitip,
-            'password' => $request->password ? Hash::make($request->password) : $penitip->password,
-            'no_telp' => $request->no_telp ?? $penitip->no_telp,
-            'alamat' => $request->alamat ?? $penitip->alamat,
-            'rata_rating' => $request->rata_rating ?? $penitip->rata_rating,
-            'status_penitip' => $request->status_penitip ?? $penitip->status_penitip,
-            'saldo_penitip' => $request->saldo_penitip ?? $penitip->saldo_penitip,
-            'profil_pict' => $request->profil_pict ?? $penitip->profil_pict,
-            'badge' => $request->badge ?? $penitip->badge,
+            'nik_penitip' => $request->nik_penitip,
+            'nama_penitip' => $request->nama_penitip,
+            'email_penitip' => $request->email_penitip,
+            'no_telp' => $request->no_telp,
+            'alamat' => $request->alamat,
         ]);
 
-        return response()->json($penitip);
+        return redirect()->route('admin.penitip.index')->with('success', 'Data berhasil diperbarui.');
     }
 
-    // Menghapus penitip berdasarkan ID
-    public function destroy($id)
+    // Menonaktifkan penitip
+    public function deactivate($id)
     {
-        $penitip = Penitip::find($id);
-        if (!$penitip) {
-            return response()->json(['message' => 'Penitip not found'], 404);
+        $penitip = Penitip::findOrFail($id);
+        $penitip->update(['status_penitip' => 'Non Active']);
+
+        return redirect()->route('admin.penitip.index')->with('success', 'Penitip dinonaktifkan.');
+    }
+
+    // Mengaktifkan kembali penitip
+    public function reactivate($id)
+    {
+        $penitip = Penitip::findOrFail($id);
+        $penitip->update(['status_penitip' => 'Active']);
+
+        return redirect()->route('admin.penitip.index')->with('success', 'Penitip diaktifkan kembali.');
+    }
+
+    // Reset password penitip (ke tanggal lahir atau default tertentu, misalnya "123456")
+    public function resetPassword($id)
+    {
+        $penitip = Penitip::findOrFail($id);
+        $penitip->update([
+            'password' => Hash::make('123456') // ganti dengan password default sesuai kebutuhan
+        ]);
+
+        return redirect()->route('admin.penitip.index')->with('success', 'Password berhasil direset.');
+    }
+
+    public function search(Request $request)
+    {
+        if (!$request->ajax()) {
+            return response('', 204);
         }
 
-        $penitip->delete();
-        return response()->json(['message' => 'Penitip deleted successfully']);
+        $query = $request->query('q');
+
+        $penitips = Penitip::where('nama_penitip', 'LIKE', "%$query%")
+            ->orWhere('email_penitip', 'LIKE', "%$query%")
+            ->orWhere('nik_penitip', 'LIKE', "%$query%")
+            ->get();
+
+        $html = '';
+
+        foreach ($penitips as $penitip) {
+            $status = strtolower(trim($penitip->status_penitip));
+            $html .= '
+            <tr>
+                <td class="center">'.$penitip->id_penitip.'</td>
+                <td'.($status !== 'active' ? ' style="color: #E53E3E; font-weight: bold;"' : '').'>'.$penitip->nama_penitip.'</td>
+                <td>'.$penitip->email_penitip.'</td>
+                <td>'.$penitip->no_telp.'</td>
+                <td>'.$penitip->alamat.'</td>
+                <td class="center">Rp '.number_format($penitip->saldo_penitip, 0, ',', '.').'</td>
+                <td class="center">'.number_format($penitip->rata_rating, 1).'</td>
+                <td class="center">'.ucwords($status).'</td>
+                <td class="action-cell" style="background-color:rgb(255, 245, 220)">
+                    <a href="'.route('admin.penitip.edit', $penitip->id_penitip).'" class="edit-btn">✏️</a>';
+
+            if ($status === 'active') {
+                $html .= '
+                    <form action="'.route('admin.penitip.deactivate', $penitip->id_penitip).'" method="POST" class="form-nonaktif" style="display:inline;">
+                        '.csrf_field().method_field('PUT').'
+                        <button type="submit" class="redeactivate-btn" title="Deactivate">🛑</button>
+                    </form>';
+            } else {
+                $html .= '
+                    <form action="'.route('admin.penitip.reactivate', $penitip->id_penitip).'" method="POST" class="form-reactivate" style="display:inline;">
+                        '.csrf_field().method_field('PUT').'
+                        <button type="submit" class="redeactivate-btn" title="Reactivate">♻️</button>
+                    </form>';
+            }
+
+            $html .= '</td></tr>';
+
+        }
+
+        if ($penitips->isEmpty()) {
+            $html = '<tr><td colspan="8" class="center">No item owner found.</td></tr>';
+        }
+
+        return response($html);
     }
 }

@@ -23,6 +23,7 @@ class Organisasi extends Model
         'kontak',
         'email_organisasi',
         'password',
+        'status_organisasi',
     ];
 
     // Kolom yang harus disembunyikan dalam array / response

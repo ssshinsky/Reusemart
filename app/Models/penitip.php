@@ -18,15 +18,12 @@ class Penitip extends Authenticatable
         'nik_penitip',
         'nama_penitip',
         'email_penitip',
-        'password',
-        'poin_penitip',
         'no_telp',
         'alamat',
-        'rata_rating',
+        'password',
         'status_penitip',
         'saldo_penitip',
-        'profil_pict',
-        'badge',
+        'rata_rating'
     ];
 
     protected $hidden = [

@@ -1,51 +1,59 @@
 @extends('Admin.admin')
 
-@section('title', 'Edit Item Owner')
+@section('title', 'Add Organization')
 
 @section('content')
-<h2 style="margin-bottom: 1.5rem;">Edit Item Owner</h2>
+<h2 style="margin-bottom: 1.5rem;">Add Organization</h2>
 
-<form action="{{ route('admin.penitip.update', $penitip->id_penitip) }}" method="POST" class="form-container">
+<form action="{{ route('admin.organisasi.store') }}" method="POST" class="form-container">
     @csrf
-    @method('PUT')
 
     <div class="form-grid">
         <div class="form-column">
             <div class="form-group">
-                <label for="nik_penitip">NIK</label>
-                <input type="text" name="nik_penitip" id="nik_penitip" value="{{ old('nik_penitip', $penitip->nik_penitip) }}" required>
+                <label for="nama_organisasi">Name</label>
+                <input type="text" name="nama_organisasi" id="nama_organisasi" placeholder="Enter organization name" value="{{ old('nama_organisasi') }}" required>
+                @error('nama_organisasi') <div class="text-danger">{{ $message }}</div> @enderror
             </div>
+
             <div class="form-group">
-                <label for="nama_penitip">Nama</label>
-                <input type="text" name="nama_penitip" id="nama_penitip" value="{{ old('nama_penitip', $penitip->nama_penitip) }}" required>
+                <label for="email_organisasi">Email</label>
+                <input type="email" name="email_organisasi" id="email_organisasi" placeholder="Enter email" value="{{ old('email_organisasi') }}" required>
+                @error('email_organisasi') <div class="text-danger">{{ $message }}</div> @enderror
             </div>
+
             <div class="form-group">
-                <label for="email_penitip">Email</label>
-                <input type="email" name="email_penitip" id="email_penitip" value="{{ old('email_penitip', $penitip->email_penitip) }}" required>
+                <label for="kontak">Contact Person</label>
+                <input type="text" name="kontak" id="kontak" placeholder="Enter contact name" value="{{ old('kontak') }}" required>
+                @error('kontak') <div class="text-danger">{{ $message }}</div> @enderror
             </div>
-        </div> 
+        </div>
+
         <div class="form-column">
             <div class="form-group">
-                <label for="no_telp">Nomor Telepon</label>
-                <input type="text" name="no_telp" id="no_telp" value="{{ old('no_telp', $penitip->no_telp) }}" required>
+                <label for="alamat">Address</label>
+                <textarea name="alamat" id="alamat" rows="4" placeholder="Enter address" required>{{ old('alamat') }}</textarea>
+                @error('alamat') <div class="text-danger">{{ $message }}</div> @enderror
             </div>
+
             <div class="form-group">
-                <label for="alamat">Alamat</label>
-                <textarea name="alamat" id="alamat" rows="3" required>{{ old('alamat', $penitip->alamat) }}</textarea>
+                <label for="password">Password</label>
+                <input type="password" name="password" id="password" placeholder="Enter password" required>
+                @error('password') <div class="text-danger">{{ $message }}</div> @enderror
             </div>
         </div>
     </div>
 
     <div class="form-actions-container">
         <div class="form-actions">
-            <a href="{{ route('admin.penitip.index') }}" class="btn btn-cancel">Cancel</a>
+            <a href="{{ route('admin.organisasi.index') }}" class="btn btn-cancel">Cancel</a>
             <button type="submit" class="btn btn-submit">Save</button>
         </div>
     </div>
 </form>
 
 <style>
-.form-container {
+    .form-container {
         width: 100%;
         padding: 2rem;
         background: #fff;
@@ -133,6 +141,12 @@
         .form-actions-container {
             justify-content: center;
         }
+    }
+
+    .text-danger {
+        color: #dc3545;
+        font-size: 14px;
+        margin-top: 4px;
     }
 </style>
 @endsection

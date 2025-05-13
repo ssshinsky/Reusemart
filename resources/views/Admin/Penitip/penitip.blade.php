@@ -21,6 +21,7 @@
                 <tr>
                     <th class="col-id">ID</th>
                     <th class="col-nama">Nama</th>
+                    <th class="col-nik">NIK</th>
                     <th class="col-email">Email</th>
                     <th class="col-telp">Nomor Telepon</th>
                     <th class="col-alamat">Alamat</th>
@@ -35,6 +36,7 @@
                 <tr>
                     <td class="center">{{ $penitip->id_penitip }}</td>
                     <td style="{{ $penitip->status_penitip !== 'Active' ? 'color: #E53E3E; font-weight: bold;' : '' }}">{{ $penitip->nama_penitip }}</td>
+                    <td>{{ $penitip->nik_penitip }}</td>
                     <td>{{ $penitip->email_penitip }}</td>
                     <td>{{ $penitip->no_telp }}</td>
                     <td>{{ $penitip->alamat }}</td>
@@ -63,69 +65,90 @@
 </div>
 
 <script>
-function rebindEditToggle() {
-    const actionCells = document.querySelectorAll('.action-cell');
-    const headerAction = document.querySelector('.header-action');
-    const toggleBtn = document.getElementById('editToggle');
-    const isActive = toggleBtn?.classList.contains('active');
+    function rebindEditToggle() {
+        const actionCells = document.querySelectorAll('.action-cell');
+        const headerAction = document.querySelector('.header-action');
+        const toggleBtn = document.getElementById('editToggle');
+        const isActive = toggleBtn?.classList.contains('active');
 
-    if (isActive) {
-        headerAction?.style && (headerAction.style.display = 'table-cell');
-        actionCells.forEach(cell => cell.classList.add('visible'));
-    } else {
-        headerAction?.style && (headerAction.style.display = 'none');
-        actionCells.forEach(cell => cell.classList.remove('visible'));
+        if (isActive) {
+            headerAction?.style && (headerAction.style.display = 'table-cell');
+            actionCells.forEach(cell => cell.classList.add('visible'));
+        } else {
+            headerAction?.style && (headerAction.style.display = 'none');
+            actionCells.forEach(cell => cell.classList.remove('visible'));
+        }
     }
-}
 
-const toggleButton = document.getElementById('editToggle');
-const addButton = document.getElementById('addBtn');
+    const toggleButton = document.getElementById('editToggle');
+    const addButton = document.getElementById('addBtn');
 
-toggleButton.addEventListener('click', function () {
-    toggleButton.classList.toggle('active');
-    addButton.classList.remove('active');
-    rebindEditToggle();
-});
+    toggleButton.addEventListener('click', function () {
+        toggleButton.classList.toggle('active');
+        addButton.classList.remove('active');
+        rebindEditToggle();
+    });
 
-const searchInput = document.getElementById('searchInput');
-let timeout = null;
+    const searchInput = document.getElementById('searchInput');
+    let timeout = null;
 
-searchInput.addEventListener('input', function () {
-    clearTimeout(timeout);
-    const query = this.value;
+    searchInput.addEventListener('input', function () {
+        clearTimeout(timeout);
+        const query = this.value;
 
-    timeout = setTimeout(() => {
-        fetch(`{{ route('admin.penitip.search') }}?q=${encodeURIComponent(query)}`, {
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        })
-        .then(res => res.text())
-        .then(html => {
-            const tbody = document.getElementById('penitipTableBody');
-            if (tbody) {
-                tbody.innerHTML = html;
-                rebindEditToggle();
-            }
-        })
-        .catch(err => console.error('Live search error:', err));
-    }, 300);
-});
+        timeout = setTimeout(() => {
+            fetch(`{{ route('admin.penitip.search') }}?q=${encodeURIComponent(query)}`, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(res => res.text())
+            .then(html => {
+                const tbody = document.getElementById('penitipTableBody');
+                if (tbody) {
+                    tbody.innerHTML = html;
+                    rebindEditToggle();
+                }
+            })
+            .catch(err => console.error('Live search error:', err));
+        }, 300);
+    });
 
-['form-nonaktif', 'form-reactivate'].forEach(cls => {
-    document.querySelectorAll(`.${cls}`).forEach(form => {
+    document.querySelectorAll('.form-nonaktif').forEach(form => {
         form.addEventListener('submit', function(e) {
             e.preventDefault();
             Swal.fire({
-                title: cls === 'form-nonaktif' ? 'Nonaktifkan akun?' : 'Aktifkan kembali akun?',
-                text: cls === 'form-nonaktif' ? 'Akun ini akan dinonaktifkan!' : 'Akun ini akan kembali aktif.',
-                icon: cls === 'form-nonaktif' ? 'warning' : 'question',
+                title: 'Are you sure?',
+                text: 'This employee will be deactivated!',
+                icon: 'warning',
                 showCancelButton: true,
-                confirmButtonColor: cls === 'form-nonaktif' ? '#d33' : '#28a745',
+                confirmButtonColor: '#d33',
                 cancelButtonColor: '#aaa',
-                confirmButtonText: cls === 'form-nonaktif' ? 'Ya, nonaktifkan!' : 'Ya, aktifkan!'
-            }).then(result => { if (result.isConfirmed) form.submit(); });
+                confirmButtonText: 'Yes, deactivate!'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    form.submit();
+                }
+            });
         });
     });
-});
+    
+    document.querySelectorAll('.form-reactivate').forEach(form => {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            Swal.fire({
+                title: 'Reactivate this employee?',
+                text: 'This employee will regain access to the system.',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#28a745',
+                cancelButtonColor: '#aaa',
+                confirmButtonText: 'Yes, reactivate!'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    form.submit();
+                }
+            });
+        });
+    });
 </script>
 
 <style>
@@ -164,6 +187,7 @@ searchInput.addEventListener('input', function () {
 .center { text-align: center; }
 .col-id      { width: 40px; }
 .col-nama    { width: 180px; }
+.col-nik     { width: 100px;}
 .col-email   { width: 220px; }
 .col-telp    { width: 140px; }
 .col-alamat  { width: 300px; }

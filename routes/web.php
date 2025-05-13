@@ -17,7 +17,8 @@ Route::get('/', function () {
     return view('welcome', [
         'role' => session('role'),
         'user' => session('user')
-]);
+    ]);
+});
 
 Route::get('/home', function () {return view('welcome');})->name('welcome');
 Route::get('/about', function () {return view('about');})->name('about');

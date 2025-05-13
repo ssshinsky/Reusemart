@@ -132,23 +132,37 @@ class PenitipController extends Controller
     }
 
     public function updateProfile(Request $request, $id)
-{
-    $penitip = Penitip::findOrFail($id);
+    {
+        $penitip = Penitip::findOrFail($id);
 
-    $request->validate([
-        'nik_penitip' => 'required|string|unique:penitip,nik_penitip,' . $id . ',id_penitip',
-        'nama_penitip' => 'required|string',
-        'email_penitip' => 'required|email|unique:penitip,email_penitip,' . $id . ',id_penitip',
-        'no_telp' => 'required|string',
-        'alamat' => 'required|string',
-    ]);
+        $request->validate([
+                'nik_penitip' => 'required|string|unique:penitip,nik_penitip,' . $id . ',id_penitip',
+                'nama_penitip' => 'required|string',
+                'email_penitip' => 'required|email|unique:penitip,email_penitip,' . $id . ',id_penitip',
+                'no_telp' => 'required|string',
+                'alamat' => 'required|string',
+                'profil_pict' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            ]);
 
-    $penitip->update($request->only([
-        'nik_penitip', 'nama_penitip', 'email_penitip', 'no_telp', 'alamat'
-    ]));
+        if ($request->hasFile('profil_pict')) {
+                $file = $request->file('profil_pict');
+                $filename = time() . '_' . $file->getClientOriginalName();
+                $file->storeAs('public/foto_penitip', $filename);
 
-    return redirect()->route('penitip.profile')->with('success', 'Profil berhasil diperbarui.');
-}
+                $penitip->profil_pict = $filename;
+            }
+
+            $penitip->update([
+                'nik_penitip' => $request->nik_penitip,
+                'nama_penitip' => $request->nama_penitip,
+                'email_penitip' => $request->email_penitip,
+                'no_telp' => $request->no_telp,
+                'alamat' => $request->alamat,
+                'profil_pict' => $penitip->profil_pict,
+            ]);
+
+        return redirect()->route('penitip.profile')->with('success', 'Profil berhasil diperbarui.');
+    }
 
 
     // Update data penitip
@@ -162,7 +176,16 @@ class PenitipController extends Controller
             'email_penitip' => 'required|email|unique:penitip,email_penitip,' . $id . ',id_penitip',
             'no_telp' => 'required|string',
             'alamat' => 'required|string',
+            'profil_pict' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ]);
+
+       if ($request->hasFile('profil_pict')) {
+            $file = $request->file('profil_pict');
+            $filename = time() . '_' . $file->getClientOriginalName();
+            $file->storeAs('public/foto_penitip', $filename);
+
+            $penitip->profil_pict = $filename;
+        }
 
         $penitip->update([
             'nik_penitip' => $request->nik_penitip,
@@ -170,6 +193,7 @@ class PenitipController extends Controller
             'email_penitip' => $request->email_penitip,
             'no_telp' => $request->no_telp,
             'alamat' => $request->alamat,
+            'profil_pict' => $penitip->profil_pict,
         ]);
 
         return redirect()->route('admin.penitip.index')->with('success', 'Data berhasil diperbarui.');

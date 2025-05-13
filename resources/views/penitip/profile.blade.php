@@ -26,8 +26,9 @@
                     <div class="card-body">
                         <div class="row align-items-start">
                             <div class="col-md-3 text-center mb-3 mb-md-0">
-                                <img src="{{ asset('storage/' . ($penitip->foto ?? 'default.png')) }}" alt="Profile Photo"
-                                    class="rounded" width="120" height="120" style="object-fit: cover;">
+                                <img src="{{ asset('storage/foto_penitip/' . ($penitip->profil_pict ?? 'default.png')) }}"
+                                    alt="Profile Photo" class="rounded" width="120" height="120"
+                                    style="object-fit: cover;">
                             </div>
 
                             <div class="col-md-9">
@@ -78,7 +79,8 @@
     <div class="modal fade" id="editProfileModal" tabindex="-1" aria-labelledby="editProfileModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
-                <form action="{{ route('penitip.update', $penitip->id_penitip) }}" method="POST">
+                <form action="{{ route('penitip.update', $penitip->id_penitip) }}" method="POST"
+                    enctype="multipart/form-data">
                     @csrf
                     @method('PUT')
 
@@ -122,11 +124,12 @@
                         </div>
 
                         <div class="mb-3 d-flex align-items-center">
-                            <img src="{{ asset('storage/' . ($penitip->foto ?? 'default.png')) }}" alt="Profile Photo"
-                                class="rounded-circle me-3" width="80" height="80" style="object-fit: cover;">
+                            <img src="{{ asset('storage/foto_penitip/' . ($penitip->profil_pict ?? 'default.png')) }}"
+                                alt="Profile Photo" class="rounded-circle me-3" width="80" height="80"
+                                style="object-fit: cover;">
                             <div>
-                                <label for="foto" class="form-label d-block">Profile Photo</label>
-                                <input type="file" id="foto" name="foto" accept=".jpg,.jpeg,.png"
+                                <label for="profil_pict" class="form-label d-block">Profile Photo</label>
+                                <input type="file" id="profil_pict" name="profil_pict" accept=".jpg,.jpeg,.png"
                                     class="form-control">
                                 <small class="text-muted">File max 1MB, JPG/PNG</small>
                             </div>

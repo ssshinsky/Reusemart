@@ -14,6 +14,11 @@ class OrganisasiController extends Controller
         $organisasis = Organisasi::all();
         return view('Admin.Organisasi.organisasi', compact('organisasis'));
     }
+    
+    public function create()
+    {
+        return view('Admin.Organisasi.add_organisasi');
+    }
 
     // Menampilkan organisasi berdasarkan ID
     public function show($id)
@@ -45,22 +50,15 @@ class OrganisasiController extends Controller
             'status_organisasi' => 'Active',
         ]);
 
-        if (!$request->expectsJson()) {
-            return redirect('/')->with('success', 'Register organisasi berhasil. Silakan login.');
-        }
+        return redirect()->route('admin.organisasi.index')->with('success', 'Organisasi berhasil ditambahkan.');
 
         return response()->json($organisasi, 201);
     }
 
     public function edit($id)
     {
-        $organisasi = Organisasi::find($id);
-
-        if (!$organisasi) {
-            return redirect()->route('admin.organisasi.index')->with('error', 'Organisasi tidak ditemukan.');
-        }
-
-        return view('admin.organisasi.edit_organisasi', compact('organisasi'));
+        $organisasi = Organisasi::findOrFail($id);
+        return view('Admin.Organisasi.edit_organisasi', compact('organisasi'));
     }
 
     // Mengupdate organisasi berdasarkan ID

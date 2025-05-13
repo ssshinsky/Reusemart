@@ -72,221 +72,189 @@
             </table>
         </div>
     </div>
+</div>
 
-    <script>
-        function rebindEditToggle() {
-            const actionCells = document.querySelectorAll('.action-cell');
-            const headerAction = document.querySelector('.header-action');
-            const toggleBtn = document.getElementById('editToggle');
-            const isActive = toggleBtn?.classList.contains('active');
+<script>
+    function rebindEditToggle() {
+        const actionCells = document.querySelectorAll('.action-cell');
+        const headerAction = document.querySelector('.header-action');
+        const toggleBtn = document.getElementById('editToggle');
+        const isActive = toggleBtn?.classList.contains('active');
 
-            if (isActive) {
-                headerAction?.style && (headerAction.style.display = 'table-cell');
-                actionCells.forEach(cell => cell.classList.add('visible'));
-            } else {
-                headerAction?.style && (headerAction.style.display = 'none');
-                actionCells.forEach(cell => cell.classList.remove('visible'));
-            }
+        if (isActive) {
+            headerAction?.style && (headerAction.style.display = 'table-cell');
+            actionCells.forEach(cell => cell.classList.add('visible'));
+        } else {
+            headerAction?.style && (headerAction.style.display = 'none');
+            actionCells.forEach(cell => cell.classList.remove('visible'));
         }
+    }
 
-        const toggleButton = document.getElementById('editToggle');
-        const addButton = document.getElementById('addBtn');
+    const toggleButton = document.getElementById('editToggle');
+    const addButton = document.getElementById('addBtn');
 
-        toggleButton.addEventListener('click', function() {
-            toggleButton.classList.toggle('active');
-            addButton.classList.remove('active');
-            rebindEditToggle();
-        });
+    toggleButton.addEventListener('click', function () {
+        toggleButton.classList.toggle('active');
+        addButton.classList.remove('active');
+        rebindEditToggle();
+    });
 
-        const searchInput = document.getElementById('searchInput');
-        let timeout = null;
+    const searchInput = document.getElementById('searchInput');
+    let timeout = null;
 
-        searchInput.addEventListener('input', function() {
-            clearTimeout(timeout);
-            const query = this.value;
+    searchInput.addEventListener('input', function () {
+        clearTimeout(timeout);
+        const query = this.value;
 
-            timeout = setTimeout(() => {
-                fetch(`{{ route('admin.organisasi.search') }}?q=${encodeURIComponent(query)}`, {
-                        headers: {
-                            'X-Requested-With': 'XMLHttpRequest'
-                        }
-                    })
-                    .then(res => res.text())
-                    .then(html => {
-                        const tbody = document.getElementById('organisasiTableBody');
-                        if (tbody) {
-                            tbody.innerHTML = html;
-                            rebindEditToggle();
-                        }
-                    })
-                    .catch(err => console.error('Live search error:', err));
-            }, 300);
-        });
+        timeout = setTimeout(() => {
+            fetch(`{{ route('admin.organisasi.search') }}?q=${encodeURIComponent(query)}`, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(res => res.text())
+            .then(html => {
+                const tbody = document.getElementById('organisasiTableBody');
+                if (tbody) {
+                    tbody.innerHTML = html;
+                    rebindEditToggle();
+                }
+            })
+            .catch(err => console.error('Live search error:', err));
+        }, 300);
+    });
 
-        ['form-nonaktif', 'form-reactivate'].forEach(cls => {
-            document.querySelectorAll(`.${cls}`).forEach(form => {
-                form.addEventListener('submit', function(e) {
-                    e.preventDefault();
-                    Swal.fire({
-                        title: cls === 'form-nonaktif' ? 'Nonaktifkan organisasi?' :
-                            'Aktifkan kembali organisasi?',
-                        text: cls === 'form-nonaktif' ?
-                            'Data organisasi akan dinonaktifkan!' :
-                            'Organisasi ini akan aktif kembali.',
-                        icon: cls === 'form-nonaktif' ? 'warning' : 'question',
-                        showCancelButton: true,
-                        confirmButtonColor: cls === 'form-nonaktif' ? '#d33' : '#28a745',
-                        cancelButtonColor: '#aaa',
-                        confirmButtonText: cls === 'form-nonaktif' ? 'Ya, nonaktifkan!' :
-                            'Ya, aktifkan!'
-                    }).then(result => {
-                        if (result.isConfirmed) form.submit();
-                    });
-                });
+    document.querySelectorAll('.form-nonaktif').forEach(form => {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            Swal.fire({
+                title: 'Are you sure?',
+                text: 'This employee will be deactivated!',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#aaa',
+                confirmButtonText: 'Yes, deactivate!'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    form.submit();
+                }
             });
         });
-    </script>
+    });
+    
+    document.querySelectorAll('.form-reactivate').forEach(form => {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            Swal.fire({
+                title: 'Reactivate this employee?',
+                text: 'This employee will regain access to the system.',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#28a745',
+                cancelButtonColor: '#aaa',
+                confirmButtonText: 'Yes, reactivate!'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    form.submit();
+                }
+            });
+        });
+    });
+</script>
 
-    <style>
-        .input-search {
-            flex: 1;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-            font-size: 16px;
-        }
-
-        .table-container {
-            margin-top: 1rem;
-            width: 100%;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-            overflow-x: auto;
-            max-height: 500px;
-        }
-
-        .table-org {
-            width: max-content;
-            min-width: 100%;
-            border-collapse: collapse;
-            background-color: #F9FAFB;
-        }
-
-        .table-org th,
-        .table-org td {
-            padding: 12px;
-            height: 50px;
-            border: 1px solid black;
-            white-space: nowrap;
-        }
-
-        .table-org th {
-            background-color: #A7F3D0;
-            text-align: center;
-        }
-
-        .center {
-            text-align: center;
-        }
-
-        .col-id {
-            width: 40px;
-        }
-
-        .col-nama {
-            width: 200px;
-        }
-
-        .col-email {
-            width: 200px;
-        }
-
-        .col-kontak {
-            width: 130px;
-        }
-
-        .col-alamat {
-            width: 250px;
-        }
-
-        .col-status {
-            width: 100px;
-        }
-
-        .col-action {
-            width: 100px;
-            position: sticky;
-            right: 0;
-            background: #fff;
-            z-index: 1;
-        }
-
-        .sticky-action {
-            position: sticky;
-            right: 0;
-        }
-
-        .action-cell {
-            position: sticky;
-            right: 0;
-            background: #fff;
-            display: none;
-            justify-content: center;
-            gap: 8px;
-        }
-
-        .action-cell.visible {
-            display: flex;
-            border: none;
-        }
-
-        .edit-btn,
-        .redeactivate-btn {
-            border: none;
-            background: none;
-            cursor: pointer;
-            font-size: 18px;
-            width: 32px;
-            height: 32px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 6px;
-        }
-
-        .edit-btn {
-            background-color: #FFC107;
-        }
-
-        .redeactivate-btn {
-            background-color: #3B82F6;
-        }
-
-        .btn-action {
-            padding: 10px 20px;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-            background: white;
-            cursor: pointer;
-        }
-
-        .btn-action.active {
-            background-color: #DCDCDC;
-        }
-
-        .btn-action:hover {
-            background-color: #EAEAEA;
-        }
-
-        a.btn-action,
-        button.btn-action {
-            text-decoration: none;
-            display: inline-block;
-            text-align: center;
-            color: black;
-            font-family: inherit;
-            font-size: 16px;
-            font-weight: 400;
-        }
-    </style>
+<style>
+.input-search {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 16px;
+}
+.table-container {
+    margin-top: 1rem;
+    width: 100%;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    overflow-x: auto;
+    max-height: 500px;
+}
+.table-org {
+    width: max-content;
+    min-width: 100%;
+    border-collapse: collapse;
+    background-color: #F9FAFB;
+}
+.table-org th,
+.table-org td {
+    padding: 12px;
+    height: 50px;
+    border: 1px solid black;
+    white-space: nowrap;
+}
+.table-org th {
+    background-color: #A7F3D0;
+    text-align: center;
+}
+.center { text-align: center; }
+.col-id     { width: 40px; }
+.col-nama   { width: 200px; }
+.col-email  { width: 200px; }
+.col-kontak { width: 130px; }
+.col-alamat { width: 250px; }
+.col-status { width: 100px; }
+.col-action {
+    width: 100px;
+    position: sticky;
+    right: 0;
+    background: #fff;
+    z-index: 1;
+}
+.sticky-action {
+    position: sticky;
+    right: 0;
+}
+.action-cell {
+    position: sticky;
+    right: 0;
+    background: #fff;
+    display: none;
+    justify-content: center;
+    gap: 8px;
+}
+.action-cell.visible {
+    display: flex;
+    border: none;
+}
+.edit-btn, .redeactivate-btn {
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-size: 18px;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+}
+.edit-btn { background-color: #FFC107; }
+.redeactivate-btn { background-color: #3B82F6; }
+.btn-action {
+    padding: 10px 20px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    background: white;
+    cursor: pointer;
+}
+.btn-action.active { background-color: #DCDCDC; }
+.btn-action:hover { background-color: #EAEAEA; }
+a.btn-action, button.btn-action {
+    text-decoration: none;
+    display: inline-block;
+    text-align: center;
+    color: black;
+    font-family: inherit;
+    font-size: 16px;
+    font-weight: 400;
+}
+</style>
 @endsection

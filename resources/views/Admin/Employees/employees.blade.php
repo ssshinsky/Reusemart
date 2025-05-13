@@ -160,7 +160,7 @@
 
     toggleButton.addEventListener('click', function () {
         const isVisible = toggleButton.classList.toggle('active');
-        rebindEditToggle(); // penting
+        rebindEditToggle(); 
         addButton.classList.remove('active');
     });
 </script>

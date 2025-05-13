@@ -64,6 +64,7 @@
                         data-bs-target="#loginModal">Login</a>
                 </div>
             @endif
+
         </div>
     </div>
 </nav>

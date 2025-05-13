@@ -15,8 +15,8 @@
             <div class="col-md-3 mb-4">
                 <p><strong>Support</strong></p>
                 <p>Jl. Babarsari No.44<br>Janti, Caturtunggal, Depok, Sleman<br>DIY 55281</p>
-                <p>reusemart@gmail.com</p>
-                <p>+62015-88888-9999</p>
+                <p>reusemartyogyakarta@gmail.com</p>
+                <p>(+62)815-8888-9999</p>
             </div>
 
             <div class="col-md-3 mb-4">

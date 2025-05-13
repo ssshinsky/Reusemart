@@ -1,36 +1,45 @@
 @extends('Admin.admin')
 
-@section('title', 'Edit Organization')
+@section('title', 'Add Organization')
 
 @section('content')
-<h2 style="margin-bottom: 1.5rem;">Edit Organization</h2>
+<h2 style="margin-bottom: 1.5rem;">Add Organization</h2>
 
-<form action="{{ route('admin.organisasi.update', $organisasi->id_organisasi) }}" method="POST" class="form-container">
+<form action="{{ route('admin.organisasi.store') }}" method="POST" class="form-container">
     @csrf
-    @method('PUT')
 
     <div class="form-grid">
         <div class="form-column">
             <div class="form-group">
                 <label for="nama_organisasi">Name</label>
-                <input type="text" name="nama_organisasi" id="nama_organisasi" value="{{ old('nama_organisasi', $organisasi->nama_organisasi) }}" required>
+                <input type="text" name="nama_organisasi" id="nama_organisasi" placeholder="Enter organization name" value="{{ old('nama_organisasi') }}" required>
+                @error('nama_organisasi') <div class="text-danger">{{ $message }}</div> @enderror
             </div>
 
             <div class="form-group">
                 <label for="email_organisasi">Email</label>
-                <input type="email" name="email_organisasi" id="email_organisasi" value="{{ old('email_organisasi', $organisasi->email_organisasi) }}" required>
+                <input type="email" name="email_organisasi" id="email_organisasi" placeholder="Enter email" value="{{ old('email_organisasi') }}" required>
+                @error('email_organisasi') <div class="text-danger">{{ $message }}</div> @enderror
             </div>
 
             <div class="form-group">
                 <label for="kontak">Contact Person</label>
-                <input type="text" name="kontak" id="kontak" value="{{ old('kontak', $organisasi->kontak) }}" required>
+                <input type="text" name="kontak" id="kontak" placeholder="Enter contact name" value="{{ old('kontak') }}" required>
+                @error('kontak') <div class="text-danger">{{ $message }}</div> @enderror
             </div>
         </div>
 
         <div class="form-column">
             <div class="form-group">
                 <label for="alamat">Address</label>
-                <textarea name="alamat" id="alamat" rows="4" required>{{ old('alamat', $organisasi->alamat) }}</textarea>
+                <textarea name="alamat" id="alamat" rows="4" placeholder="Enter address" required>{{ old('alamat') }}</textarea>
+                @error('alamat') <div class="text-danger">{{ $message }}</div> @enderror
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" name="password" id="password" placeholder="Enter password" required>
+                @error('password') <div class="text-danger">{{ $message }}</div> @enderror
             </div>
         </div>
     </div>
@@ -38,40 +47,10 @@
     <div class="form-actions-container">
         <div class="form-actions">
             <a href="{{ route('admin.organisasi.index') }}" class="btn btn-cancel">Cancel</a>
-            <button type="submit" class="btn btn-submit">Update</button>
+            <button type="submit" class="btn btn-submit">Save</button>
         </div>
     </div>
 </form>
-
-<script>
-    function handleResetPassword() {
-        Swal.fire({
-            title: 'Reset Password?',
-            text: "Password will be reset to default: 123456",
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#e53e3e',
-            cancelButtonColor: '#aaa',
-            confirmButtonText: 'Reset'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                fetch(`{{ route('admin.organisasi.reactivate', $organisasi->id_organisasi) }}`, {
-                    method: 'PUT',
-                    headers: {
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json'
-                    }
-                }).then(res => res.json())
-                .then(data => {
-                    Swal.fire('Success', 'Password has been reset.', 'success');
-                }).catch(err => {
-                    Swal.fire('Error', 'Failed to reset password.', 'error');
-                });
-            }
-        });
-    }
-</script>
 
 <style>
     .form-container {
@@ -150,19 +129,7 @@
         color: white;
     }
 
-    .btn-reset {
-        background-color: #e53e3e;
-        color: white;
-        border: none;
-        padding: 10px 16px;
-        border-radius: 6px;
-        cursor: pointer;
-        font-size: 14px;
-        font-weight: 500;
-        margin-top: 0.5rem;
-    }
-
-    .btn:hover, .btn-reset:hover {
+    .btn:hover {
         opacity: 0.95;
     }
 
@@ -174,6 +141,12 @@
         .form-actions-container {
             justify-content: center;
         }
+    }
+
+    .text-danger {
+        color: #dc3545;
+        font-size: 14px;
+        margin-top: 4px;
     }
 </style>
 @endsection

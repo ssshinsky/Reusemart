@@ -118,52 +118,47 @@ class PenitipController extends Controller
         return view('Admin.Penitip.penitip', compact('penitips'));
     }
 
+    // Menambahkan data
+    public function create()
+    {
+        return view('Admin.Penitip.add_penitip');
+    }
+
+    public function store(Request $request)
+    {
+        $request->validate([
+            'nik_penitip' => 'required|string|unique:penitip,nik_penitip',
+            'nama_penitip' => 'required|string|min:3',
+            'email_penitip' => 'required|email|unique:penitip,email_penitip',
+            'no_telp' => 'required|regex:/^[0-9]{10,15}$/',
+            'alamat' => 'required|string',
+            'password' => 'nullable|string|min:6',
+        ]);
+
+        $password = $request->password;
+
+        Penitip::create([
+            'nik_penitip' => $request->nik_penitip,
+            'nama_penitip' => $request->nama_penitip,
+            'email_penitip' => $request->email_penitip,
+            'no_telp' => $request->no_telp,
+            'alamat' => $request->alamat,
+            'password' => Hash::make($password),
+            'status_penitip' => 'Active',
+            'saldo_penitip' => 0,
+            'rata_rating' => 0,
+        ]);
+
+        return redirect()->route('admin.penitip.index')->with('success', 'Penitip berhasil ditambahkan.');
+    }
+
+
     // Menampilkan form edit penitip
     public function edit($id)
     {
         $penitip = Penitip::findOrFail($id);
         return view('Admin.Penitip.edit_penitip', compact('penitip'));
     }
-
-    public function editProfile($id)
-    {
-        $penitip = Penitip::findOrFail($id);
-        return view('penitip.edit', compact('penitip'));
-    }
-
-    public function updateProfile(Request $request, $id)
-    {
-        $penitip = Penitip::findOrFail($id);
-
-        $request->validate([
-                'nik_penitip' => 'required|string|unique:penitip,nik_penitip,' . $id . ',id_penitip',
-                'nama_penitip' => 'required|string',
-                'email_penitip' => 'required|email|unique:penitip,email_penitip,' . $id . ',id_penitip',
-                'no_telp' => 'required|string',
-                'alamat' => 'required|string',
-                'profil_pict' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
-            ]);
-
-        if ($request->hasFile('profil_pict')) {
-                $file = $request->file('profil_pict');
-                $filename = time() . '_' . $file->getClientOriginalName();
-                $file->storeAs('public/foto_penitip', $filename);
-
-                $penitip->profil_pict = $filename;
-            }
-
-            $penitip->update([
-                'nik_penitip' => $request->nik_penitip,
-                'nama_penitip' => $request->nama_penitip,
-                'email_penitip' => $request->email_penitip,
-                'no_telp' => $request->no_telp,
-                'alamat' => $request->alamat,
-                'profil_pict' => $penitip->profil_pict,
-            ]);
-
-        return redirect()->route('penitip.profile')->with('success', 'Profil berhasil diperbarui.');
-    }
-
 
     // Update data penitip
     public function update(Request $request, $id)
@@ -237,6 +232,7 @@ class PenitipController extends Controller
         $query = $request->query('q');
 
         $penitips = Penitip::where('nama_penitip', 'LIKE', "%$query%")
+            ->orWhere('nik_penitip', 'LIKE', "%$query%")
             ->orWhere('email_penitip', 'LIKE', "%$query%")
             ->orWhere('nik_penitip', 'LIKE', "%$query%")
             ->get();
@@ -249,6 +245,7 @@ class PenitipController extends Controller
             <tr>
                 <td class="center">'.$penitip->id_penitip.'</td>
                 <td'.($status !== 'active' ? ' style="color: #E53E3E; font-weight: bold;"' : '').'>'.$penitip->nama_penitip.'</td>
+                <td>'.$penitip->nik_penitip.'</td>
                 <td>'.$penitip->email_penitip.'</td>
                 <td>'.$penitip->no_telp.'</td>
                 <td>'.$penitip->alamat.'</td>

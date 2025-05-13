@@ -13,29 +13,35 @@
             <div class="form-group">
                 <label for="nik_penitip">NIK</label>
                 <input type="text" name="nik_penitip" id="nik_penitip" required placeholder="Enter NIK">
+                @error('nik_penitip') <div class="text-danger">{{ $message }}</div> @enderror
             </div>
             <div class="form-group">
                 <label for="nama_penitip">Name</label>
                 <input type="text" name="nama_penitip" id="nama_penitip" required placeholder="Enter name">
+                @error('nama_penitip') <div class="text-danger">{{ $message }}</div> @enderror
             </div>
             <div class="form-group">
                 <label for="email_penitip">Email</label>
                 <input type="email" name="email_penitip" id="email_penitip" required placeholder="Enter email">
+                @error('email_penitip') <div class="text-danger">{{ $message }}</div> @enderror
+            </div>
+            <div class="form-group">
+                <label for="no_telp">Phone Number</label>
+                <input type="text" name="no_telp" id="no_telp" required placeholder="Enter phone number">
+                @error('no_telp') <div class="text-danger">{{ $message }}</div> @enderror
             </div>
         </div>
 
         <div class="form-column">
             <div class="form-group">
-                <label for="no_telp">Phone Number</label>
-                <input type="text" name="no_telp" id="no_telp" required placeholder="Enter phone number">
+                <label for="alamat">Address</label>
+                <textarea name="alamat" placeholder="Enter address" class="form-control" rows="4">{{ old('alamat') }}</textarea>
+                @error('alamat') <div class="text-danger">{{ $message }}</div> @enderror
             </div>
             <div class="form-group">
                 <label for="password">Password</label>
                 <input type="password" name="password" id="password" required placeholder="Enter password">
-            </div>
-            <div class="form-group">
-                <label for="alamat">Address</label>
-                <input type="text" name="alamat" id="alamat" required placeholder="Enter address">
+                @error('password') <div class="text-danger">{{ $message }}</div> @enderror
             </div>
         </div>
     </div>
@@ -51,7 +57,6 @@
 <style>
     .form-container {
         width: 100%;
-        max-width: 920px;
         padding: 2rem;
         background: #fff;
         border: 1px solid #ddd;
@@ -81,8 +86,10 @@
         font-size: 16px;
     }
 
-    .form-group input {
+    .form-group input,
+    .form-group textarea {
         padding: 0.6rem;
+        font-family: inherit;
         font-size: 16px;
         font-weight: 400;
         border: 1px solid #ccc;

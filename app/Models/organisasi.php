@@ -14,6 +14,7 @@ class Organisasi extends Model
     use HasApiTokens, Notifiable, HasFactory;
 
     protected $table = 'organisasi';
+    protected $primaryKey = 'id_organisasi';
 
     // Tambahkan ini:
     protected $primaryKey = 'id_organisasi';

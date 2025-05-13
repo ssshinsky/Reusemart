@@ -45,6 +45,10 @@ class OrganisasiController extends Controller
             'status_organisasi' => 'Active',
         ]);
 
+        if (!$request->expectsJson()) {
+            return redirect('/')->with('success', 'Register organisasi berhasil. Silakan login.');
+        }
+
         return response()->json($organisasi, 201);
     }
 

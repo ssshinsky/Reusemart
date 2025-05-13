@@ -5,20 +5,7 @@
         <div class="row">
             {{-- Sidebar --}}
             <div class="col-md-3">
-                <div class="list-group shadow-sm sidebar-menu">
-                    <a href="{{ route('penitip.profile') }}"
-                        class="list-group-item {{ request()->routeIs('penitip.profile') ? 'active' : '' }}">
-                        <i class="bi bi-person"></i> My Account
-                    </a>
-                    <a href="{{ route('penitip.myproduct') }}"
-                        class="list-group-item {{ request()->routeIs('penitip.myproduct') ? 'active' : '' }}">
-                        <i class="bi bi-box-seam"></i> My Product
-                    </a>
-                    <a href="{{ route('penitip.rewards') }}"
-                        class="list-group-item {{ request()->routeIs('penitip.rewards') ? 'active' : '' }}">
-                        <i class="bi bi-coin"></i> Balances and Rewards
-                    </a>
-                </div>
+                @include('penitip.sidebar')
             </div>
 
             <div class="col-md-9">
@@ -26,7 +13,7 @@
                     <div class="card-body">
                         <div class="row align-items-start">
                             <div class="col-md-3 text-center mb-3 mb-md-0">
-                                <img src="{{ asset('storage/foto_penitip/' . ($penitip->profil_pict ?? 'default.png')) }}"
+                                <img src="{{ asset('storage/app/private/public/foto_penitip/' . ($penitip->profil_pict ?? 'default.png')) }}"
                                     alt="Profile Photo" class="rounded" width="120" height="120"
                                     style="object-fit: cover;">
                             </div>
@@ -160,6 +147,35 @@
 
         body {
             font-family: 'Poppins', sans-serif;
+        }
+
+        footer {
+            font-family: 'Poppins', sans-serif;
+            font-size: 14px;
+            background-color: #2E7D32;
+            color: white;
+        }
+
+        footer strong {
+            font-weight: 600;
+        }
+
+        footer p,
+        footer a {
+            margin-bottom: 6px;
+            line-height: 1.6;
+            color: white;
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+
+        .footer-social a {
+            font-size: 18px;
+            margin-right: 12px;
+            color: white;
         }
 
         .text-success {

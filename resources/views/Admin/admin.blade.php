@@ -146,7 +146,6 @@
 </head>
 
 <body>
-    <!-- TOPBAR -->
     <div class="topbar">
         <div class="topbar-left">
             <a href="{{ route('admin.dashboard') }}">
@@ -161,7 +160,6 @@
                 {{ session('user')->nama_pegawai ?? 'Admin' }} ⏷
             </span>
 
-            <!-- DROPDOWN CONTENT -->
             <div class="dropdown-content" id="dropdownContent">
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf

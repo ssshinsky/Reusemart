@@ -99,17 +99,37 @@ class PenitipController extends Controller
     // Tampilkan produk milik penitip sendiri
     public function myproduct()
     {
-        $produkSaya = \App\Models\Barang::where('id_penitip', auth()->id())->get();
-        return view('Penitip.myproduct', compact('produkSaya'));
+        $id_user = session('user.id');
+
+        $penitip = \App\Models\Penitip::where('id_penitip', $id_user)->first();
+
+        if (!$penitip) {
+            abort(404, 'Penitip tidak ditemukan');
+        }
+
+        $transaksiIds = \App\Models\TransaksiPenitipan::where('id_penitip', $penitip->id_penitip)->pluck('id_transaksi_penitipan');
+        $produkSaya = \App\Models\Barang::whereIn('id_transaksi_penitipan', $transaksiIds)->get();
+        $products = $produkSaya;
+        return view('penitip.myproduct', compact('products'));
     }
 
     // Tampilkan saldo dan reward penitip
     public function rewards()
     {
-        $penitip = auth()->user();
-        return view('Penitip.rewards', compact('penitip'));
-    }
+        $sessionUser = session('user');
 
+        if (!$sessionUser || !isset($sessionUser['id'])) {
+            abort(403, 'User tidak ditemukan dalam sesi.');
+        }
+
+        $penitip = \App\Models\Penitip::where('id_penitip', $sessionUser['id'])->first();
+
+        if (!$penitip) {
+            abort(404, 'Data penitip tidak ditemukan.');
+        }
+
+        return view('penitip.rewards', compact('penitip'));
+    }
 
     // Menampilkan halaman daftar penitip (item owners)
     public function index()
@@ -145,12 +165,13 @@ class PenitipController extends Controller
             ]);
 
         if ($request->hasFile('profil_pict')) {
-                $file = $request->file('profil_pict');
-                $filename = time() . '_' . $file->getClientOriginalName();
-                $file->storeAs('public/foto_penitip', $filename);
+            $file = $request->file('profil_pict');
+            $filename = time() . '_' . $file->getClientOriginalName();
 
-                $penitip->profil_pict = $filename;
-            }
+            Storage::disk('public')->putFileAs('foto_penitip', $file, $filename);
+
+            $penitip->profil_pict = $filename;
+        }
 
             $penitip->update([
                 'nik_penitip' => $request->nik_penitip,
@@ -182,7 +203,8 @@ class PenitipController extends Controller
        if ($request->hasFile('profil_pict')) {
             $file = $request->file('profil_pict');
             $filename = time() . '_' . $file->getClientOriginalName();
-            $file->storeAs('public/foto_penitip', $filename);
+
+            Storage::disk('public')->putFileAs('foto_penitip', $file, $filename);
 
             $penitip->profil_pict = $filename;
         }

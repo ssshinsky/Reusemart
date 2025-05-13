@@ -25,6 +25,7 @@ class Penitip extends Authenticatable
         'rata_rating',
         'status_penitip',
         'saldo_penitip',
+        'poin_penitip',
         'profil_pict',
         'badge',
     ];
@@ -50,4 +51,10 @@ class Penitip extends Authenticatable
     {
         return $this->hasMany(TransaksiPenitipan::class, 'id_penitip', 'id_penitip');
     }
+
+    public function barang()
+{
+    return $this->belongsToMany(Barang::class, 'transaksi_penitipan', 'id_penitip', 'id_barang');
+}
+
 }

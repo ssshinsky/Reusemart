@@ -1,31 +1,31 @@
 <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm px-4 py-3">
-    <div class="container-fluid d-flex justify-content-between align-items-center">
-        <a class="navbar-brand d-flex align-items-center" href="{{ route('welcome') }}">
-            <img src="/assets/images/logo.png" width="100" height="100" class="me-2" alt="Logo">
-            <strong>ReUseMart</strong>
-        </a>
+    <div class="container-fluid">
+        <div class="d-flex align-items-center">
+            <a class="navbar-brand d-flex align-items-center me-4" href="{{ route('welcome') }}">
+                <img src="/assets/images/logo.png" width="60" height="60" class="me-2" alt="Logo">
+                <strong>ReUseMart</strong>
+            </a>
+        </div>
 
-        <form class="d-flex w-50 mx-4">
+        <form class="d-flex flex-grow-1 mx-4">
             <input class="form-control me-2" type="search" placeholder="What are you looking for?" aria-label="Search">
             <button class="btn btn-outline-success" type="submit">Search</button>
         </form>
 
         <div class="d-flex align-items-center">
-
             @php
                 $role = $role ?? session('role');
                 $user = $user ?? session('user');
             @endphp
 
-
             @if ($role && $user)
-                <nav class="me-3">
+                <div class="d-flex align-items-center me-3">
                     <a href="{{ route('welcome') }}" class="me-3 text-decoration-none text-dark">Home</a>
-                    <a href="{{ route('about') }}" class="text-decoration-none text-dark">About</a>
-                </nav>
-                <a href="{{ route('cart') }}" class="text-success position-relative me-3">
-                    <i class="bi bi-cart-fill fs-4"></i>
-                </a>
+                    <a href="{{ route('about') }}" class="me-3 text-decoration-none text-dark">About</a>
+                    <a href="{{ route('cart') }}" class="text-success position-relative me-3">
+                        <i class="bi bi-cart-fill fs-4"></i>
+                    </a>
+                </div>
 
                 <div class="dropdown">
                     <button class="btn dropdown-toggle d-flex align-items-center" type="button"
@@ -48,18 +48,16 @@
                             <li><a class="dropdown-item" href="{{ route('organisasi.request') }}">Request Donasi
                                     Saya</a></li>
                         @endif
-
                         <li>
                             <a class="dropdown-item" href="#"
                                 onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
                                 Log Out
                             </a>
                         </li>
-
                     </ul>
                 </div>
             @else
-                <div>
+                <div class="d-flex align-items-center">
                     <a href="#" class="btn btn-success me-2" data-bs-toggle="modal"
                         data-bs-target="#registerModal">Register</a>
                     <a href="#" class="btn btn-success" data-bs-toggle="modal"
@@ -69,6 +67,7 @@
         </div>
     </div>
 </nav>
+
 <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
     @csrf
 </form>

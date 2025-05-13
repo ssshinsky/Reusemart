@@ -17,8 +17,8 @@ public function login(Request $request)
     $password = $request->password;
 
     // 1. Cek Pembeli
-    $pembeli = \App\Models\Pembeli::where('email_pembeli', $email)->first();
-    if ($pembeli && Hash::check($password, $pembeli->password)) {
+    $pembeli = \App\Models\Pembeli::where('email_pembeli', $request->email)->first();
+    if ($pembeli && Hash::check($request->password, $pembeli->password)) {
         session([
             'user' => [
                 'id' => $pembeli->id_pembeli,
@@ -27,7 +27,7 @@ public function login(Request $request)
             ],
             'role' => 'pembeli',
         ]);
-        return redirect('/pembeli/profile');
+        return redirect('/');
     }
 
     // 2. Cek Penitip
@@ -41,7 +41,7 @@ public function login(Request $request)
             ],
             'role' => 'penitip',
         ]);
-        return redirect('/penitip/profile');
+        return redirect('/');
     }
 
 
@@ -56,7 +56,7 @@ public function login(Request $request)
             ],
             'role' => 'organisasi',
         ]);
-        return redirect('/organisasi/profile');
+        return redirect('/');
     }
 
     // 4. Cek Pegawai (Admin)

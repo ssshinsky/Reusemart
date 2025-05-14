@@ -4,11 +4,21 @@ namespace App\Http\Controllers;
 
 use App\Models\Role;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class RoleController extends Controller
 {
+    private function ensureAdmin()
+    {
+        if (!Auth::guard('pegawai')->check() || Auth::guard('pegawai')->user()->id_role != 2) {
+            abort(403, 'Akses ditolak.');
+        }
+    }
+
     public function search(Request $request)
     {
+        $this->ensureAdmin();
+
         if (!$request->ajax()) {
             return response('', 204);
         }
@@ -51,6 +61,8 @@ class RoleController extends Controller
     // Tampilkan semua role (View)
     public function index()
     {
+        $this->ensureAdmin();
+
         $roles = Role::all();
         return view('Admin.Roles.roles', compact('roles'));
     }
@@ -58,12 +70,16 @@ class RoleController extends Controller
     // Tampilkan form tambah role
     public function create()
     {
+        $this->ensureAdmin();
+
         return view('Admin.Roles.add_role');
     }
 
     // Simpan role baru
     public function store(Request $request)
     {
+        $this->ensureAdmin();
+
         $request->validate([
             'nama_role' => 'required|string|max:255',
         ]);
@@ -78,6 +94,8 @@ class RoleController extends Controller
     // Tampilkan form edit role
     public function edit($id)
     {
+        $this->ensureAdmin();
+
         $role = Role::findOrFail($id);
         return view('Admin.Roles.edit_role', compact('role'));
     }
@@ -85,6 +103,8 @@ class RoleController extends Controller
     // Update role
     public function update(Request $request, $id)
     {
+        $this->ensureAdmin();
+
         $role = Role::findOrFail($id);
 
         $request->validate([
@@ -100,6 +120,8 @@ class RoleController extends Controller
 
     public function destroy($id)
     {
+        $this->ensureAdmin();
+
         $role = Role::findOrFail($id);
         $role->delete();
 
@@ -108,6 +130,8 @@ class RoleController extends Controller
 
     public function deactivate($id)
     {
+        $this->ensureAdmin();
+
         $role = Role::findOrFail($id);
         $role->is_active = false;
         $role->save();
@@ -117,11 +141,12 @@ class RoleController extends Controller
 
     public function reactivate($id)
     {
+        $this->ensureAdmin();
+
         $role = Role::findOrFail($id);
         $role->is_active = true;
         $role->save();
 
         return redirect()->route('admin.roles.index')->with('success', 'Role berhasil diaktifkan kembali.');
     }
-
 }

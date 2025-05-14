@@ -11,10 +11,18 @@ use Illuminate\Support\Facades\Auth;
 class PegawaiController extends Controller
 {
     // ============ VIEW SECTION ============
-
+    
+    private function ensureAdmin()
+    {
+        if (!Auth::guard('pegawai')->check() || Auth::guard('pegawai')->user()->id_role != 2) {
+            abort(403, 'Akses ditolak.');
+        }
+    }
+    
     // Halaman daftar pegawai
     public function indexView(Request $request)
     {
+        $this->ensureAdmin();
         $search = $request->query('search');
 
         $pegawais = Pegawai::with('role')
@@ -31,6 +39,8 @@ class PegawaiController extends Controller
     // Halaman form tambah pegawai
     public function create()
     {
+        $this->ensureAdmin();
+
         $roles = Role::all();
         return view('Admin.Employees.add_employee', compact('roles'));
     }
@@ -56,6 +66,8 @@ class PegawaiController extends Controller
 
     public function search(Request $request)
     {
+        $this->ensureAdmin();
+        
         if (!$request->ajax()) {
             return response('', 204);
         }
@@ -113,6 +125,8 @@ class PegawaiController extends Controller
     // Simpan pegawai baru
     public function store(Request $request)
     {
+        $this->ensureAdmin();
+
         $request->validate([
             'id_role' => 'required|exists:role,id_role',
             'nama_pegawai' => 'required|string',
@@ -145,6 +159,8 @@ class PegawaiController extends Controller
     // Update pegawai
     public function update(Request $request, $id)
     {
+        $this->ensureAdmin();
+
         $pegawai = Pegawai::find($id);
         if (!$pegawai) {
             return redirect()->back()->withErrors(['message' => 'Pegawai not found']);
@@ -185,6 +201,8 @@ class PegawaiController extends Controller
 
     public function edit($id)
     {
+        $this->ensureAdmin();
+
         $pegawai = Pegawai::find($id);
         if (!$pegawai) {
             return redirect()->route('admin.employees.index')->with('error', 'Employee not found.');
@@ -197,6 +215,8 @@ class PegawaiController extends Controller
     //reset password
     public function resetPassword($id)
     {
+        $this->ensureAdmin();
+
         $pegawai = Pegawai::find($id);
         if (!$pegawai) {
             return response()->json(['message' => 'Pegawai not found.'], 404);
@@ -212,6 +232,8 @@ class PegawaiController extends Controller
 
     public function deactivate($id)
     {
+        $this->ensureAdmin();
+
         $pegawai = Pegawai::findOrFail($id);
         $pegawai->is_active = 0;
         $pegawai->save();
@@ -221,6 +243,8 @@ class PegawaiController extends Controller
 
     public function reactivate($id)
     {
+        $this->ensureAdmin();
+        
         $pegawai = Pegawai::findOrFail($id);
         $pegawai->is_active = 1;
         $pegawai->save();

@@ -5,9 +5,17 @@ namespace App\Http\Controllers;
 use App\Models\Pembeli;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Auth;
 
 class PembeliController extends Controller
 {
+    private function ensureAdmin()
+    {
+        if (!Auth::guard('pegawai')->check() || Auth::guard('pegawai')->user()->id_role != 2) {
+            abort(403, 'Akses ditolak.');
+        }
+    }
+    
     public function profile()
     {
         $user = session('user');
@@ -17,6 +25,8 @@ class PembeliController extends Controller
     // Web: Menampilkan halaman daftar pembeli (admin panel)
     public function index()
     {
+        $this->ensureAdmin();
+        
         $pembelis = Pembeli::with('alamatDefault')->get();
         return view('Admin.Pembeli.pembeli', compact('pembelis'));
     }
@@ -30,12 +40,16 @@ class PembeliController extends Controller
     // Web: Halaman form tambah
     public function create()
     {
+        $this->ensureAdmin();
+        
         return view('Admin.Pembeli.add_pembeli');
     }
 
     // Web: Menyimpan data pembeli baru
     public function store(Request $request)
     {
+        $this->ensureAdmin();
+        
         $request->validate([
             'nama_pembeli' => 'required|string',
             'email_pembeli' => 'required|email|unique:pembeli,email_pembeli',
@@ -61,6 +75,8 @@ class PembeliController extends Controller
     // Web: Form edit pembeli
     public function edit($id)
     {
+        $this->ensureAdmin();
+        
         $pembeli = Pembeli::findOrFail($id);
         return view('Admin.Pembeli.edit_pembeli', compact('pembeli'));
     }
@@ -68,6 +84,8 @@ class PembeliController extends Controller
     // Web: Update pembeli
     public function update(Request $request, $id)
     {
+        $this->ensureAdmin();
+        
         $pembeli = Pembeli::findOrFail($id);
 
         $request->validate([
@@ -85,6 +103,8 @@ class PembeliController extends Controller
     // Web: Nonaktifkan akun
     public function deactivate($id)
     {
+        $this->ensureAdmin();
+        
         $pembeli = Pembeli::findOrFail($id);
         $pembeli->update(['status_pembeli' => 'Non Active']);
 
@@ -94,6 +114,8 @@ class PembeliController extends Controller
     // Web: Aktifkan kembali akun
     public function reactivate($id)
     {
+        $this->ensureAdmin();
+        
         $pembeli = Pembeli::findOrFail($id);
         $pembeli->update(['status_pembeli' => 'Active']);
 
@@ -102,6 +124,8 @@ class PembeliController extends Controller
 
     public function search(Request $request)
     {
+        $this->ensureAdmin();
+        
         if (!$request->ajax()) {
             return response('', 204);
         }

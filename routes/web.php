@@ -147,6 +147,21 @@ Route::prefix('admin')->group(function () {
     Route::put('/merchandise/{id}', [MerchandiseController::class, 'update'])->name('admin.merchandise.update');
 });
 
+Route::prefix('cs')->group(function () {
+    Route::get('/dashboard', function () {
+        return redirect()->route('cs.penitip.index');
+    })->name('cs.dashboard');
+
+    Route::get('/item-owners', [PenitipController::class, 'index'])->name('cs.penitip.index');
+    Route::get('/item-owners/add', [PenitipController::class, 'create'])->name('cs.penitip.create');
+    Route::post('/item-owners', [PenitipController::class, 'store'])->name('cs.penitip.store');
+    Route::get('/item-owners/search', [PenitipController::class, 'search'])->name('cs.penitip.search');
+    Route::get('/item-owners/{id}/edit', [PenitipController::class, 'edit'])->name('cs.penitip.edit');
+    Route::put('/item-owners/{id}', [PenitipController::class, 'update'])->name('cs.penitip.update');
+    Route::put('/item-owners/{id}/deactivate', [PenitipController::class, 'deactivate'])->name('cs.penitip.deactivate');
+    Route::put('/item-owners/{id}/reactivate', [PenitipController::class, 'reactivate'])->name('cs.penitip.reactivate');
+});
+
 Route::prefix('owner')->middleware(['auth:pegawai'])->group(function () {
     Route::get('/dashboard', [OwnerController::class, 'dashboard'])->name('owner.dashboard');
     Route::get('/donation/requests', [OwnerController::class, 'donationRequests'])->name('owner.donation.requests');

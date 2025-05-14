@@ -5,18 +5,30 @@ namespace App\Http\Controllers;
 use App\Models\Organisasi;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Auth;
 
 class OrganisasiController extends Controller
 {
+    private function ensureAdmin()
+    {
+        if (!Auth::guard('pegawai')->check() || Auth::guard('pegawai')->user()->id_role != 2) {
+            abort(403, 'Akses ditolak.');
+        }
+    }
+
     // Menampilkan daftar semua organisasi
     public function index()
     {
+        $this->ensureAdmin();
+        
         $organisasis = Organisasi::all();
         return view('Admin.Organisasi.organisasi', compact('organisasis'));
     }
     
     public function create()
     {
+        $this->ensureAdmin();
+        
         return view('Admin.Organisasi.add_organisasi');
     }
 
@@ -33,6 +45,8 @@ class OrganisasiController extends Controller
     // Menambahkan organisasi baru
     public function store(Request $request)
     {
+        $this->ensureAdmin();
+       
         $request->validate([
             'nama_organisasi' => 'required|string',
             'alamat' => 'required|string',
@@ -57,6 +71,8 @@ class OrganisasiController extends Controller
 
     public function edit($id)
     {
+        $this->ensureAdmin();
+
         $organisasi = Organisasi::findOrFail($id);
         return view('Admin.Organisasi.edit_organisasi', compact('organisasi'));
     }
@@ -64,6 +80,8 @@ class OrganisasiController extends Controller
     // Mengupdate organisasi berdasarkan ID
     public function update(Request $request, $id)
     {
+        $this->ensureAdmin();
+       
         $organisasi = Organisasi::find($id);
         if (!$organisasi) {
             return response()->json(['message' => 'Organisasi not found'], 404);
@@ -91,6 +109,8 @@ class OrganisasiController extends Controller
 
     public function destroy($id)
     {
+        $this->ensureAdmin();
+       
         $organisasi = Organisasi::findOrFail($id);
         $organisasi->delete();
 
@@ -99,6 +119,8 @@ class OrganisasiController extends Controller
 
     public function search(Request $request)
     {
+        $this->ensureAdmin();
+       
         if (!$request->ajax()) {
             return response('', 204);
         }
@@ -152,6 +174,8 @@ class OrganisasiController extends Controller
 
     public function deactivate($id)
     {
+        $this->ensureAdmin();
+       
         $organisasi = Organisasi::findOrFail($id);
         $organisasi->update(['status_organisasi' => 'Non Active']);
         return redirect()->route('admin.organisasi.index')->with('success', 'Organisasi dinonaktifkan.');
@@ -159,6 +183,8 @@ class OrganisasiController extends Controller
 
     public function reactivate($id)
     {
+        $this->ensureAdmin();
+       
         $organisasi = Organisasi::findOrFail($id);
         $organisasi->update(['status_organisasi' => 'Active']);
         return redirect()->route('admin.organisasi.index')->with('success', 'Organisasi diaktifkan kembali.');

@@ -42,7 +42,7 @@ class AuthController extends Controller
             return match ($pegawai->id_role) {
                 1 => redirect('/owner/dashboard'),    
                 2 => redirect('/admin'),    
-                3 => redirect('/cs'),       
+                3 => redirect('/cs/dashboard'),       
                 4 => redirect('/gudang'),
                 5 => redirect('/kurir'),
                 6 => redirect('/hunter'),

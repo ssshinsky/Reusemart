@@ -5,16 +5,36 @@ namespace App\Http\Controllers;
 use App\Models\Penitip;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Auth;
 
 class PenitipController extends Controller
 {
+    private function ensureAdminOrCS()
+    {
+        $user = Auth::guard('pegawai')->user();
+        if (!$user || !in_array($user->id_role, [2, 3])) {
+            abort(403, 'Akses ditolak.');
+        }
+    }
+
+
     public function create()
     {
-        return view('Admin.Penitip.add_penitip'); // sesuaikan dengan view yang kamu miliki
+        $pegawai = Auth::guard('pegawai')->user();
+
+        if ($pegawai->id_role == 2) {
+            return view('Admin.Penitip.add_penitip');
+        } elseif ($pegawai->id_role == 3) {
+            return view('CS.add_penitip');
+        } else {
+            abort(403, 'Akses ditolak.');
+        }
     }
 
     public function store(Request $request)
     {
+        $this->ensureAdminOrCS();
+        
         $request->validate([
             'nik_penitip' => 'required|string|unique:penitip,nik_penitip',
             'nama_penitip' => 'required|string',
@@ -135,14 +155,32 @@ class PenitipController extends Controller
     public function index()
     {
         $penitips = Penitip::all();
-        return view('Admin.Penitip.penitip', compact('penitips'));
+        $pegawai = Auth::guard('pegawai')->user();
+
+        if ($pegawai->id_role == 2) {
+            // Admin
+            return view('Admin.Penitip.penitip', compact('penitips'));
+        } elseif ($pegawai->id_role == 3) {
+            // CS
+            return view('CS.penitip', compact('penitips'));
+        } else {
+            bort(403, 'Akses ditolak.');
+        }
     }
 
     // Menampilkan form edit penitip
     public function edit($id)
     {
         $penitip = Penitip::findOrFail($id);
-        return view('Admin.Penitip.edit_penitip', compact('penitip'));
+        $pegawai = Auth::guard('pegawai')->user();
+
+        if ($pegawai->id_role == 2) {
+            return view('Admin.Penitip.edit_penitip', compact('penitip'));
+        } elseif ($pegawai->id_role == 3) {
+            return view('CS.edit_penitip', compact('penitip'));
+        } else {
+            abort(403, 'Akses ditolak.');
+        }
     }
 
     public function editProfile($id)
@@ -189,6 +227,8 @@ class PenitipController extends Controller
     // Update data penitip
     public function update(Request $request, $id)
     {
+        $this->ensureAdminOrCS();
+
         $penitip = Penitip::findOrFail($id);
 
         $request->validate([
@@ -224,6 +264,8 @@ class PenitipController extends Controller
     // Menonaktifkan penitip
     public function deactivate($id)
     {
+        $this->ensureAdminOrCS();
+        
         $penitip = Penitip::findOrFail($id);
         $penitip->update(['status_penitip' => 'Non Active']);
 
@@ -233,6 +275,8 @@ class PenitipController extends Controller
     // Mengaktifkan kembali penitip
     public function reactivate($id)
     {
+        $this->ensureAdminOrCS();
+        
         $penitip = Penitip::findOrFail($id);
         $penitip->update(['status_penitip' => 'Active']);
 
@@ -242,6 +286,8 @@ class PenitipController extends Controller
     // Reset password penitip (ke tanggal lahir atau default tertentu, misalnya "123456")
     public function resetPassword($id)
     {
+        $this->ensureAdminOrCS();
+        
         $penitip = Penitip::findOrFail($id);
         $penitip->update([
             'password' => Hash::make('123456') // ganti dengan password default sesuai kebutuhan
@@ -252,6 +298,12 @@ class PenitipController extends Controller
 
     public function search(Request $request)
     {
+        $pegawai = Auth::guard('pegawai')->user();
+
+        if (!$pegawai || !in_array($pegawai->id_role, [2, 3])) {
+            abort(403, 'Akses ditolak.');
+        }
+
         if (!$request->ajax()) {
             return response('', 204);
         }
@@ -262,6 +314,9 @@ class PenitipController extends Controller
             ->orWhere('email_penitip', 'LIKE', "%$query%")
             ->orWhere('nik_penitip', 'LIKE', "%$query%")
             ->get();
+
+        // Tentukan prefix route berdasarkan role
+        $prefix = $pegawai->id_role == 2 ? 'admin' : 'cs';
 
         $html = '';
 
@@ -278,30 +333,30 @@ class PenitipController extends Controller
                 <td class="center">'.number_format($penitip->rata_rating, 1).'</td>
                 <td class="center">'.ucwords($status).'</td>
                 <td class="action-cell" style="background-color:rgb(255, 245, 220)">
-                    <a href="'.route('admin.penitip.edit', $penitip->id_penitip).'" class="edit-btn">✏️</a>';
+                    <a href="'.route($prefix.'.penitip.edit', $penitip->id_penitip).'" class="edit-btn">✏️</a>';
 
             if ($status === 'active') {
                 $html .= '
-                    <form action="'.route('admin.penitip.deactivate', $penitip->id_penitip).'" method="POST" class="form-nonaktif" style="display:inline;">
+                    <form action="'.route($prefix.'.penitip.deactivate', $penitip->id_penitip).'" method="POST" class="form-nonaktif" style="display:inline;">
                         '.csrf_field().method_field('PUT').'
                         <button type="submit" class="redeactivate-btn" title="Deactivate">🛑</button>
                     </form>';
             } else {
                 $html .= '
-                    <form action="'.route('admin.penitip.reactivate', $penitip->id_penitip).'" method="POST" class="form-reactivate" style="display:inline;">
+                    <form action="'.route($prefix.'.penitip.reactivate', $penitip->id_penitip).'" method="POST" class="form-reactivate" style="display:inline;">
                         '.csrf_field().method_field('PUT').'
                         <button type="submit" class="redeactivate-btn" title="Reactivate">♻️</button>
                     </form>';
             }
 
             $html .= '</td></tr>';
-
         }
 
         if ($penitips->isEmpty()) {
-            $html = '<tr><td colspan="8" class="center">No item owner found.</td></tr>';
+            $html = '<tr><td colspan="9" class="center">No item owner found.</td></tr>';
         }
 
         return response($html);
     }
+
 }

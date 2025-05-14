@@ -174,20 +174,8 @@
     <div class="main-wrapper">
         <!-- SIDEBAR -->
         <div class="sidebar">
-            <a href="{{ route('admin.employees.index') }}"
-                class="menu-item {{ request()->is('admin/employees*') ? 'active' : '' }}">👥 Employees</a>
-            <a href="{{ route('admin.roles.index') }}"
-                class="menu-item {{ request()->is('admin/roles*') ? 'active' : '' }}">💼 Roles</a>
-            <a href="{{ route('admin.penitip.index') }}"
-                class="menu-item {{ request()->is('admin/item-owners*') ? 'active' : '' }}">📦 Item Owners</a>
-            <a href="{{ route('admin.pembeli.index') }}"
-                class="menu-item {{ request()->is('admin/customers*') ? 'active' : '' }}">🛍️ Customers</a>
-            <a href="{{ route('admin.organisasi.index') }}"
-                class="menu-item {{ request()->is('admin/organizations*') ? 'active' : '' }}">🏢 Organizations</a>
-            <a href="{{ route('admin.produk.index') }}"
-                class="menu-item {{ request()->is('admin/products*') ? 'active' : '' }}">🏷️ Products</a>
-            <a href="{{ route('admin.merch.index') }}"
-                class="menu-item {{ request()->is('admin/merchandise*') ? 'active' : '' }}">🎁 Merchandise</a>
+            <a href="{{ route('cs.penitip.index') }}"
+                class="menu-item {{ request()->is('cs/item-owners*') ? 'active' : '' }}">📦 Item Owners</a>
         </div>
 
         <!-- DYNAMIC CONTENT -->

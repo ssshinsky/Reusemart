@@ -5,14 +5,24 @@ namespace App\Http\Controllers;
 use App\Models\Barang;
 use App\Models\Kategori;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use App\Models\DiskusiProduk;
 use Carbon\Carbon;
 
 class BarangController extends Controller
 {
+    private function ensureAdmin()
+    {
+        if (!Auth::guard('pegawai')->check() || Auth::guard('pegawai')->user()->id_role != 2) {
+            abort(403, 'Akses ditolak.');
+        }
+    }
+
     // Halaman utama admin (produk.blade.php)
     public function index()
     {
+        $this->ensureAdmin();
+       
         $barangs = Barang::with(['transaksiPenitipan.penitip', 'kategori'])->get();
         return view('Admin.Produk.produk', compact('barangs'));
     }
@@ -33,6 +43,8 @@ class BarangController extends Controller
 
     public function search(Request $request)
     {
+        $this->ensureAdmin();
+       
         if (!$request->ajax()) {
             return response('', 204);
         }
@@ -95,6 +107,8 @@ class BarangController extends Controller
     // Ubah status jadi Donated
     public function deactivate($id)
     {
+        $this->ensureAdmin();
+       
         $barang = Barang::findOrFail($id);
         $barang->update(['status_barang' => 'Donated']);
 
@@ -104,6 +118,8 @@ class BarangController extends Controller
     // Ubah status jadi Available
     public function reactivate($id)
     {
+        $this->ensureAdmin();
+       
         $barang = Barang::findOrFail($id);
         $barang->update(['status_barang' => 'Available']);
 
@@ -147,7 +163,9 @@ class BarangController extends Controller
     }
 
     public function store(Request $request)
-    {
+    {        
+        $this->ensureAdmin();
+
         $request->validate([
             'id_kategori' => 'required|exists:kategori,id_kategori',
             'id_transaksi_penitipan' => 'required|exists:transaksi_penitipan,id_transaksi_penitipan',
@@ -168,6 +186,8 @@ class BarangController extends Controller
 
     public function update(Request $request, $id)
     {
+        $this->ensureAdmin();
+
         $barang = Barang::find($id);
         if (!$barang) {
             return response()->json(['message' => 'Barang not found'], 404);

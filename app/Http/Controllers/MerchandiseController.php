@@ -4,12 +4,22 @@ namespace App\Http\Controllers;
 
 use App\Models\Merchandise;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class MerchandiseController extends Controller
 {
+    private function ensureAdmin()
+    {
+        if (!Auth::guard('pegawai')->check() || Auth::guard('pegawai')->user()->id_role != 2) {
+            abort(403, 'Akses ditolak.');
+        }
+    }
+
     // Menampilkan daftar semua merchandise
     public function index()
     {
+        $this->ensureAdmin();
+       
         $merches = Merchandise::all();
         return view('Admin.Merchandise.merchandise', compact('merches'));
     }
@@ -27,6 +37,8 @@ class MerchandiseController extends Controller
     // Menambahkan merchandise baru
     public function store(Request $request)
     {
+        $this->ensureAdmin();
+       
         $request->validate([
             'id_pegawai' => 'required|exists:pegawai,id_pegawai',
             'nama_merch' => 'required|string',
@@ -48,6 +60,8 @@ class MerchandiseController extends Controller
     // Mengupdate merchandise berdasarkan ID
     public function update(Request $request, $id)
     {
+        $this->ensureAdmin();
+       
         $merchandise = Merchandise::find($id);
         if (!$merchandise) {
             return response()->json(['message' => 'Merchandise not found'], 404);
@@ -74,6 +88,8 @@ class MerchandiseController extends Controller
     
     public function search(Request $request)
     {
+        $this->ensureAdmin();
+       
         if (!$request->ajax()) {
             return response('', 204);
         }

@@ -26,7 +26,7 @@ Route::get('/', function () {
 
 Route::get('/about', function () {return view('about');})->name('about');
 Route::post('/login', [AuthController::class, 'login'])->name('login.submit');
-Route::post('/logout', function () {session()->flush();return redirect('/');})->name('logout');
+Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 Route::post('/admin/logout', function () {
     session()->flush();
     return redirect('/login');
@@ -61,7 +61,9 @@ Route::prefix('pembeli')->group(function () {
     Route::post('/alamat', [AlamatController::class, 'store'])->name('pembeli.alamat.store');
     Route::put('/alamat/{id}', [AlamatController::class, 'update'])->name('pembeli.alamat.update');
     Route::delete('/alamat/{id}', [AlamatController::class, 'destroy'])->name('pembeli.alamat.destroy');
+    Route::post('/alamat/{id}/set-default', [AlamatController::class, 'setDefault'])->name('pembeli.alamat.set_default');
 });
+
 
 // Admin routes
 Route::prefix('admin')->group(function () {

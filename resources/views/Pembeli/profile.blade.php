@@ -1,208 +1,213 @@
-@extends('layouts.app')
+@extends('layouts.main')
 
 @section('content')
-    <div class="container mt-5">
+    <div class="container py-4">
         <div class="row">
-            <!-- Sidebar -->
-            <div class="col-md-3">
-                <div class="text-center mb-4">
-                    <img src="{{ asset('images/default-avatar.png') }}" alt="Avatar" class="rounded-circle" width="80">
-                    <h6 class="mt-2">{{ $user['nama'] ?? 'User' }}</h6>
-                    <a href="#" class="text-muted text-decoration-none">✏️ Edit Profile</a>
-                </div>
-                <ul class="nav flex-column">
-                    <li class="nav-item fw-bold">My Account</li>
-                    <li class="nav-item">
-                        <a href="{{ route('pembeli.profile') }}" class="nav-link ps-3">Profile</a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="#" class="nav-link ps-3" data-bs-toggle="modal"
-                            data-bs-target="#addAddressModal">Addresses</a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="{{ route('pembeli.password') }}" class="nav-link ps-3">Change Password</a>
-                    </li>
-
-                    <li class="nav-item mt-3 fw-bold">My Purchase</li>
-                    <li class="nav-item">
-                        <a href="{{ route('pembeli.purchase') }}" class="nav-link ps-3">Purchase History</a>
-                    </li>
-
-                    <li class="nav-item mt-2 fw-bold">My ReuseMart Coins</li>
-                    <li class="nav-item">
-                        <a href="{{ route('pembeli.reward') }}" class="nav-link ps-3">Reward Coins</a>
-                    </li>
-                </ul>
+            {{-- Sidebar Pembeli --}}
+            <div class="col-md-3 mb-4">
+                @include('pembeli.sidebar')
             </div>
 
-            <!-- Main content -->
             <div class="col-md-9">
-                <!-- Profile Card -->
-                <div class="card shadow-sm mb-4">
+                <div class="card shadow-sm">
                     <div class="card-body">
-                        <h5 class="text-success fw-bold">My Profile</h5>
-                        <p class="text-muted">Manage and protect your account</p>
-                        <form>
-                            <div class="row mb-3">
-                                <div class="col-md-6">
-                                    <label>Username</label>
-                                    <input type="text" class="form-control" placeholder="Username"
-                                        value="{{ $user['nama'] ?? 'User' }}">
-                                </div>
-                                <div class="col-md-6">
-                                    <label>Name</label>
-                                    <input type="text" class="form-control" placeholder="Full Name"
-                                        value="{{ $user['nama'] ?? 'User' }}">
-                                </div>
+                        <div class="row g-4 align-items-center">
+                            <div class="col-md-3 text-center">
+                                <img src="{{ asset('images/default-avatar.png') }}" alt="Profile Photo"
+                                    class="rounded-circle img-fluid"
+                                    style="width: 120px; height: 120px; object-fit: cover;">
                             </div>
 
-                            <div class="row mb-3">
-                                <div class="col-md-6">
-                                    <label>Email</label>
-                                    <input type="email" class="form-control" placeholder="Email Address"
-                                        value="{{ auth()->user()->email }}">
+                            <div class="col-md-9">
+                                <h5 class="fw-bold text-success mb-1">My Profile</h5>
+                                <p class="text-muted small mb-3">Manage and protect your account</p>
+
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Username</label>
+                                    <input type="text" class="form-control" value="{{ session('user.nama') ?? 'User' }}"
+                                        disabled>
                                 </div>
-                                <div class="col-md-6">
-                                    <label>Phone Number</label>
-                                    <input type="text" class="form-control" placeholder="Phone Number"
-                                        value="{{ auth()->user()->nomor_telepon }}">
+
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Email</label>
+                                    <input type="email" class="form-control" value="{{ session('user.email') ?? '' }}"
+                                        disabled>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Phone</label>
+                                    <input type="text" class="form-control" value="{{ session('user.no_telp') ?? '' }}"
+                                        disabled>
+                                </div>
+
+                                <div class="text-end">
+                                    <button class="btn btn-success" data-bs-toggle="modal"
+                                        data-bs-target="#editProfileModal">
+                                        Edit Profile
+                                    </button>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-                            <div class="row mb-3 align-items-center">
-                                <div class="col-md-6 d-flex align-items-center">
-                                    <img src="{{ asset('images/default-avatar.png') }}" alt="Avatar"
-                                        class="rounded-circle me-3" width="60">
-                                    <div>
-                                        <input type="file" class="form-control mb-1">
-                                        <small>File size: max 1MB | JPG, PNG</small>
+        {{-- Modal Edit Profile --}}
+        <div class="modal fade" id="editProfileModal" tabindex="-1" aria-labelledby="editProfileModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-centered">
+                <div class="modal-content">
+                    <form action="{{ route('pembeli.update', session('user.id')) }}" method="POST"
+                        enctype="multipart/form-data">
+                        @csrf
+                        @method('PUT')
+
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="editProfileModalLabel">Edit Profile</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+
+                        <div class="modal-body">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label for="nama" class="form-label">Name</label>
+                                    <input type="text" id="nama" name="nama" class="form-control"
+                                        value="{{ session('user.nama') ?? '' }}" required>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label for="nomor_telepon" class="form-label">Phone Number</label>
+                                    <input type="text" id="nomor_telepon" name="nomor_telepon" class="form-control"
+                                        value="{{ session('user.no_telp') ?? '' }}" required>
+                                </div>
+
+                                <div class="col-12">
+                                    <label for="email" class="form-label">Email</label>
+                                    <input type="email" id="email" name="email" class="form-control"
+                                        value="{{ session('user.email') ?? '' }}" required>
+                                </div>
+
+                                <div class="col-12 d-flex align-items-center gap-3 mt-2">
+                                    <img src="{{ asset('images/default-avatar.png') }}" alt="Current Photo"
+                                        class="rounded-circle" width="80" height="80" style="object-fit: cover;">
+                                    <div class="flex-grow-1">
+                                        <label for="profile_pict" class="form-label">Profile Photo</label>
+                                        <input type="file" id="profile_pict" name="profile_pict" accept=".jpg,.jpeg,.png"
+                                            class="form-control">
+                                        <small class="text-muted d-block">Max 1MB - JPG/PNG only</small>
                                     </div>
                                 </div>
                             </div>
+                        </div>
 
-                            <button type="submit" class="btn btn-success mt-2">Save Change</button>
-                        </form>
-                    </div>
-                </div>
-
-                <!-- Address Card -->
-                <div class="card shadow-sm">
-                    <div class="card-body">
-                        <h5 class="text-success fw-bold">Alamat Pengiriman</h5>
-                        <p class="text-muted">Kelola alamat pengirimanmu</p>
-
-                        <button class="btn btn-success btn-sm mb-3" data-bs-toggle="modal"
-                            data-bs-target="#addAddressModal">
-                            + Tambah Alamat Baru
-                        </button>
-
-                        @forelse ($alamat as $item)
-                            <div class="card mb-2">
-                                <div class="card-body">
-                                    <strong>{{ $item->label_alamat }}</strong><br>
-                                    {{ $item->nama_orang }} - {{ $item->nomor_telepon }}<br>
-                                    {{ $item->alamat_lengkap }}<br>
-                                    @if ($item->is_default)
-                                        <span class="badge bg-primary">Default</span>
-                                    @endif
-                                </div>
-                            </div>
-                        @empty
-                            <p class="text-muted">Belum ada alamat tersimpan.</p>
-                        @endforelse
-                    </div>
+                        <div class="modal-footer">
+                            <button type="submit" class="btn btn-success">Save Changes</button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
     </div>
-
-    <!-- Modal Tambah Alamat -->
-    <div class="modal fade" id="addAddressModal" tabindex="-1" aria-labelledby="addAddressModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <form id="addAddressForm" class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Tambah Alamat Baru</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    @csrf
-                    <input type="hidden" name="id_pembeli" value="{{ auth()->user()->id_pembeli }}">
-
-                    <div class="mb-3">
-                        <label>Nama Penerima</label>
-                        <input type="text" name="nama_orang" class="form-control" required>
-                    </div>
-
-                    <div class="mb-3">
-                        <label>Label Alamat</label>
-                        <input type="text" name="label_alamat" class="form-control" required>
-                    </div>
-
-                    <div class="mb-3">
-                        <label>Alamat Lengkap</label>
-                        <input type="text" name="alamat_lengkap" class="form-control" required>
-                    </div>
-
-                    <div class="mb-3">
-                        <label>Alamat Detail</label>
-                        <input type="text" name="alamat_detail" class="form-control">
-                    </div>
-
-                    <div class="mb-3">
-                        <label>Keterangan</label>
-                        <input type="text" name="keterangan" class="form-control">
-                    </div>
-
-                    <div class="mb-3">
-                        <label>Nomor Telepon</label>
-                        <input type="text" name="nomor_telepon" class="form-control" required>
-                    </div>
-
-                    <div class="form-check mb-3">
-                        <input class="form-check-input" type="checkbox" name="is_default" id="is_default">
-                        <label class="form-check-label" for="is_default">Jadikan sebagai alamat utama</label>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="submit" class="btn btn-success">Simpan</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Script Tambah Alamat -->
-    <script>
-        document.getElementById('addAddressForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-
-            const formData = new FormData(this);
-            const isDefault = formData.get('is_default') === 'on' ? 1 : 0;
-
-            fetch("{{ route('alamat.store') }}", {
-                    method: "POST",
-                    headers: {
-                        "X-CSRF-TOKEN": "{{ csrf_token() }}",
-                        "Accept": "application/json",
-                    },
-                    body: new URLSearchParams({
-                        id_pembeli: formData.get("id_pembeli"),
-                        nama_orang: formData.get("nama_orang"),
-                        label_alamat: formData.get("label_alamat"),
-                        alamat_lengkap: `${formData.get("alamat_lengkap")}, ${formData.get("alamat_detail")}, ${formData.get("keterangan")}`,
-                        nomor_telepon: formData.get("nomor_telepon"),
-                        kode_pos: '00000',
-                        is_default: isDefault
-                    }),
-                })
-                .then(response => response.json())
-                .then(data => {
-                    alert("Alamat berhasil ditambahkan!");
-                    location.reload();
-                })
-                .catch(error => {
-                    console.error(error);
-                    alert("Gagal menambahkan alamat.");
-                });
-        });
-    </script>
 @endsection
+
+@push('styles')
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #00b14f;
+            --text-dark: #212529;
+            --text-muted: #6c757d;
+            --bg-light: #f8f9fa;
+            --border-color: #dee2e6;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+        }
+
+        footer {
+            font-family: 'Poppins', sans-serif;
+            font-size: 14px;
+            background-color: #2E7D32;
+            color: white;
+        }
+
+        footer strong {
+            font-weight: 600;
+        }
+
+        footer p,
+        footer a {
+            margin-bottom: 6px;
+            line-height: 1.6;
+            color: white;
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+
+        .footer-social a {
+            font-size: 18px;
+            margin-right: 12px;
+            color: white;
+        }
+
+        .text-success {
+            color: var(--primary-color) !important;
+        }
+
+        .btn-success {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        .btn-success:hover {
+            background-color: #019944;
+            border-color: #019944;
+        }
+
+        .sidebar-menu a {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            font-weight: 500;
+            border: none;
+            border-left: 4px solid transparent;
+            color: #333;
+            transition: all 0.3s;
+        }
+
+        .sidebar-menu a.active {
+            background-color: var(--bg-light);
+            border-left: 4px solid var(--primary-color);
+            color: var(--primary-color);
+        }
+
+        .sidebar-menu a:hover {
+            background-color: #f1f1f1;
+            color: var(--primary-color);
+        }
+
+        .sidebar-menu i {
+            margin-right: 10px;
+        }
+
+        .card {
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 24px;
+        }
+
+        .modal-content {
+            border-radius: 16px;
+            padding: 20px;
+        }
+
+        img.rounded-circle {
+            border: 2px solid var(--primary-color);
+        }
+    </style>
+@endpush

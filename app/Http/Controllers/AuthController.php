@@ -11,6 +11,12 @@ use App\Models\Organisasi;
 
 class AuthController extends Controller
 {
+    public function logout(Request $request)
+    {
+        session()->flush();
+        return redirect('/');
+    }
+
     public function login(Request $request)
     {
         $email = $request->input('email');

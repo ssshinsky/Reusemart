@@ -21,6 +21,11 @@ class PembeliController extends Controller
         return view('Admin.Pembeli.pembeli', compact('pembelis'));
     }
 
+    public function purchase()
+    {
+        return view('pembeli.purchase');
+    }
+
 
     // Web: Halaman form tambah
     public function create()

@@ -38,7 +38,7 @@ class transaksiPenitipan extends Model
     // Relasi ke model Penitip
     public function penitip()
     {
-        return $this->belongsTo(Penitip::class, 'id_penitip');
+        return $this->belongsTo(Penitip::class, 'id_penitip', 'id_penitip');
     }
 
     // Relasi ke Barang

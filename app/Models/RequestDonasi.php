@@ -10,7 +10,7 @@ class RequestDonasi extends Model
     use HasFactory;
 
     // Nama tabel yang digunakan oleh model
-    protected $table = 'requestdonasi';
+    protected $table = 'request_donasi';
     protected $primaryKey = 'id_request';
 
     // Kolom yang dapat diisi (Mass Assignment)

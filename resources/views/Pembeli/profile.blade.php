@@ -24,7 +24,7 @@
 
                                 <div class="mb-3">
                                     <label class="form-label fw-semibold">Username</label>
-                                    <input type="text" class="form-control" value="{{ session('user.nama') ?? 'User' }}"
+                                    <input type="text" class="form-control" value="{{ session('customer.nama_pembeli') ?? 'User' }}"
                                         disabled>
                                 </div>
 

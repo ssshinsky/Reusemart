@@ -91,7 +91,7 @@
 
     const searchInput = document.getElementById('searchInput');
     let timeout = null;
-
+    
     searchInput.addEventListener('input', function () {
         clearTimeout(timeout);
         const query = this.value;

@@ -61,7 +61,7 @@ class AuthController extends Controller
         $pembeli = Pembeli::where('email_pembeli', $email)->first();
         if ($pembeli && Hash::check($password, $pembeli->password)) {
             Auth::guard('pembeli')->login($pembeli);
-            return redirect('/dashboard-pembeli');
+            return redirect()->route('pembeli.profile');
         }
 
         // 4. Cek Organisasi

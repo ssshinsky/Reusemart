@@ -147,26 +147,22 @@ Route::prefix('admin')->group(function () {
     Route::put('/merchandise/{id}', [MerchandiseController::class, 'update'])->name('admin.merchandise.update');
 });
 
-
-Route::prefix('owner')->middleware(['auth.owner', 'role:owner'])->group(function () {
+Route::prefix('owner')->middleware(['auth:pegawai'])->group(function () {
     Route::get('/dashboard', [OwnerController::class, 'dashboard'])->name('owner.dashboard');
     Route::get('/donation/requests', [OwnerController::class, 'donationRequests'])->name('owner.donation.requests');
     Route::get('/donation/history', [OwnerController::class, 'donationHistory'])->name('owner.donation.history');
     Route::get('/allocate-items', [OwnerController::class, 'allocateItems'])->name('owner.allocate.items');
+    Route::post('/allocate-items', [OwnerController::class, 'storeAllocation'])->name('owner.store.allocation');
     Route::get('/update-donation', [OwnerController::class, 'updateDonation'])->name('owner.update.donation');
+    Route::post('/update-donation', [OwnerController::class, 'updateDonasiStore'])->name('owner.update.donasi.store');
     Route::get('/rewards', [OwnerController::class, 'rewards'])->name('owner.rewards');
-    Route::post('/logout', [OwnerController::class, 'logout'])->name('owner.logout');
+    Route::get('/donasi', [OwnerController::class, 'getDonasi'])->name('owner.get.donasi');
+    Route::get('/requests-by-organisasi', [OwnerController::class, 'getRequestsByOrganisasi'])->name('owner.requests.by_organisasi');
+    Route::delete('/request/{id}', [OwnerController::class, 'deleteRequest'])->name('owner.delete.request');
+    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 });
 
-    Route::get('owner/dashboard', [OwnerController::class, 'dashboard'])->name('owner.dashboard');
-    Route::get('owner/donation/requests', [OwnerController::class, 'donationRequests'])->name('owner.donation.requests');
-    Route::get('owner/donation/history', [OwnerController::class, 'donationHistory'])->name('owner.donation.history');
-    Route::get('owner/allocate-items', [OwnerController::class, 'allocateItems'])->name('owner.allocate.items');
-    Route::get('owner/update-donation', [OwnerController::class, 'updateDonation'])->name('owner.update.donation');
-    Route::delete('/request/{id}', [OwnerController::class, 'deleteRequest'])->name('owner.delete.request');
-    Route::get('/requests-by-organisasi', [OwnerController::class, 'getRequestsByOrganisasi'])->name('owner.requests.by_organisasi');
-    Route::post('/allocate-items', [OwnerController::class, 'storeAllocation'])->name('owner.store.allocation');
-    // Route::get('owner/update-donation', [OwnerController::class, 'updateDonation'])->name('owner.update.donation');
-    Route::post('owner/update-donation', [OwnerController::class, 'updateDonasiStore'])->name('owner.update.donasi.store');
-    Route::get('owner/rewards', [OwnerController::class, 'rewards'])->name('owner.rewards');
-    Route::get('/owner/donasi', [OwnerController::class, 'getDonasi'])->name('owner.get.donasi');
+Route::get('/login', function () {
+    return redirect('/');
+})->name('login');
+

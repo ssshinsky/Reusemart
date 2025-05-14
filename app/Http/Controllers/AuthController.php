@@ -13,9 +13,22 @@ class AuthController extends Controller
 {
     public function logout(Request $request)
     {
-        session()->flush();
+        if (Auth::guard('pegawai')->check()) {
+            Auth::guard('pegawai')->logout();
+        } elseif (Auth::guard('penitip')->check()) {
+            Auth::guard('penitip')->logout();
+        } elseif (Auth::guard('pembeli')->check()) {
+            Auth::guard('pembeli')->logout();
+        } elseif (Auth::guard('organisasi')->check()) {
+            Auth::guard('organisasi')->logout();
+        }
+
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
         return redirect('/');
     }
+
 
     public function login(Request $request)
     {
@@ -27,7 +40,7 @@ class AuthController extends Controller
         if ($pegawai && Hash::check($password, $pegawai->password)) {
             Auth::guard('pegawai')->login($pegawai);
             return match ($pegawai->id_role) {
-                1 => redirect('/owner'),    
+                1 => redirect('/owner/dashboard'),    
                 2 => redirect('/admin'),    
                 3 => redirect('/cs'),       
                 4 => redirect('/gudang'),
@@ -57,9 +70,7 @@ class AuthController extends Controller
             Auth::guard('organisasi')->login($organisasi);
             return redirect('/dashboard-organisasi');
         }
-
         return back()->with('error', 'Email atau password salah.');
     }
-    return back()->withErrors(['login' => 'Email atau password salah']);
 }
-}
+

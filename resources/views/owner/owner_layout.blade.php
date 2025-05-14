@@ -163,7 +163,7 @@
             <a href="{{ route('owner.rewards') }}" class="{{ Route::is('owner.rewards') ? 'active' : '' }}">
                 <i class="bi bi-gift"></i> Poin Reward
             </a>
-            <form action="{{ route('owner.logout') }}" method="POST" class="mt-4">
+            <form action="{{ route('logout') }}" method="POST" class="mt-4">
                 @csrf
                 <button type="submit" class="btn btn-danger w-100">
                     <i class="bi bi-box-arrow-right me-2"></i> Logout

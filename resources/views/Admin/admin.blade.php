@@ -147,6 +147,7 @@
 </head>
 
 <body>
+    @if($pegawai)
     <div class="topbar">
         <div class="topbar-left">
             <a href="{{ route('admin.dashboard') }}">
@@ -209,6 +210,9 @@
             }
         }
     </script>
+    @else
+        <script>window.location.href = "{{ route('login') }}";</script>
+    @endif
 </body>
 
 </html>

@@ -3,7 +3,14 @@
 @section('title', 'Dashboard Admin')
 
 @section('content')
-    <h2>Welcome back, {{ Auth::guard('pegawai')->user()->nama_pegawai }}!</h2>
+    @php $pegawai = Auth::guard('pegawai')->user(); @endphp
+
+    @if($pegawai)
+        <h2>Welcome back, {{ $pegawai->nama_pegawai }}!</h2>
+    @else
+        <script>window.location.href = "{{ route('login') }}";</script>
+    @endif
+
 
     <div style="display: flex; gap: 1rem; margin-top: 1rem;">
         <div class="card-stat">

@@ -204,7 +204,7 @@
                 <form action="{{ route('login.submit') }}" method="POST">
                     @csrf
                     <div class="text-center mb-3">
-                        <img src="/assets/images/logo.png" alt="Logo" style="width: 80px;">
+                        <img src="/assets/images/logoNoBg.png" alt="Logo" style="width: 80px;">
                     </div>
 
                     <div class="mb-3">

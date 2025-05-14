@@ -231,7 +231,7 @@
             <div class="modal-content">
                 @csrf
                 <div class="text-center mb-3">
-                    <img src="/assets/images/logo.png" alt="Logo" style="width: 80px;">
+                    <img src="/assets/images/logoNoBg.png" alt="Logo" style="width: 80px;">
                 </div>
                 <div class="d-flex justify-content-center mb-4">
                     <button id="btn-customer" type="button" class="btn btn-outline-success me-2"

@@ -6,6 +6,7 @@ use App\Http\Controllers\PegawaiController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\PenitipController;
 use App\Http\Controllers\PembeliController;
+use App\Http\Controllers\AlamatController;
 use App\Http\Controllers\OrganisasiController;
 use App\Http\Controllers\BarangController;
 use App\Http\Controllers\KategoriController;
@@ -15,18 +16,20 @@ use App\Http\Controllers\RequestDonasiController;
 use App\Http\Controllers\DonasiController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\KeranjangController;
+use App\Models\Barang;
 
-// Route::get('/', function () {
-//     return view('welcome', [
-//         'role' => session('role'),
-//         'user' => session('user')
-//     ]);
-// });
+Route::get('/', function () {
+    $barangTerbatas = Barang::with('gambar')->take(12)->get();
+    return view('welcome', [
+        'role' => session('role'),
+        'user' => session('user'),
+        'barangTerbatas' => $barangTerbatas
+    ]);
+})->name('welcome');
 
-Route::get('/', [BarangController::class, 'indexLanding'])->name('welcome');
 Route::get('/about', function () {return view('about');})->name('about');
-Route::post('/logout', function () {session()->flush();return redirect('/');})->name('logout');
 Route::post('/login', [AuthController::class, 'login'])->name('login.submit');
+Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 Route::post('/admin/logout', function () {
     session()->flush();
     return redirect('/login');
@@ -49,13 +52,21 @@ Route::prefix('penitip')->group(function () {
     Route::get('/transaction/filter/{type}', [PenitipController::class, 'filterTransaction'])->name('penitip.transaction.filter');
 });
 
-    // =================== PEMBELI ROUTES ===================
 Route::prefix('pembeli')->group(function () {
     Route::get('/profile', [PembeliController::class, 'profile'])->name('pembeli.profile');
+    Route::get('/{id}/edit', [PembeliController::class, 'editProfile'])->name('pembeli.edit');
+    Route::put('/{id}/update', [PembeliController::class, 'updateProfile'])->name('pembeli.update');
     Route::get('/purchase', [PembeliController::class, 'purchase'])->name('pembeli.purchase');
     Route::get('/reward', [PembeliController::class, 'reward'])->name('pembeli.reward');
     Route::get('/password', function () {return view('password');})->name('pembeli.password');
+
+    Route::get('/alamat', [AlamatController::class, 'alamatPembeli'])->name('pembeli.alamat');
+    Route::post('/alamat', [AlamatController::class, 'store'])->name('pembeli.alamat.store');
+    Route::put('/alamat/{id}', [AlamatController::class, 'update'])->name('pembeli.alamat.update');
+    Route::delete('/alamat/{id}', [AlamatController::class, 'destroy'])->name('pembeli.alamat.destroy');
+    Route::post('/alamat/{id}/set-default', [AlamatController::class, 'setDefault'])->name('pembeli.alamat.set_default');
 });
+
 
 Route::get('/barang/{id}', [BarangController::class, 'show'])->name('umum.show');
 // Route::post('/diskusi/store', [DiskusiProdukController::class, 'store'])->name('diskusi.store')->middleware('auth:pembeli');

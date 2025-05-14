@@ -99,17 +99,37 @@ class PenitipController extends Controller
     // Tampilkan produk milik penitip sendiri
     public function myproduct()
     {
-        $produkSaya = \App\Models\Barang::where('id_penitip', auth()->id())->get();
-        return view('Penitip.myproduct', compact('produkSaya'));
+        $id_user = session('user.id');
+
+        $penitip = \App\Models\Penitip::where('id_penitip', $id_user)->first();
+
+        if (!$penitip) {
+            abort(404, 'Penitip tidak ditemukan');
+        }
+
+        $transaksiIds = \App\Models\TransaksiPenitipan::where('id_penitip', $penitip->id_penitip)->pluck('id_transaksi_penitipan');
+        $produkSaya = \App\Models\Barang::whereIn('id_transaksi_penitipan', $transaksiIds)->get();
+        $products = $produkSaya;
+        return view('penitip.myproduct', compact('products'));
     }
 
     // Tampilkan saldo dan reward penitip
     public function rewards()
     {
-        $penitip = auth()->user();
-        return view('Penitip.rewards', compact('penitip'));
-    }
+        $sessionUser = session('user');
 
+        if (!$sessionUser || !isset($sessionUser['id'])) {
+            abort(403, 'User tidak ditemukan dalam sesi.');
+        }
+
+        $penitip = \App\Models\Penitip::where('id_penitip', $sessionUser['id'])->first();
+
+        if (!$penitip) {
+            abort(404, 'Data penitip tidak ditemukan.');
+        }
+
+        return view('penitip.rewards', compact('penitip'));
+    }
 
     // Menampilkan halaman daftar penitip (item owners)
     public function index()
@@ -124,6 +144,47 @@ class PenitipController extends Controller
         $penitip = Penitip::findOrFail($id);
         return view('Admin.Penitip.edit_penitip', compact('penitip'));
     }
+
+    public function editProfile($id)
+    {
+        $penitip = Penitip::findOrFail($id);
+        return view('penitip.edit', compact('penitip'));
+    }
+
+    public function updateProfile(Request $request, $id)
+    {
+        $penitip = Penitip::findOrFail($id);
+
+        $request->validate([
+                'nik_penitip' => 'required|string|unique:penitip,nik_penitip,' . $id . ',id_penitip',
+                'nama_penitip' => 'required|string',
+                'email_penitip' => 'required|email|unique:penitip,email_penitip,' . $id . ',id_penitip',
+                'no_telp' => 'required|string',
+                'alamat' => 'required|string',
+                'profil_pict' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            ]);
+
+        if ($request->hasFile('profil_pict')) {
+            $file = $request->file('profil_pict');
+            $filename = time() . '_' . $file->getClientOriginalName();
+
+            Storage::disk('public')->putFileAs('foto_penitip', $file, $filename);
+
+            $penitip->profil_pict = $filename;
+        }
+
+            $penitip->update([
+                'nik_penitip' => $request->nik_penitip,
+                'nama_penitip' => $request->nama_penitip,
+                'email_penitip' => $request->email_penitip,
+                'no_telp' => $request->no_telp,
+                'alamat' => $request->alamat,
+                'profil_pict' => $penitip->profil_pict,
+            ]);
+
+        return redirect()->route('penitip.profile')->with('success', 'Profil berhasil diperbarui.');
+    }
+
 
     // Update data penitip
     public function update(Request $request, $id)
@@ -142,7 +203,8 @@ class PenitipController extends Controller
        if ($request->hasFile('profil_pict')) {
             $file = $request->file('profil_pict');
             $filename = time() . '_' . $file->getClientOriginalName();
-            $file->storeAs('public/foto_penitip', $filename);
+
+            Storage::disk('public')->putFileAs('foto_penitip', $file, $filename);
 
             $penitip->profil_pict = $filename;
         }
@@ -197,7 +259,6 @@ class PenitipController extends Controller
         $query = $request->query('q');
 
         $penitips = Penitip::where('nama_penitip', 'LIKE', "%$query%")
-            ->orWhere('nik_penitip', 'LIKE', "%$query%")
             ->orWhere('email_penitip', 'LIKE', "%$query%")
             ->orWhere('nik_penitip', 'LIKE', "%$query%")
             ->get();
@@ -210,7 +271,6 @@ class PenitipController extends Controller
             <tr>
                 <td class="center">'.$penitip->id_penitip.'</td>
                 <td'.($status !== 'active' ? ' style="color: #E53E3E; font-weight: bold;"' : '').'>'.$penitip->nama_penitip.'</td>
-                <td>'.$penitip->nik_penitip.'</td>
                 <td>'.$penitip->email_penitip.'</td>
                 <td>'.$penitip->no_telp.'</td>
                 <td>'.$penitip->alamat.'</td>

@@ -11,52 +11,47 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
 
     <style>
-        .banner {
-            background-color: #fffbe6;
-            padding: 20px;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 15px;
-        }
-
-        .card img {
-            object-fit: contain;
-            height: 160px;
-        }
-
-        .card-title {
-            font-size: 14px;
-        }
-
         body {
             font-family: 'Poppins', sans-serif;
+            background-color: #f4f4f4;
+        }
+
+        .banner {
+            background-color: #2E7D32;
+            color: white;
+            padding: 40px;
+            border-radius: 12px;
         }
 
         .category-card {
-            min-width: 120px;
-            border: 1px solid #ddd;
+            width: 115px;
+            padding: 8px;
+            margin: 4px;
             border-radius: 12px;
-            padding: 10px;
-            transition: 0.3s;
-            font-size: 12px;
-        }
-
-        .category-card:hover {
-            background-color: #f8f9fa;
-            transform: scale(1.02);
+            border: 1px solid #e0e0e0;
+            background-color: #ffffff;
+            transition: transform 0.3s, box-shadow 0.3s;
+            text-align: center;
         }
 
         .category-card img {
-            width: 60px;
-            height: 60px;
+            width: 50px;
+            height: 50px;
             object-fit: contain;
+            margin-bottom: 8px;
+        }
+
+        .category-text {
+            font-size: 12px;
+            color: #2E7D32;
+            font-weight: 500;
         }
 
         footer {
             font-family: 'Poppins', sans-serif;
             font-size: 14px;
+            background-color: #2E7D32;
+            color: white;
         }
 
         footer strong {
@@ -81,14 +76,22 @@
             color: white;
         }
 
-        .custom-modal {
-            max-width: 400px;
-            width: 100%;
-        }
-
         .modal-content {
             border-radius: 12px;
             padding: 2rem;
+            background-color: #fff;
+        }
+
+        .modal-header {
+            border-bottom: none;
+        }
+
+        .modal-footer {
+            border-top: none;
+        }
+
+        .btn-toggle-role {
+            border-radius: 20px;
         }
 
         nav {
@@ -112,25 +115,20 @@
     @include('partials.navbar')
 
     <div class="container my-5">
-        <div class="banner d-flex justify-content-between align-items-center flex-wrap p-5 rounded"
-            style="background-color: #2E7D32; color: white; height: 320px; overflow: hidden;">
-
-            <div class="text-section mb-4 mb-md-0" style="max-width: 600px;">
-                <h1 class="fw-bold mb-2" style="font-size: 3.5rem;"><strong>Recycle for a Better Tomorrow</strong></h1>
-                <h4 class="mb-4" style="font-weight: 400;"><strong>From You, For All of Us</strong></h4>
+        <div class="banner d-flex flex-wrap align-items-center justify-content-between">
+            <div class="text-section" style="max-width: 600px;">
+                <h1 class="fw-bold mb-2 display-4">Recycle for a Better Tomorrow</h1>
+                <h4 class="mb-4">From You, For All of Us</h4>
             </div>
-
-            <div class="d-flex justify-content-center align-items-center">
-                <img src="/assets/images/banner.jpg" alt="Banner" class="img-fluid rounded shadow"
-                    style="max-height: 255px; width: auto;">
-            </div>
-
+            <img src="/assets/images/banner.jpg" alt="Banner" class="img-fluid rounded shadow"
+                style="max-height: 255px;">
         </div>
     </div>
 
     <div class="container mb-5">
-        <h5 class="mb-3"><strong>BROWSE BY CATEGORY</strong></h5>
-        <div class="d-flex flex-nowrap overflow-auto gap-3">
+        <h5 class="mb-3 fw-bold">BROWSE BY CATEGORY</h5>
+        <div class="d-flex flex-wrap gap-3 justify-content-start">
+            <!-- Category Card -->
             <div class="category-card text-center">
                 <img src="/assets/images/laptop.png" alt="Electronics">
                 <p class="category-text">Electronics & Gadgets</p>
@@ -167,18 +165,8 @@
     </div>
 
     <div class="container mb-5">
-        <h5 class="mb-3"><strong>RECOMMENDED PRODUCTS</strong></h5>
+        <h5 class="mb-3 fw-bold">RECOMMENDED PRODUCTS</h5>
         <div class="row row-cols-2 row-cols-sm-3 row-cols-md-4 row-cols-lg-6 g-3">
-            <div class="col">
-                <div class="card h-100 text-center p-2">
-                    <img src="/assets/images/book.png" class="card-img-top" alt="Book">
-                    <div class="card-body">
-                        <p class="card-title small">Buku harry potter and the sorcerer's stone</p>
-                        <p class="fw-bold text-success">Rp80.000</p>
-                        <button class="btn btn-success btn-sm w-100">Buy Now</button>
-                    </div>
-                </div>
-            </div>
         </div>
         <div class="text-center mt-3">
             <button class="btn btn-success">View All Recommendations</button>
@@ -186,18 +174,21 @@
     </div>
 
     <div class="container mb-5">
-        <h5 class="mb-3"><strong>ALL PRODUCT</strong></h5>
+        <h5 class="mb-3 fw-bold">ALL PRODUCT</h5>
         <div class="row row-cols-2 row-cols-sm-3 row-cols-md-4 row-cols-lg-6 g-3">
             @foreach ($barangTerbatas as $item)
                 <div class="col">
                     <div class="card h-100 text-center p-2">
                         <img src="{{ asset('storage/' . ($item->gambar->first()->path ?? 'default.png')) }}"
                             class="card-img-top" alt="{{ $item->nama_barang }}">
-                        <div class="card-body">
+                        <div class="card-body d-flex flex-column">
                             <p class="card-title small">{{ $item->nama_barang }}</p>
                             <p class="fw-bold text-success">Rp{{ number_format($item->harga_barang, 0, ',', '.') }}</p>
-                            <button class="btn btn-success btn-sm w-100">Buy Now</button>
+                            <div class="mt-auto">
+                                <button class="btn btn-success btn-sm w-100">Buy Now</button>
+                            </div>
                         </div>
+
                     </div>
                 </div>
             @endforeach
@@ -207,14 +198,13 @@
         </div>
     </div>
 
-
     <div class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered custom-modal">
             <div class="modal-content">
                 <form action="{{ route('login.submit') }}" method="POST">
                     @csrf
                     <div class="text-center mb-3">
-                        <img src="/assets/images/logoNoBg.png" alt="Logo" style="width: 80px;">
+                        <img src="/assets/images/logo.png" alt="Logo" style="width: 80px;">
                     </div>
 
                     <div class="mb-3">
@@ -224,14 +214,13 @@
                         <input type="password" name="password" class="form-control" placeholder="Password" required>
                     </div>
 
-                    <button type="submit" class="btn btn-dark w-100 mb-2">Login</button>
+                    <button type="submit" class="btn btn-success w-100 mb-2">Login</button>
 
                     <div class="text-center">
                         <a href="#" data-bs-toggle="modal" data-bs-target="#registerModal"
                             data-bs-dismiss="modal">Register</a>
                     </div>
                 </form>
-
             </div>
         </div>
     </div>
@@ -256,8 +245,7 @@
                     <input type="text" name="nama_pembeli" class="form-control mb-2" placeholder="Name" required>
                     <input type="email" name="email_pembeli" class="form-control mb-2" placeholder="Email"
                         required>
-                    <input type="date" name="tanggal_lahir" class="form-control mb-2" placeholder="Date of Birth"
-                        required>
+                    <input type="date" name="tanggal_lahir" class="form-control mb-2" required>
                     <input type="tel" name="nomor_telepon" class="form-control mb-2" placeholder="Phone Number"
                         required>
                     <input type="password" name="password" class="form-control mb-2" placeholder="Password"
@@ -291,6 +279,7 @@
 
     @include('partials.footer')
 
+
     <script>
         function showForm(type) {
             const btnCustomer = document.getElementById('btn-customer');
@@ -318,8 +307,6 @@
             showForm('customer');
         });
     </script>
-
-
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 

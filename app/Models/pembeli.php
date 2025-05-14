@@ -15,6 +15,7 @@ class Pembeli extends Authenticatable
 
     // Nama tabel yang digunakan oleh model
     protected $table = 'pembeli';
+    protected $primaryKey = 'id_pembeli';
 
     // Kolom yang dapat diisi (Mass Assignment)
     protected $fillable = [

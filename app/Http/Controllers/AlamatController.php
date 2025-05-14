@@ -3,18 +3,19 @@
 namespace App\Http\Controllers;
 
 use App\Models\Alamat;
+use App\Models\Pembeli;
 use Illuminate\Http\Request;
 
 class AlamatController extends Controller
 {
-    // Menampilkan daftar semua alamat
+    // API: Tampilkan semua alamat
     public function index()
     {
         $alamat = Alamat::all();
         return response()->json($alamat);
     }
 
-    // Menampilkan alamat berdasarkan ID
+    // API: Tampilkan alamat berdasarkan ID
     public function show($id)
     {
         $alamat = Alamat::find($id);
@@ -24,72 +25,116 @@ class AlamatController extends Controller
         return response()->json($alamat);
     }
 
-    // Menambahkan alamat baru
+    // Web: Tambah alamat baru
     public function store(Request $request)
     {
-        $request->validate([
-            'id_pembeli' => 'required|exists:pembeli,id_pembeli',
-            'nama_orang' => 'nullable|string|max:255',
+        $validated = $request->validate([
+            'nama_orang' => 'required|string|max:255',
             'label_alamat' => 'required|string|max:255',
             'alamat_lengkap' => 'required|string',
-            'nomor_telepon' => 'required|string|max:15',
+            'kecamatan' => 'required|string',
+            'kabupaten' => 'required|string',
             'kode_pos' => 'required|string|max:10',
-            'is_default' => 'required|boolean',
+            'no_telepon' => 'required|string|max:15',
         ]);
 
-        $alamat = Alamat::create([
-            'id_pembeli' => $request->id_pembeli,
-            'nama_orang' => $request->nama_orang,
-            'label_alamat' => $request->label_alamat,
-            'alamat_lengkap' => $request->alamat_lengkap,
-            'nomor_telepon' => $request->nomor_telepon,
-            'kode_pos' => $request->kode_pos,
-            'is_default' => $request->is_default,
-        ]);
+        $user = session('user');
+        if (!$user || !isset($user['id'])) {
+            return redirect('/')->with('error', 'Akses ditolak.');
+        }
 
-        return response()->json($alamat, 201);
+        $validated['id_pembeli'] = $user['id'];
+        $validated['is_default'] = 0;
+
+        Alamat::create($validated);
+
+        return $this->alamatPembeli()->with('success', 'Alamat berhasil ditambahkan');
     }
 
-    // Mengupdate alamat berdasarkan ID
     public function update(Request $request, $id)
     {
         $alamat = Alamat::find($id);
         if (!$alamat) {
-            return response()->json(['message' => 'Alamat not found'], 404);
+            return redirect()->back()->with('error', 'Alamat tidak ditemukan.');
         }
 
-        $request->validate([
-            'id_pembeli' => 'required|exists:pembeli,id_pembeli',
-            'nama_orang' => 'nullable|string|max:255',
+        $user = session('user');
+        if (!$user || $alamat->id_pembeli != $user['id']) {
+            return redirect('/')->with('error', 'Akses ditolak.');
+        }
+
+         $validated = $request->validate([
+            'nama_orang' => 'required|string|max:255',
             'label_alamat' => 'required|string|max:255',
             'alamat_lengkap' => 'required|string',
-            'nomor_telepon' => 'required|string|max:15',
+            'kecamatan' => 'required|string',
+            'kabupaten' => 'required|string',
+            'no_telepon' => 'required|string|max:15',
             'kode_pos' => 'required|string|max:10',
-            'is_default' => 'required|boolean',
         ]);
 
-        $alamat->update([
-            'id_pembeli' => $request->id_pembeli,
-            'nama_orang' => $request->nama_orang,
-            'label_alamat' => $request->label_alamat,
-            'alamat_lengkap' => $request->alamat_lengkap,
-            'nomor_telepon' => $request->nomor_telepon,
-            'kode_pos' => $request->kode_pos,
-            'is_default' => $request->is_default,
-        ]);
+        if ($request->is_default) {
+            Alamat::where('id_pembeli', $alamat->id_pembeli)
+                ->where('id_alamat', '!=', $id)
+                ->update(['is_default' => false]);
+        }
 
-        return response()->json($alamat);
+        $alamat->update($request->all());
+
+        return $this->alamatPembeli()->with('success', 'Alamat berhasil diperbarui');
     }
 
-    // Menghapus alamat berdasarkan ID
+    // Web: Hapus alamat
     public function destroy($id)
     {
         $alamat = Alamat::find($id);
         if (!$alamat) {
-            return response()->json(['message' => 'Alamat not found'], 404);
+            return redirect()->back()->with('error', 'Alamat tidak ditemukan.');
+        }
+
+        $user = session('user');
+        if (!$user || $alamat->id_pembeli != $user['id']) {
+            return redirect('/')->with('error', 'Akses ditolak.');
         }
 
         $alamat->delete();
-        return response()->json(['message' => 'Alamat deleted successfully']);
+
+        return $this->alamatPembeli()->with('success', 'Alamat berhasil dihapus');
+    }
+
+    // Web: Tampilkan alamat untuk user login
+    public function alamatPembeli()
+    {
+        $user = session('user');
+
+        if (!$user || !isset($user['id'])) {
+            return redirect('/')->with('error', 'Akses ditolak.');
+        }
+
+        $pembeli = Pembeli::find($user['id']);
+        $alamatList = Alamat::where('id_pembeli', $user['id'])->get();
+
+        return view('pembeli.alamat', compact('alamatList', 'pembeli'));
+    }
+
+    // Web: Set alamat sebagai default
+    public function setDefault($id)
+    {
+        $alamat = Alamat::find($id);
+        if (!$alamat) {
+            return redirect()->back()->with('error', 'Alamat tidak ditemukan.');
+        }
+
+        $user = session('user');
+        if (!$user || $alamat->id_pembeli != $user['id']) {
+            return redirect('/')->with('error', 'Akses ditolak.');
+        }
+
+        Alamat::where('id_pembeli', $alamat->id_pembeli)->update(['is_default' => false]);
+
+        $alamat->is_default = true;
+        $alamat->save();
+
+        return redirect()->back()->with('success', 'Alamat default diperbarui.');
     }
 }

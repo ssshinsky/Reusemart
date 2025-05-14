@@ -18,12 +18,16 @@ class Penitip extends Authenticatable
         'nik_penitip',
         'nama_penitip',
         'email_penitip',
+        'password',
+        'poin_penitip',
         'no_telp',
         'alamat',
-        'password',
+        'rata_rating',
         'status_penitip',
         'saldo_penitip',
-        'rata_rating'
+        'poin_penitip',
+        'profil_pict',
+        'badge',
     ];
 
     protected $hidden = [
@@ -47,4 +51,10 @@ class Penitip extends Authenticatable
     {
         return $this->hasMany(TransaksiPenitipan::class, 'id_penitip', 'id_penitip');
     }
+
+    public function barang()
+{
+    return $this->belongsToMany(Barang::class, 'transaksi_penitipan', 'id_penitip', 'id_barang');
+}
+
 }

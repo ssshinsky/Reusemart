@@ -11,15 +11,18 @@ class Alamat extends Model
 
     // Nama tabel yang digunakan oleh model
     protected $table = 'alamat';
+    protected $primaryKey = 'id_alamat';
 
     // Kolom yang dapat diisi (Mass Assignment)
-    protected $fillable = [
-        'id_pembeli', 
-        'nama_orang', 
-        'label_alamat', 
-        'alamat_lengkap', 
-        'nomor_telepon', 
-        'kode_pos', 
+   protected $fillable = [
+        'id_pembeli',
+        'label_alamat',
+        'nama_orang',
+        'alamat_lengkap',
+        'kecamatan',
+        'kabupaten',
+        'no_telepon',
+        'kode_pos',
         'is_default',
     ];
 

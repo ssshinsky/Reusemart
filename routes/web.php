@@ -13,6 +13,7 @@ use App\Http\Controllers\KategoriController;
 use App\Http\Controllers\MerchandiseController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\KeranjangController;
+use App\Http\Controllers\ResetPasswordController;
 use App\Models\Barang;
 
 Route::get('/', function () {
@@ -31,13 +32,14 @@ Route::post('/admin/logout', function () {
     session()->flush();
     return redirect('/login');
 })->name('admin.logout');
+
   
 Route::post('/pembeli', [PembeliController::class, 'store']);
 Route::post('/organisasi', [OrganisasiController::class, 'store']);
 Route::get('/keranjang', [\App\Http\Controllers\KeranjangController::class, 'index'])->name('cart');
 Route::get('/produk/allProduct', [BarangController::class, 'allProduct'])->name('produk.allproduct'); 
 
-    // =================== PENITIP ROUTES ===================
+// =================== PENITIP ROUTES ===================
 Route::prefix('penitip')->group(function () {
     Route::get('/profile', [PenitipController::class, 'profile'])->name('penitip.profile');
     Route::get('/{id}/edit', [PenitipController::class, 'editProfile'])->name('penitip.edit');
@@ -47,15 +49,17 @@ Route::prefix('penitip')->group(function () {
     Route::get('/myproduct', [PenitipController::class, 'myproduct'])->name('penitip.myproduct');
     Route::get('/transaction', [PenitipController::class, 'transaction'])->name('penitip.transaction');
     Route::get('/transaction/filter/{type}', [PenitipController::class, 'filterTransaction'])->name('penitip.transaction.filter');
+    Route::get('/reset-password', [ResetPasswordController::class, 'showResetForm'])->name('penitip.password');
 });
 
+// =================== PEMBELI ROUTES ===================
 Route::prefix('pembeli')->group(function () {
     Route::get('/profile', [PembeliController::class, 'profile'])->name('pembeli.profile');
     Route::get('/{id}/edit', [PembeliController::class, 'editProfile'])->name('pembeli.edit');
     Route::put('/{id}/update', [PembeliController::class, 'updateProfile'])->name('pembeli.update');
     Route::get('/purchase', [PembeliController::class, 'purchase'])->name('pembeli.purchase');
     Route::get('/reward', [PembeliController::class, 'reward'])->name('pembeli.reward');
-    Route::get('/password', function () {return view('password');})->name('pembeli.password');
+    Route::get('/reset-password', [ResetPasswordController::class, 'showResetForm'])->name('pembeli.password');
 
     Route::get('/alamat', [AlamatController::class, 'alamatPembeli'])->name('pembeli.alamat');
     Route::post('/alamat', [AlamatController::class, 'store'])->name('pembeli.alamat.store');
@@ -63,6 +67,12 @@ Route::prefix('pembeli')->group(function () {
     Route::delete('/alamat/{id}', [AlamatController::class, 'destroy'])->name('pembeli.alamat.destroy');
     Route::post('/alamat/{id}/set-default', [AlamatController::class, 'setDefault'])->name('pembeli.alamat.set_default');
 });
+
+// ================= RESET PASSWORD ROUTES ===============
+Route::get('/reset-password', [ResetPasswordController::class, 'showEmailForm'])->name('reset.form');
+Route::post('/password/send-code', [ResetPasswordController::class, 'sendCode'])->name('password.sendCode');
+Route::post('/password/verify-code', [ResetPasswordController::class, 'verifyCode'])->name('password.verifyCode');
+Route::post('/password/update', [ResetPasswordController::class, 'updatePassword'])->name('password.update');
 
 
 // Admin routes

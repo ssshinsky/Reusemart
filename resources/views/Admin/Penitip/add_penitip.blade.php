@@ -12,22 +12,26 @@
         <div class="form-column">
             <div class="form-group">
                 <label for="nik_penitip">NIK</label>
-                <input type="text" name="nik_penitip" id="nik_penitip" required placeholder="Enter NIK">
+                <input type="text" name="nik_penitip" id="nik_penitip" required placeholder="Enter NIK"
+                    value="{{ old('nik_penitip') }}">
                 @error('nik_penitip') <div class="text-danger">{{ $message }}</div> @enderror
             </div>
             <div class="form-group">
                 <label for="nama_penitip">Name</label>
-                <input type="text" name="nama_penitip" id="nama_penitip" required placeholder="Enter name">
+                <input type="text" name="nama_penitip" id="nama_penitip" required placeholder="Enter name"
+                    value="{{ old('nama_penitip') }}">
                 @error('nama_penitip') <div class="text-danger">{{ $message }}</div> @enderror
             </div>
             <div class="form-group">
                 <label for="email_penitip">Email</label>
-                <input type="email" name="email_penitip" id="email_penitip" required placeholder="Enter email">
+                <input type="email" name="email_penitip" id="email_penitip" required placeholder="Enter email"
+                    value="{{ old('email_penitip') }}">
                 @error('email_penitip') <div class="text-danger">{{ $message }}</div> @enderror
             </div>
             <div class="form-group">
                 <label for="no_telp">Phone Number</label>
-                <input type="text" name="no_telp" id="no_telp" required placeholder="Enter phone number">
+                <input type="text" name="no_telp" id="no_telp" required placeholder="Enter phone number"
+                    value="{{ old('no_telp') }}">
                 @error('no_telp') <div class="text-danger">{{ $message }}</div> @enderror
             </div>
         </div>
@@ -144,5 +148,12 @@
             justify-content: center;
         }
     }
+
+    .text-danger {
+        color: red;
+        font-size: 0.9rem;
+        margin-top: 0.2rem;
+    }
+
 </style>
 @endsection

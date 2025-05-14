@@ -23,4 +23,10 @@ class Gambar extends Model
     {
         return $this->belongsTo(Barang::class, 'id_barang', 'id_barang');
     }
+
+    public function gambar()
+    {
+        return $this->hasMany(Gambar::class, 'id_barang', 'id_barang');
+    }
+
 }

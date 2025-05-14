@@ -1,8 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>@yield('title', 'Admin Panel')</title>
+    <link rel="icon" type="image/png" href="{{ asset('assets/images/logo.png') }}">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
@@ -26,6 +28,7 @@
             justify-content: space-between;
             align-items: center;
             border-bottom: 1px solid #ccc;
+            position: relative;
         }
 
         .topbar-left img {
@@ -34,7 +37,7 @@
 
         .main-wrapper {
             display: flex;
-            height: calc(100vh - 120px); /* sisa tinggi layar setelah topbar */
+            height: calc(100vh - 120px);
         }
 
         .sidebar {
@@ -64,7 +67,7 @@
 
         .menu-item:hover {
             color: #212529;
-            background-color: #4DD6A5 ;
+            background-color: #4DD6A5;
             padding-left: 6px;
             border-radius: 4px;
         }
@@ -74,7 +77,7 @@
             padding-left: 6px;
             border-radius: 4px;
         }
-        
+
         .card-stat {
             width: 240px;
             height: 80px;
@@ -95,12 +98,51 @@
         .card-stat span:last-child {
             font-size: 20px;
         }
-        
+
         .card-value {
             font-size: 20px;
             font-weight: 400;
         }
 
+        /* Profile dropdown */
+        .profile-dropdown {
+            position: relative;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            top: 100px;
+            right: 2rem;
+            background-color: white;
+            min-width: 120px;
+            box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.2);
+            z-index: 999;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .dropdown-content form {
+            margin: 0;
+        }
+
+        .dropdown-content button {
+            width: 100%;
+            padding: 10px;
+            background: none;
+            border: none;
+            text-align: left;
+            font-family: 'Poppins', sans-serif;
+            font-weight: 400;
+            cursor: pointer;
+        }
+
+        .dropdown-content button:hover {
+            background-color: #f1f1f1;
+        }
     </style>
 </head>
 
@@ -112,10 +154,21 @@
                 <img src="{{ asset('images/Reusemart kiri.png') }}" alt="ReUse Mart">
             </a>
         </div>
-        <div style="display: flex; align-items: center;">
+        <div class="profile-dropdown" onclick="toggleDropdown()">
             <span style="font-size: 18px; margin-right: 40px;">🛒 Marketplace</span>
-            <img src="{{ asset('images/avatar.png') }}" alt="avatar" height="40" style="border-radius: 50%; margin-right: 5px;">
-            <span style="font-weight: 400;">Sinta Admin</span>
+            <img src="{{ asset('images/avatar.png') }}" alt="avatar" height="40"
+                style="border-radius: 50%; margin-right: 5px;">
+            <span style="font-weight: 400;">
+                {{ Auth::guard('pegawai')->user()->nama_pegawai }} ⏷
+            </span>
+
+            <!-- DROPDOWN CONTENT -->
+            <div class="dropdown-content" id="dropdownContent">
+                <form method="POST" action="{{ route('logout') }}">
+                    @csrf
+                    <button type="submit">🔓 Logout</button>
+                </form>
+            </div>
         </div>
     </div>
 
@@ -123,19 +176,19 @@
     <div class="main-wrapper">
         <!-- SIDEBAR -->
         <div class="sidebar">
-            <a href="{{ route('admin.employees.index') }}" 
+            <a href="{{ route('admin.employees.index') }}"
                 class="menu-item {{ request()->is('admin/employees*') ? 'active' : '' }}">👥 Employees</a>
-            <a href="{{ route('admin.roles.index') }}" 
+            <a href="{{ route('admin.roles.index') }}"
                 class="menu-item {{ request()->is('admin/roles*') ? 'active' : '' }}">💼 Roles</a>
-            <a href="{{ route('admin.penitip.index') }}" 
+            <a href="{{ route('admin.penitip.index') }}"
                 class="menu-item {{ request()->is('admin/item-owners*') ? 'active' : '' }}">📦 Item Owners</a>
-            <a href="{{ route('admin.pembeli.index') }}" 
+            <a href="{{ route('admin.pembeli.index') }}"
                 class="menu-item {{ request()->is('admin/customers*') ? 'active' : '' }}">🛍️ Customers</a>
-            <a href="{{ route('admin.organisasi.index') }}" 
+            <a href="{{ route('admin.organisasi.index') }}"
                 class="menu-item {{ request()->is('admin/organizations*') ? 'active' : '' }}">🏢 Organizations</a>
-            <a href="{{ route('admin.produk.index') }}" 
+            <a href="{{ route('admin.produk.index') }}"
                 class="menu-item {{ request()->is('admin/products*') ? 'active' : '' }}">🏷️ Products</a>
-            <a href="{{ route('admin.merch.index') }}" 
+            <a href="{{ route('admin.merch.index') }}"
                 class="menu-item {{ request()->is('admin/merchandise*') ? 'active' : '' }}">🎁 Merchandise</a>
         </div>
 
@@ -144,5 +197,20 @@
             @yield('content')
         </div>
     </div>
+
+    <!-- TOGGLE SCRIPT -->
+    <script>
+        function toggleDropdown() {
+            const dropdown = document.getElementById("dropdownContent");
+            dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
+        }
+
+        window.onclick = function(e) {
+            if (!e.target.closest('.profile-dropdown')) {
+                document.getElementById("dropdownContent").style.display = "none";
+            }
+        }
+    </script>
 </body>
+
 </html>

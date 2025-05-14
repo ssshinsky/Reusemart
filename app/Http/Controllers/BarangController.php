@@ -17,6 +17,20 @@ class BarangController extends Controller
         return view('Admin.Produk.produk', compact('barangs'));
     }
 
+    //ini untuk dihalaman utama
+    public function indexLanding()
+    {
+        $barangTerbatas = Barang::with('gambar')->take(12)->get();
+        return view('welcome', compact('barangTerbatas'));
+    }
+
+    //ini untuk all product
+    public function allProduct()
+    {
+        $produk = Barang::with('gambar')->get();
+        return view('produk.allproduct', compact('produk'));
+    }
+
     public function search(Request $request)
     {
         if (!$request->ajax()) {

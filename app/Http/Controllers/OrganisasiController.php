@@ -14,6 +14,11 @@ class OrganisasiController extends Controller
         $organisasis = Organisasi::all();
         return view('Admin.Organisasi.organisasi', compact('organisasis'));
     }
+    
+    public function create()
+    {
+        return view('Admin.Organisasi.add_organisasi');
+    }
 
     // Menampilkan organisasi berdasarkan ID
     public function show($id)
@@ -45,7 +50,15 @@ class OrganisasiController extends Controller
             'status_organisasi' => 'Active',
         ]);
 
+        return redirect()->route('admin.organisasi.index')->with('success', 'Organisasi berhasil ditambahkan.');
+
         return response()->json($organisasi, 201);
+    }
+
+    public function edit($id)
+    {
+        $organisasi = Organisasi::findOrFail($id);
+        return view('Admin.Organisasi.edit_organisasi', compact('organisasi'));
     }
 
     // Mengupdate organisasi berdasarkan ID
@@ -60,7 +73,7 @@ class OrganisasiController extends Controller
             'nama_organisasi' => 'nullable|string',
             'alamat' => 'nullable|string',
             'kontak' => 'nullable|string',
-            'email_organisasi' => 'nullable|email|unique:organisasi,email_organisasi,' . $id . ',id_organisasi',
+            'email_organisasi' => 'nullable|email|unique:organisasi,email_organisasi,' . $organisasi->id_organisasi . ',id_organisasi',
             'password' => 'nullable|string|min:6',
         ]);
 
@@ -72,7 +85,16 @@ class OrganisasiController extends Controller
             'password' => $request->password ? Hash::make($request->password) : $organisasi->password,
         ]);
 
-        return response()->json($organisasi);
+        return redirect()->route('admin.organisasi.index');
+
+    }
+
+    public function destroy($id)
+    {
+        $organisasi = Organisasi::findOrFail($id);
+        $organisasi->delete();
+
+        return redirect()->route('admin.organisasi.index')->with('success', 'Organisasi berhasil dihapus.');
     }
 
     public function search(Request $request)

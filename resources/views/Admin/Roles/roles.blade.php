@@ -20,7 +20,7 @@
             <thead>
                 <tr>
                     <th class="col-id">ID</th>
-                    <th class="col-nama">Nama Role</th>
+                    <th class="col-nama">Role Name</th>
                     <th class="col-action sticky-action header-action action-cell" style="display: none; background-color: #ffce53; text-align: center">Edit</th>
                 </tr>
             </thead>

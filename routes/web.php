@@ -17,7 +17,18 @@ use App\Http\Controllers\DonasiController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\KeranjangController;
 use App\Http\Controllers\ResetPasswordController;
+use App\Http\Controllers\ZTestController;
 use App\Models\Barang;
+
+// ZTest
+Route::get('/', [ZTestController::class, 'index'])->name('ztest.penitip.index');
+Route::get('/item-owners/add', [ZTestController::class, 'create'])->name('ztest.penitip.create');
+Route::post('/item-owners', [ZTestController::class, 'store'])->name('ztest.penitip.store');
+Route::get('/item-owners/search', [ZTestController::class, 'search'])->name('ztest.penitip.search');
+Route::get('/item-owners/{id}/edit', [ZTestController::class, 'edit'])->name('ztest.penitip.edit');
+Route::put('/item-owners/{id}', [ZTestController::class, 'update'])->name('ztest.penitip.update');
+Route::put('/item-owners/{id}/deactivate', [ZTestController::class, 'deactivate'])->name('ztest.penitip.deactivate');
+Route::put('/item-owners/{id}/reactivate', [ZTestController::class, 'reactivate'])->name('ztest.penitip.reactivate');
 
 Route::get('/', function () {
     $barangTerbatas = Barang::with('gambar')->take(12)->get();
@@ -90,7 +101,7 @@ Route::prefix('admin')->group(function () {
     Route::get('/employees', [PegawaiController::class, 'indexView'])->name('admin.employees.index');
     Route::get('/employees/add', [PegawaiController::class, 'create'])->name('admin.employees.create');
     Route::get('/employees/search', [PegawaiController::class, 'search'])->name('admin.employees.search');
-    Route::post('/employees', [PegawaiController::class, 'store'])->name('admin.employees.store');
+    Route::post('/employees', [PegawaiController::class, 'store'])->name('admin.employees.store'); //p
     Route::get('/employees/{id}/edit', [PegawaiController::class, 'edit'])->name('admin.employees.edit');
     Route::put('/employees/{id}', [PegawaiController::class, 'update'])->name('admin.employees.update');
     Route::put('/employees/{id}/reset-password', [PegawaiController::class, 'resetPassword'])->name('admin.employees.reset-password');

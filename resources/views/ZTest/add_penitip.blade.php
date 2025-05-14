@@ -1,11 +1,16 @@
-@extends('Admin.admin')
+@extends('CS.dashboard')
 
 @section('title', 'Add Item Owner')
 
 @section('content')
 <h2 style="margin-bottom: 1.5rem;">Add Item Owner</h2>
 
-<form action="{{ route('admin.penitip.store') }}" method="POST" class="form-container">
+@php
+    $pegawai = Auth::guard('pegawai')->user();
+    $prefix = $pegawai->id_role == 2 ? 'admin' : 'cs';
+@endphp
+
+<form action="{{ route('cs.penitip.store') }}" method="POST" class="form-container">
     @csrf
 
     <div class="form-grid">
@@ -52,31 +57,12 @@
 
     <div class="form-actions-container">
         <div class="form-actions">
-            <a href="{{ route('admin.penitip.index') }}" class="btn btn-cancel">Cancel</a>
+            <a href="{{ route('cs.penitip.index') }}" class="btn btn-cancel">Cancel</a>
             <button type="submit" class="btn btn-submit">Save</button>
         </div>
     </div>
 </form>
-<script>
-    document.querySelectorAll('.form-container').forEach(form => {
-        form.addEventListener('.btn-submit', function(e) {
-            e.preventDefault();
-            Swal.fire({
-                title: 'ppp',
-                text: 'This employee will regain access to the system.',
-                icon: 'question',
-                showCancelButton: true,
-                confirmButtonColor: '#28a745',
-                cancelButtonColor: '#aaa',
-                confirmButtonText: 'Yes, reactivate!'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    form.submit();
-                }
-            });
-        });
-    });
-</script>
+
 <style>
     .form-container {
         width: 100%;

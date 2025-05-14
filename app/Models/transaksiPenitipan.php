@@ -5,12 +5,13 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class TransaksiPenitipan extends Model
+class transaksiPenitipan extends Model
 {
     use HasFactory;
 
     // Nama tabel yang digunakan oleh model
     protected $table = 'transaksi_penitipan';
+    protected $primaryKey = 'id_transaksi_penitipan';
 
     // Kolom yang dapat diisi (Mass Assignment)
     protected $fillable = [

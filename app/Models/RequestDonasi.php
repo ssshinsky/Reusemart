@@ -11,12 +11,14 @@ class RequestDonasi extends Model
 
     // Nama tabel yang digunakan oleh model
     protected $table = 'request_donasi';
+    protected $primaryKey = 'id_request';
 
     // Kolom yang dapat diisi (Mass Assignment)
     protected $fillable = [
         'id_organisasi',
         'id_pegawai',
         'request',
+        'status_request',
     ];
 
 

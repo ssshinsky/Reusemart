@@ -11,6 +11,7 @@ class Donasi extends Model
 
     // Nama tabel yang digunakan oleh model
     protected $table = 'donasi';
+    protected $primaryKey = 'id_donasi';
 
     // Kolom yang dapat diisi (Mass Assignment)
     protected $fillable = [
@@ -19,6 +20,23 @@ class Donasi extends Model
         'tanggal_donasi',
         'nama_penerima',
     ];
+
+    protected static function booted()
+    {
+        static::created(function ($donasi) {
+            // Perbarui status_request di RequestDonasi
+            $requestDonasi = RequestDonasi::where('id_request', $donasi->id_request)->first();
+            if ($requestDonasi) {
+                $requestDonasi->update(['status_request' => 'sudah di donasikan']);
+            }
+
+            // Perbarui status_barang di Barang
+            $barang = Barang::where('id_barang', $donasi->id_barang)->first();
+            if ($barang) {
+                $barang->update(['status_barang' => 'didonasikan']);
+            }
+        });
+    }
 
     // Relasi dengan model RequestDonasi
     public function requestDonasi()

@@ -224,7 +224,7 @@
     display: flex;
     border: none;
 }
-.edit-btn, .redeactivate-btn {
+.edit-btn, .redeactivate-btn, .delete-btn {
     border: none;
     background: none;
     cursor: pointer;
@@ -238,6 +238,7 @@
 }
 .edit-btn { background-color: #FFC107; }
 .redeactivate-btn { background-color: #3B82F6; }
+.delete-btn { background-color: #FF3B3F; }
 .btn-action {
     padding: 10px 20px;
     border: 1px solid #ccc;

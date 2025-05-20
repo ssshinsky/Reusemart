@@ -41,6 +41,12 @@ class DonasiController extends Controller
             'nama_penerima' => $request->nama_penerima,
         ]);
 
+        // Perbarui status_request di RequestDonasi
+        $requestDonasi = RequestDonasi::find($request->id_request);
+        if ($requestDonasi) {
+            $requestDonasi->update(['status_request' => 'sudah di donasikan']);
+        }
+
         return response()->json($donasi, 201);
     }
 

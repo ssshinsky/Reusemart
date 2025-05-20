@@ -22,33 +22,34 @@ class AuthController extends Controller
         $email = $request->input('email');
         $password = $request->input('password');
 
-    // 1. Cek Pembeli
-    $pembeli = \App\Models\Pembeli::where('email_pembeli', $request->email)->first();
-    if ($pembeli && Hash::check($request->password, $pembeli->password)) {
-        session([
-            'user' => [
-                'id' => $pembeli->id_pembeli,
-                'nama' => $pembeli->nama_pembeli,
-                'email' => $pembeli->email_pembeli,
-            ],
-            'role' => 'pembeli',
-        ]);
-        return redirect('/');
-    }
+        // 1. Cek Pegawai
+        $pegawai = Pegawai::where('email_pegawai', $email)->first();
+        if ($pegawai && Hash::check($password, $pegawai->password)) {
+            Auth::guard('pegawai')->login($pegawai);
+            return match ($pegawai->id_role) {
+                1 => redirect('/owner'),    
+                2 => redirect('/admin'),    
+                3 => redirect('/cs'),       
+                4 => redirect('/gudang'),
+                5 => redirect('/kurir'),
+                6 => redirect('/hunter'),
+                default => redirect('/pegawai'),
+            };
+        }
 
-    // 2. Cek Penitip
-    $penitip = \App\Models\Penitip::where('email_penitip', $request->email)->first();
-    if ($penitip && Hash::check($request->password, $penitip->password)) {
-        session([
-            'user' => [
-                'id' => $penitip->id_penitip,
-                'nama' => $penitip->nama_penitip,
-                'email' => $penitip->email_penitip,
-            ],
-            'role' => 'penitip',
-        ]);
-        return redirect('/');
-    }
+        // 2. Cek Penitip
+        $penitip = Penitip::where('email_penitip', $email)->first();
+        if ($penitip && Hash::check($password, $penitip->password)) {
+            Auth::guard('penitip')->login($penitip);
+            return redirect('/dashboard-penitip');
+        }
+
+        // 3. Cek Pembeli
+        $pembeli = Pembeli::where('email_pembeli', $email)->first();
+        if ($pembeli && Hash::check($password, $pembeli->password)) {
+            Auth::guard('pembeli')->login($pembeli);
+            return redirect('/dashboard-pembeli');
+        }
 
 
     // 3. Cek Organisasi
@@ -74,7 +75,6 @@ class AuthController extends Controller
         ]);
         return redirect('/admin');
     }
-
     return back()->withErrors(['login' => 'Email atau password salah']);
 }
 }

@@ -91,17 +91,11 @@ class OrganisasiController extends Controller
 
     public function destroy($id)
     {
-        $organisasi = Organisasi::find($id);
-
-        if (!$organisasi) {
-            return redirect()->route('admin.organisasi.index')->with('error', 'Organisasi tidak ditemukan.');
-        }
-
+        $organisasi = Organisasi::findOrFail($id);
         $organisasi->delete();
 
         return redirect()->route('admin.organisasi.index')->with('success', 'Organisasi berhasil dihapus.');
     }
-
 
     public function search(Request $request)
     {

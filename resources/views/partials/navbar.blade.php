@@ -15,8 +15,8 @@
 
         <div class="d-flex align-items-center">
             @php
-                $role = $role ?? session('role');
-                $user = $user ?? session('user');
+                $role = session('role');
+                $user = session('user');
             @endphp
 
             @if ($role && $user)
@@ -50,10 +50,10 @@
                                     Saya</a></li>
                         @endif
                         <li>
-                            <a class="dropdown-item" href="#"
-                                onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
-                                Log Out
-                            </a>
+                            <form id="logout-form" action="{{ route('logout') }}" method="POST">
+                                @csrf
+                                <button type="submit" class="dropdown-item">Log Out</button>
+                            </form>
                         </li>
                     </ul>
                 </div>
@@ -69,7 +69,3 @@
         </div>
     </div>
 </nav>
-
-<form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
-    @csrf
-</form>

@@ -3,8 +3,8 @@
         class="list-group-item {{ request()->routeIs('penitip.profile') ? 'active' : '' }}">
         <i class="bi bi-person"></i> My Account
     </a>
-    <a href="{{ route('penitip.profile') }}"
-        class="list-group-item {{ request()->routeIs('penitip.profile') ? 'active' : '' }}">
+    <a href="{{ route('password.reset') }}"
+        class="list-group-item {{ request()->routeIs('password.reset') ? 'active' : '' }}">
         <i class="bi bi-key"></i> Change Password
     </a>
     <a href="{{ route('penitip.myproduct') }}"

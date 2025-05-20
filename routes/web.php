@@ -52,7 +52,8 @@ Route::prefix('penitip')->group(function () {
     Route::get('/myproduct', [PenitipController::class, 'myproduct'])->name('penitip.myproduct');
     Route::get('/transaction', [PenitipController::class, 'transaction'])->name('penitip.transaction');
     Route::get('/transaction/filter/{type}', [PenitipController::class, 'filterTransaction'])->name('penitip.transaction.filter');
-    Route::get('/reset-password', [ResetPasswordController::class, 'showResetForm'])->name('penitip.password');
+    // Route::get('/reset-password', [ResetPasswordController::class, 'showResetForm'])->name('penitip.password');
+    Route::get('/transaksi/hasil', [PenitipController::class, 'showSearchResult'])->name('penitip.detail');
 });
 
 // =================== PEMBELI ROUTES ===================
@@ -62,7 +63,7 @@ Route::prefix('pembeli')->group(function () {
     Route::put('/{id}/update', [PembeliController::class, 'updateProfile'])->name('pembeli.update');
     Route::get('/purchase', [PembeliController::class, 'purchase'])->name('pembeli.purchase');
     Route::get('/reward', [PembeliController::class, 'reward'])->name('pembeli.reward');
-    Route::get('/reset-password', [ResetPasswordController::class, 'showResetForm'])->name('pembeli.password');
+    // Route::get('/reset-password', [ResetPasswordController::class, 'showResetForm'])->name('pembeli.password');
 
     Route::get('/alamat', [AlamatController::class, 'alamatPembeli'])->name('pembeli.alamat');
     Route::post('/alamat', [AlamatController::class, 'store'])->name('pembeli.alamat.store');
@@ -72,11 +73,10 @@ Route::prefix('pembeli')->group(function () {
 });
 
 // ================= RESET PASSWORD ROUTES ===============
-Route::get('/reset-password', [ResetPasswordController::class, 'showEmailForm'])->name('reset.form');
+Route::get('/reset-password', [ResetPasswordController::class, 'showEmailForm'])->name('password.reset');
 Route::post('/password/send-code', [ResetPasswordController::class, 'sendCode'])->name('password.sendCode');
 Route::post('/password/verify-code', [ResetPasswordController::class, 'verifyCode'])->name('password.verifyCode');
 Route::post('/password/update', [ResetPasswordController::class, 'updatePassword'])->name('password.update');
-
 
 Route::get('/barang/{id}', [BarangController::class, 'show'])->name('umum.show');
 // Route::post('/diskusi/store', [DiskusiProdukController::class, 'store'])->name('diskusi.store')->middleware('auth:pembeli');

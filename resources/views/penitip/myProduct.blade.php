@@ -28,16 +28,18 @@
                                         Status:
                                         @php
                                             $status = [
-                                                'AVAILABLE' => ['label' => 'Available', 'class' => 'success'],
-                                                'SOLD OUT' => ['label' => 'Sold Out', 'class' => 'danger'],
-                                                'DONATED' => ['label' => 'Donated', 'class' => 'warning text-dark'],
-                                                'COLLECTED' => ['label' => 'Collected', 'class' => 'primary'],
+                                                'available' => ['label' => 'Available', 'class' => 'success'],
+                                                'sold' => ['label' => 'Sold Out', 'class' => 'danger'],
+                                                'donated' => ['label' => 'Donated', 'class' => 'primary'],
+                                                'returned' => ['label' => 'Returned', 'class' => 'info text-dark'],
                                             ];
-                                            $badge = $status[$product->status_barang] ?? [
+
+                                            $badge = $status[strtolower($product->status_barang)] ?? [
                                                 'label' => 'Unknown',
                                                 'class' => 'secondary',
                                             ];
                                         @endphp
+
                                         <span class="badge bg-{{ $badge['class'] }}">{{ $badge['label'] }}</span>
                                     </p>
                                 </div>

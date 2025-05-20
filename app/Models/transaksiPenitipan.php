@@ -11,6 +11,8 @@ class TransaksiPenitipan extends Model
 
     // Nama tabel yang digunakan oleh model
     protected $table = 'transaksi_penitipan';
+    protected $primaryKey = 'id_transaksi_penitipan';
+
 
     // Kolom yang dapat diisi (Mass Assignment)
     protected $fillable = [

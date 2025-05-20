@@ -3,8 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\Penitip;
+use App\Models\Barang;
+use App\Models\TransaksiPenitipan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Carbon\Carbon;
+
 
 class PenitipController extends Controller
 {
@@ -66,34 +70,63 @@ class PenitipController extends Controller
     // Tampilkan riwayat transaksi penitip
     public function transaction()
     {
-        $transaksis = \App\Models\TransaksiPenitipan::with('barang')->where('id_penitip', auth()->id())->get();
-        return view('Penitip.transaction', compact('transaksis'));
+        $id_user = session('user.id'); // ID dari session
+        $penitip = Penitip::where('id_penitip', $id_user)->first();
+
+        if (!$penitip) {
+            abort(404, 'Data penitip tidak ditemukan');
+        }
+
+        // Ambil semua barang milik penitip
+        $barangs = Barang::with('transaksiPenitipan.penitip')
+            ->whereHas('transaksiPenitipan', function ($query) use ($penitip) {
+                $query->where('id_penitip', $penitip->id_penitip);
+            })
+            ->get();
+
+        return view('penitip.transaction', compact('barangs'));
     }
 
     public function filterTransaction($type)
     {
-        $query = \App\Models\TransaksiPenitipan::with('barang')
-            ->where('id_penitip', auth()->id());
+        $id_user = session('user.id');
+
+        $penitip = \App\Models\Penitip::where('id_penitip', $id_user)->first();
+
+        if (!$penitip) {
+            abort(404, 'Penitip tidak ditemukan');
+        }
+
+        $transaksiIds = \App\Models\TransaksiPenitipan::where('id_penitip', $penitip->id_penitip)
+            ->pluck('id_transaksi_penitipan');
+
+        $query = \App\Models\Barang::with('transaksi_penitipan')
+            ->whereIn('id_transaksi_penitipan', $transaksiIds);
 
         switch ($type) {
             case 'sold':
-                $query->where('status_transaksi', 'COMPLETED');
+                $query->where('status_barang', 'sold');
                 break;
+
             case 'expired':
-                $query->where('status_transaksi', 'EXPIRED');
+                $query->whereHas('transaksi_penitipan', function ($q) {
+                    $q->whereDate('tanggal_berakhir', '<', Carbon::now());
+                });
                 break;
+
             case 'donated':
-                $query->where('status_transaksi', 'DONATED');
+                $query->where('status_barang', 'donated');
                 break;
+
             case 'all':
             default:
+                // tidak ada filter tambahan
                 break;
         }
 
         $transaksis = $query->get();
 
-        // Kembalikan view partial untuk AJAX
-        return view('Penitip.partials.table', compact('transaksis'));
+        return view('penitip.partials.table', compact('transaksis'));
     }
 
     // Tampilkan produk milik penitip sendiri

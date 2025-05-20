@@ -72,7 +72,7 @@ class AuthController extends Controller
             'user' => $pegawai,
             'role' => 'admin',
         ]);
-        return redirect('/admin/dashboard');
+        return redirect('/admin');
     }
 
     return back()->withErrors(['login' => 'Email atau password salah']);

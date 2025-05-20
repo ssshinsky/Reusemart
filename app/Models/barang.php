@@ -33,10 +33,14 @@ class Barang extends Model
         return $this->belongsTo(Kategori::class, 'id_kategori', 'id_kategori');
     }
 
-    // Relasi dengan model TransaksiPenitipan
+    public function getPenitipAttribute()
+    {
+        return $this->transaksiPenitipan?->penitip;
+    }
+
     public function transaksiPenitipan()
     {
-        return $this->belongsTo(TransaksiPenitipan::class, 'id_transaksi_penitipan', 'id_transaksi_penitipan');
+        return $this->belongsTo(TransaksiPenitipan::class, 'id_transaksi_penitipan');
     }
 
     // Relasi ke DiskusiProduk

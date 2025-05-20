@@ -11,6 +11,9 @@ use App\Http\Controllers\OrganisasiController;
 use App\Http\Controllers\BarangController;
 use App\Http\Controllers\KategoriController;
 use App\Http\Controllers\MerchandiseController;
+use App\Http\Controllers\OwnerController;
+use App\Http\Controllers\RequestDonasiController;
+use App\Http\Controllers\DonasiController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\KeranjangController;
 use App\Http\Controllers\ResetPasswordController;
@@ -50,6 +53,7 @@ Route::prefix('penitip')->group(function () {
     Route::get('/transaction', [PenitipController::class, 'transaction'])->name('penitip.transaction');
     Route::get('/transaction/filter/{type}', [PenitipController::class, 'filterTransaction'])->name('penitip.transaction.filter');
     Route::get('/reset-password', [ResetPasswordController::class, 'showResetForm'])->name('penitip.password');
+    Route::get('/transaksi/hasil', [PenitipController::class, 'showSearchResult'])->name('penitip.detail');
 });
 
 // =================== PEMBELI ROUTES ===================
@@ -74,6 +78,9 @@ Route::post('/password/send-code', [ResetPasswordController::class, 'sendCode'])
 Route::post('/password/verify-code', [ResetPasswordController::class, 'verifyCode'])->name('password.verifyCode');
 Route::post('/password/update', [ResetPasswordController::class, 'updatePassword'])->name('password.update');
 
+
+Route::get('/barang/{id}', [BarangController::class, 'show'])->name('umum.show');
+// Route::post('/diskusi/store', [DiskusiProdukController::class, 'store'])->name('diskusi.store')->middleware('auth:pembeli');
 
 // Admin routes
 Route::prefix('admin')->group(function () {
@@ -130,6 +137,7 @@ Route::prefix('admin')->group(function () {
     Route::put('/organizations/{id}', [OrganisasiController::class, 'update'])->name('admin.organisasi.update');
     Route::put('/organizations/{id}/deactivate', [OrganisasiController::class, 'deactivate'])->name('admin.organisasi.deactivate');
     Route::put('/organizations/{id}/reactivate', [OrganisasiController::class, 'reactivate'])->name('admin.organisasi.reactivate');
+    Route::delete('/organizations/{id}', [OrganisasiController::class, 'destroy'])->name('admin.organisasi.destroy');
 
     // PRODUCTS
     Route::get('/products', [BarangController::class, 'index'])->name('admin.produk.index');
@@ -149,3 +157,27 @@ Route::prefix('admin')->group(function () {
     Route::get('/merchandise/{id}/edit', [MerchandiseController::class, 'edit'])->name('admin.merchandise.edit');
     Route::put('/merchandise/{id}', [MerchandiseController::class, 'update'])->name('admin.merchandise.update');
 });
+
+
+Route::prefix('owner')->middleware(['auth.owner', 'role:owner'])->group(function () {
+    Route::get('/dashboard', [OwnerController::class, 'dashboard'])->name('owner.dashboard');
+    Route::get('/donation/requests', [OwnerController::class, 'donationRequests'])->name('owner.donation.requests');
+    Route::get('/donation/history', [OwnerController::class, 'donationHistory'])->name('owner.donation.history');
+    Route::get('/allocate-items', [OwnerController::class, 'allocateItems'])->name('owner.allocate.items');
+    Route::get('/update-donation', [OwnerController::class, 'updateDonation'])->name('owner.update.donation');
+    Route::get('/rewards', [OwnerController::class, 'rewards'])->name('owner.rewards');
+    Route::post('/logout', [OwnerController::class, 'logout'])->name('owner.logout');
+});
+
+    Route::get('owner/dashboard', [OwnerController::class, 'dashboard'])->name('owner.dashboard');
+    Route::get('owner/donation/requests', [OwnerController::class, 'donationRequests'])->name('owner.donation.requests');
+    Route::get('owner/donation/history', [OwnerController::class, 'donationHistory'])->name('owner.donation.history');
+    Route::get('owner/allocate-items', [OwnerController::class, 'allocateItems'])->name('owner.allocate.items');
+    Route::get('owner/update-donation', [OwnerController::class, 'updateDonation'])->name('owner.update.donation');
+    Route::delete('/request/{id}', [OwnerController::class, 'deleteRequest'])->name('owner.delete.request');
+    Route::get('/requests-by-organisasi', [OwnerController::class, 'getRequestsByOrganisasi'])->name('owner.requests.by_organisasi');
+    Route::post('/allocate-items', [OwnerController::class, 'storeAllocation'])->name('owner.store.allocation');
+    // Route::get('owner/update-donation', [OwnerController::class, 'updateDonation'])->name('owner.update.donation');
+    Route::post('owner/update-donation', [OwnerController::class, 'updateDonasiStore'])->name('owner.update.donasi.store');
+    Route::get('owner/rewards', [OwnerController::class, 'rewards'])->name('owner.rewards');
+    Route::get('/owner/donasi', [OwnerController::class, 'getDonasi'])->name('owner.get.donasi');

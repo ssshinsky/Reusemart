@@ -100,4 +100,5 @@ class TransaksiPenitipanController extends Controller
         $transaksiPenitipan->delete();
         return response()->json(['message' => 'Transaksi penitipan deleted successfully']);
     }
+
 }

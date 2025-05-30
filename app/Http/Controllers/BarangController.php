@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\DiskusiProduk;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 
 class BarangController extends Controller
 {
@@ -40,6 +41,72 @@ class BarangController extends Controller
         $produk = Barang::with('gambar')->get();
         return view('produk.allproduct', compact('produk'));
     }
+
+    // Daftar barang titipan (termasuk pencarian)
+    public function itemList(Request $request)
+    {
+        // $this->ensureAdmin();
+
+        $query = Barang::with(['transaksiPenitipan.penitip', 'kategori', 'gambar']);
+
+        // Pencarian berdasarkan keyword
+        if ($request->filled('keyword')) {
+            $keyword = $request->input('keyword');
+            $query->where(function ($q) use ($keyword) {
+                // Field di tabel barang
+                $q->where('kode_barang', 'like', "%{$keyword}%")
+                  ->orWhere('nama_barang', 'like', "%{$keyword}%")
+                  ->orWhere('status_barang', 'like', "%{$keyword}%")
+                  ->orWhere('harga_barang', 'like', "%{$keyword}%")
+                  ->orWhere('berat_barang', 'like', "%{$keyword}%")
+                  ->orWhere('deskripsi_barang', 'like', "%{$keyword}%")
+                  ->orWhere('status_garansi', 'like', "%{$keyword}%")
+                  ->orWhere('perpanjangan', 'like', "%{$keyword}%")
+                  ->orWhere('tanggal_garansi', 'like', "%{$keyword}%")
+                  ->orWhere('tanggal_berakhir', 'like', "%{$keyword}%")
+                  // Relasi kategori
+                  ->orWhereHas('kategori', function ($q) use ($keyword) {
+                      $q->where('nama_kategori', 'like', "%{$keyword}%");
+                  })
+                  // Relasi transaksiPenitipan dan penitip
+                  ->orWhereHas('transaksiPenitipan', function ($q) use ($keyword) {
+                      $q->where('tanggal_penitipan', 'like', "%{$keyword}%")
+                        ->orWhere('id_qc', 'like', "%{$keyword}%")
+                        ->orWhere('id_hunter', 'like', "%{$keyword}%")
+                        ->orWhereHas('penitip', function ($q) use ($keyword) {
+                            $q->where('nama_penitip', 'like', "%{$keyword}%")
+                              ->orWhere('alamat', 'like', "%{$keyword}%");
+                        });
+                  });
+            });
+        }
+
+        // Filter berdasarkan tanggal
+        if ($request->filled('tanggal_mulai')) {
+            $tanggal_mulai = $request->input('tanggal_mulai');
+            $query->whereHas('transaksiPenitipan', function ($q) use ($tanggal_mulai) {
+                $q->where('tanggal_penitipan', '>=', $tanggal_mulai);
+            });
+        }
+
+        if ($request->filled('tanggal_selesai')) {
+            $tanggal_selesai = $request->input('tanggal_selesai');
+            $query->where('tanggal_berakhir', '<=', $tanggal_selesai);
+        }
+
+        $barangs = $query->get();
+        return view('gudang.item_list', compact('barangs'));
+    }
+
+    // Detail barang
+    public function itemDetail($id)
+    {
+        // $this->ensureAdmin();
+
+        $barang = Barang::with(['transaksiPenitipan.penitip', 'kategori', 'gambar'])->findOrFail($id);
+        return view('gudang.item_detail', compact('barang'));
+    }
+    
 
     public function search(Request $request)
     {
@@ -103,7 +170,6 @@ class BarangController extends Controller
         return response($html);
     }
 
-
     // Ubah status jadi Donated
     public function deactivate($id)
     {
@@ -126,6 +192,7 @@ class BarangController extends Controller
         return redirect()->route('admin.produk.index')->with('success', 'Produk ditandai sebagai Available');
     }
 
+    
     // ====================== API ======================
 
     public function apiIndex()
@@ -137,8 +204,6 @@ class BarangController extends Controller
     {
         try {
             $barang = Barang::with(['kategori', 'gambar'])->findOrFail($id);
-
-            // dd($barang->gambar);
 
             $diskusi = DiskusiProduk::with(['pembeli', 'pegawai'])
                 ->where('id_barang', $id)

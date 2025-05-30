@@ -17,6 +17,7 @@ use App\Http\Controllers\DonasiController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\KeranjangController;
 use App\Http\Controllers\ResetPasswordController;
+use App\Http\Controllers\TransaksiPenitipanController;
 use App\Models\Barang;
 
 Route::get('/', function () {
@@ -185,6 +186,31 @@ Route::prefix('owner')->middleware(['auth:pegawai'])->group(function () {
     Route::get('/requests-by-organisasi', [OwnerController::class, 'getRequestsByOrganisasi'])->name('owner.requests.by_organisasi');
     Route::delete('/request/{id}', [OwnerController::class, 'deleteRequest'])->name('owner.delete.request');
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+});
+
+Route::prefix('gudang')->name('gudang.')->group(function () {
+    // Dashboard
+    Route::get('/dashboard', [TransaksiPenitipanController::class, 'dashboard'])->name('dashboard');
+
+    // Tambah transaksi baru
+    Route::get('/add-transaction', [TransaksiPenitipanController::class, 'create'])->name('add.transaction');
+    Route::post('/store-transaction', [TransaksiPenitipanController::class, 'store'])->name('store.transaction');
+
+    // Daftar transaksi
+    Route::get('/transaction-list', [TransaksiPenitipanController::class, 'transactionList'])->name('transaction.list');
+
+    // Pencarian transaksi
+    Route::get('/search-transaction', [TransaksiPenitipanController::class, 'searchTransaction'])->name('transaction.search');
+
+    // Edit transaksi
+    Route::get('/edit-transaction/{id}', [TransaksiPenitipanController::class, 'editTransaction'])->name('transaction.edit');
+    Route::put('/update-transaction/{id}', [TransaksiPenitipanController::class, 'updateTransaction'])->name('transaction.update');
+
+    // Cetak nota
+    Route::get('/print-note/{id}', [TransaksiPenitipanController::class, 'printNote'])->name('transaction.print');
+    
+    // Daftar barang (termasuk pencarian)
+    Route::get('/item-list', [BarangController::class, 'itemList'])->name('item.list');
 });
 
 Route::get('/login', function () {

@@ -178,8 +178,6 @@
                 class="menu-item {{ request()->is('admin/employees*') ? 'active' : '' }}">👥 Employees</a>
             <a href="{{ route('admin.roles.index') }}"
                 class="menu-item {{ request()->is('admin/roles*') ? 'active' : '' }}">💼 Roles</a>
-            <a href="{{ route('admin.penitip.index') }}"
-                class="menu-item {{ request()->is('admin/item-owners*') ? 'active' : '' }}">📦 Item Owners</a>
             <a href="{{ route('admin.pembeli.index') }}"
                 class="menu-item {{ request()->is('admin/customers*') ? 'active' : '' }}">🛍️ Customers</a>
             <a href="{{ route('admin.organisasi.index') }}"

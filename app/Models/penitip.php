@@ -28,10 +28,11 @@ class Penitip extends Authenticatable
         'poin_penitip',
         'profil_pict',
         'badge',
+        'foto_ktp',
     ];
 
     protected $hidden = [
-        'password',
+        'password', 'foto_ktp',
     ];
 
     protected $casts = [

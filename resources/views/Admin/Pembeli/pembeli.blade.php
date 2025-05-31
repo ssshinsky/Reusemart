@@ -5,11 +5,6 @@
 @section('content')
 <h2>Customer Management</h2>
 
-<div style="margin: 1rem 0; display: flex; gap: 1rem;">
-    <a href="{{ route('admin.pembeli.create') }}" class="btn-action" id="addBtn">➕ Add Customer</a>
-    <button class="btn-action" id="editToggle">✏️ Edit Customer</button>
-</div>
-
 <div style="margin-bottom: 1rem; display: flex; gap: 0.5rem; align-items: center;">
     <input type="text" id="searchInput" placeholder="🔍 Search Customers" class="input-search" style="width: 100%;">
 </div>
@@ -27,7 +22,6 @@
                     <th class="col-poin">Point</th>
                     <th class="col-tanggal">Birth Date</th>
                     <th class="col-alamat">Default Address</th>
-                    <th class="col-action sticky-action header-action action-cell" style="display: none; background-color: #ffce53;">Edit</th>
                 </tr>
             </thead>
             <tbody id="pembeliTableBody">
@@ -41,20 +35,6 @@
                     <td class="center">{{ $pembeli->poin_pembeli }}</td>
                     <td class="center">{{ \Carbon\Carbon::parse($pembeli->tanggal_lahir)->format('Y-m-d') }}</td>
                     <td>{{ $pembeli->alamatDefault->alamat_lengkap ?? '-' }}</td>
-                    <td class="action-cell" style="background-color:rgb(255, 245, 220)">
-                        <a href="{{ route('admin.pembeli.edit', $pembeli->id_pembeli) }}" class="edit-btn">✏️</a>
-                        @if($pembeli->status_pembeli === 'Active')
-                            <form action="{{ route('admin.pembeli.deactivate', $pembeli->id_pembeli) }}" method="POST" class="form-nonaktif" style="display:inline;">
-                                @csrf @method('PUT')
-                                <button type="submit" class="redeactivate-btn" title="Nonaktifkan">🛑</button>
-                            </form>
-                        @else
-                            <form action="{{ route('admin.pembeli.reactivate', $pembeli->id_pembeli) }}" method="POST" class="form-reactivate" style="display:inline;">
-                                @csrf @method('PUT')
-                                <button type="submit" class="redeactivate-btn" title="Aktifkan kembali">♻️</button>
-                            </form>
-                        @endif
-
                     </td>
                 </tr>
                 @endforeach

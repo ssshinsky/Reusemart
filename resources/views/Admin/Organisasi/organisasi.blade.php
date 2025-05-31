@@ -127,7 +127,7 @@
             e.preventDefault();
             Swal.fire({
                 title: 'Are you sure?',
-                text: 'This employee will be deactivated!',
+                text: 'This Organization will be deactivated!',
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#d33',
@@ -145,8 +145,8 @@
         form.addEventListener('submit', function(e) {
             e.preventDefault();
             Swal.fire({
-                title: 'Reactivate this employee?',
-                text: 'This employee will regain access to the system.',
+                title: 'Reactivate this Organization?',
+                text: 'This Organization will regain access to the system.',
                 icon: 'question',
                 showCancelButton: true,
                 confirmButtonColor: '#28a745',

@@ -5,15 +5,22 @@
 @section('content')
 <h2 style="margin-bottom: 1.5rem;">Add Item Owner</h2>
 
-@php
-    $pegawai = Auth::guard('pegawai')->user();
-    $prefix = $pegawai->id_role == 2 ? 'admin' : 'cs';
-@endphp
-
-<form action="{{ route('cs.penitip.store') }}" method="POST" class="form-container">
+<form action="{{ route('cs.penitip.store') }}" method="POST" enctype="multipart/form-data" class="form-container">
     @csrf
 
     <div class="form-grid">
+        <div class="form-group">
+            <label for="foto_ktp">Upload Foto KTP</label>
+            <input type="file" name="foto_ktp" id="foto_ktp" accept="image/*" onchange="previewKTP(event)" required>
+            @error('foto_ktp') <div class="text-danger">{{ $message }}</div> @enderror
+
+            @if (isset($penitip) && $penitip->foto_ktp)
+                <img id="ktp-preview" src="{{ asset('storage/' . $penitip->foto_ktp) }}" style="margin-top: 1rem; max-height: 200px;" />
+            @else
+                <img id="ktp-preview"
+                    style="display:none; width:400px; height:240px; object-fit:contain; margin-top: 10px; padding: 0;" />
+            @endif
+        </div>
         <div class="form-column">
             <div class="form-group">
                 <label for="nik_penitip">NIK</label>
@@ -62,6 +69,19 @@
         </div>
     </div>
 </form>
+
+<script>
+    function previewKTP(event) {
+        const img = document.getElementById('ktp-preview');
+        const file = event.target.files[0];
+        if (file) {
+            img.src = URL.createObjectURL(file);
+            img.style.display = 'block';
+        } else {
+            img.style.display = 'none';
+        }
+    }
+</script>
 
 <style>
     .form-container {

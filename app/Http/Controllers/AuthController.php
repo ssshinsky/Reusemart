@@ -39,16 +39,26 @@ class AuthController extends Controller
         $pegawai = Pegawai::where('email_pegawai', $email)->first();
         if ($pegawai && Hash::check($password, $pegawai->password)) {
             Auth::guard('pegawai')->login($pegawai);
+            session([
+                'user' => [
+                    'id' => $pegawai->id_pegawai,
+                    'nama' => $pegawai->nama_pegawai
+                ],
+                'role' => match ($pegawai->id_role) {
+                    1 => 'owner', 2 => 'admin', 3 => 'cs', 4 => 'gudang', 5 => 'kurir', 6 => 'hunter'
+                }
+            ]);
             return match ($pegawai->id_role) {
-                1 => redirect('/owner/dashboard'),    
-                2 => redirect('/admin'),    
-                3 => redirect('/cs/dashboard'),       
+                1 => redirect('/owner/dashboard'),
+                2 => redirect('/admin'),
+                3 => redirect('/cs/dashboard'),
                 4 => redirect('/gudang'),
                 5 => redirect('/kurir'),
                 6 => redirect('/hunter'),
                 default => redirect('/pegawai'),
             };
         }
+
 
         // 2. Cek Penitip
         $penitip = Penitip::where('email_penitip', $email)->first();

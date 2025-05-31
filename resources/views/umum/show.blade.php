@@ -14,7 +14,7 @@
             --text-muted: #6c757d;
             --bg-light: #f8f9fa;
             --border-color: #dee2e6;
-            --star-color: #ffd700; /* Warna kuning untuk bintang */
+            --star-color: #ffd700;
         }
 
         body {
@@ -207,21 +207,73 @@
         }
 
         .rating-box {
-            background-color: var(--bg-light);
-            padding: 0.75rem;
-            border-radius: 8px;
+            background-color: #fff;
+            padding: 1rem;
+            border-radius: 12px;
             border: 1px solid var(--border-color);
             font-size: 0.75rem;
+            transition: transform 0.2s ease, box-shadow 0.3s ease;
         }
 
-        .star-rating {
-            color: var(--star-color);
-            display: inline-block;
+        .rating-box:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
 
-        .star-empty {
-            color: #d1d5db;
+        .star-rating, .star-partial, .star-empty {
             display: inline-block;
+            width: 1rem;
+            height: 1rem;
+            position: relative;
+        }
+
+        .star-rating svg, .star-partial svg, .star-empty svg {
+            width: 1rem;
+            height: 1rem;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        .star-rating .star-foreground {
+            fill: var(--star-color);
+        }
+
+        .star-partial .star-background {
+            fill: #d1d5db;
+        }
+
+        .star-partial .star-foreground {
+            fill: var(--star-color);
+            clip-path: inset(0 calc(100% - var(--partial-width, 0%)) 0 0);
+        }
+
+        .star-empty .star-background {
+            fill: #d1d5db;
+        }
+
+        .penitip-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            background: linear-gradient(135deg, var(--primary-color), #019944);
+            color: white;
+            font-weight: 600;
+            font-size: 0.85rem;
+            transition: transform 0.2s ease, box-shadow 0.3s ease;
+            margin-top: 0.5rem;
+        }
+
+        .penitip-badge:hover {
+            transform: scale(1.05);
+            box-shadow: 0 2px 8px rgba(0, 177, 79, 0.3);
+        }
+
+        .penitip-name {
+            font-weight: 600;
+            text-transform: capitalize;
         }
 
         .discussion-section {
@@ -288,6 +340,16 @@
                 padding: 0.4rem 0.8rem;
                 font-size: 0.75rem;
             }
+
+            .star-rating, .star-partial, .star-empty {
+                width: 1rem;
+                height: 1rem;
+            }
+
+            .penitip-badge {
+                font-size: 0.75rem;
+                padding: 0.3rem 0.8rem;
+            }
         }
 
         footer {
@@ -353,25 +415,46 @@
                         </p>
                     </div>
                     <div class="rating-box">
-                        <p class="font-medium">
-                            Rating Penitip:
-                            @php
-                                $rating = $barang->transaksiPenitipan->penitip->rata_rating ?? 0;
-                                $fullStars = floor($rating);
-                                $halfStar = ($rating - $fullStars) >= 0.5 ? 1 : 0;
-                                $emptyStars = 5 - $fullStars - $halfStar;
-                            @endphp
-                            @for($i = 0; $i < $fullStars; $i++)
-                                <span class="star-rating">⭐</span>
-                            @endfor
-                            @if($halfStar)
-                                <span class="star-rating">⭐</span>
-                            @endif
-                            @for($i = 0; $i < $emptyStars; $i++)
-                                <span class="star-empty">☆</span>
-                            @endfor
-                            <span class="text-primary font-semibold"> ({{ $rating }}/5)</span>
-                        </p>
+                        @php
+                            $penitip = optional($barang->transaksiPenitipan)->penitip;
+                            $rating = $penitip ? ($penitip->rata_rating ?? 0) : 0;
+                            $fullStars = floor($rating);
+                            $decimal = $rating - $fullStars;
+                            $partialWidth = min(max($decimal * 100, 0), 100) . '%';
+                        @endphp
+                        @if($penitip && $rating >= 0)
+                            <div class="d-flex align-items-center gap-1 mb-2">
+                                @for($i = 0; $i < $fullStars; $i++)
+                                    <span class="star-rating">
+                                        <svg viewBox="0 0 24 24">
+                                            <path class="star-foreground" d="M12 .587l3.668 7.431 8.332 1.151-6.001 5.843 1.417 8.264L12 18.839l-7.416 3.897 1.417-8.264-6.001-5.843 8.332-1.151z"/>
+                                        </svg>
+                                    </span>
+                                @endfor
+                                @if($decimal > 0)
+                                    <span class="star-partial" style="--partial-width: {{ $partialWidth }}">
+                                        <svg viewBox="0 0 24 24">
+                                            <path class="star-background" d="M12 .587l3.668 7.431 8.332 1.151-6.001 5.843 1.417 8.264L12 18.839l-7.416 3.897 1.417-8.264-6.001-5.843 8.332-1.151z"/>
+                                            <path class="star-foreground" d="M12 .587l3.668 7.431 8.332 1.151-6.001 5.843 1.417 8.264L12 18.839l-7.416 3.897 1.417-8.264-6.001-5.843 8.332-1.151z"/>
+                                        </svg>
+                                    </span>
+                                @endif
+                                @for($i = 0; $i < (5 - $fullStars - ($decimal > 0 ? 1 : 0)); $i++)
+                                    <span class="star-empty">
+                                        <svg viewBox="0 0 24 24">
+                                            <path class="star-background" d="M12 .587l3.668 7.431 8.332 1.151-6.001 5.843 1.417 8.264L12 18.839l-7.416 3.897 1.417-8.264-6.001-5.843 8.332-1.151z"/>
+                                        </svg>
+                                    </span>
+                                @endfor
+                                <span class="text-primary font-semibold">({{ number_format($rating, 1) }}/5)</span>
+                            </div>
+                            <div class="penitip-badge">
+                                <i class="bi bi-person-fill me-1"></i>
+                                <span class="penitip-name">{{ $penitip->nama_penitip ?? 'N/A' }}</span>
+                            </div>
+                        @else
+                            <p class="text-muted">Rating dan data penitip tidak tersedia.</p>
+                        @endif
                     </div>
                     @auth
                     <form action="{{ route('cart.add') }}" method="POST" class="flex items-center gap-3">

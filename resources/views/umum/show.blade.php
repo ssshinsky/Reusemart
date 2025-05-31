@@ -14,6 +14,7 @@
             --text-muted: #6c757d;
             --bg-light: #f8f9fa;
             --border-color: #dee2e6;
+            --star-color: #ffd700; /* Warna kuning untuk bintang */
         }
 
         body {
@@ -205,6 +206,24 @@
             font-size: 0.75rem;
         }
 
+        .rating-box {
+            background-color: var(--bg-light);
+            padding: 0.75rem;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            font-size: 0.75rem;
+        }
+
+        .star-rating {
+            color: var(--star-color);
+            display: inline-block;
+        }
+
+        .star-empty {
+            color: #d1d5db;
+            display: inline-block;
+        }
+
         .discussion-section {
             margin-top: 1.5rem;
         }
@@ -331,6 +350,27 @@
                             @else
                                 <span class="text-muted font-medium">Tidak ada garansi</span>
                             @endif
+                        </p>
+                    </div>
+                    <div class="rating-box">
+                        <p class="font-medium">
+                            Rating Penitip:
+                            @php
+                                $rating = $barang->transaksiPenitipan->penitip->rata_rating ?? 0;
+                                $fullStars = floor($rating);
+                                $halfStar = ($rating - $fullStars) >= 0.5 ? 1 : 0;
+                                $emptyStars = 5 - $fullStars - $halfStar;
+                            @endphp
+                            @for($i = 0; $i < $fullStars; $i++)
+                                <span class="star-rating">⭐</span>
+                            @endfor
+                            @if($halfStar)
+                                <span class="star-rating">⭐</span>
+                            @endif
+                            @for($i = 0; $i < $emptyStars; $i++)
+                                <span class="star-empty">☆</span>
+                            @endfor
+                            <span class="text-primary font-semibold"> ({{ $rating }}/5)</span>
                         </p>
                     </div>
                     @auth

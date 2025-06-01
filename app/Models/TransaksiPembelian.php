@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\DetailPembelian;
+use App\Models\Alamat;
 
 class TransaksiPembelian extends Model
 {
@@ -60,5 +62,9 @@ class TransaksiPembelian extends Model
     public function komisi()
     {
         return $this->hasMany(Komisi::class, 'id_pembelian', 'id_pembelian');
+    }
+    public function detailPembelians()
+    {
+        return $this->hasMany(DetailPembelian::class, 'id_transaksi');
     }
 }

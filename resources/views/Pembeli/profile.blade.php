@@ -13,9 +13,13 @@
                     <div class="card-body">
                         <div class="row g-4 align-items-center">
                             <div class="col-md-3 text-center">
-                                <img src="{{ asset('images/default-avatar.png') }}" alt="Profile Photo"
+                                <img src="{{ $pembeli->profil_pict 
+                                            ? asset('uploads/profil_pembeli/' . $pembeli->profil_pict) 
+                                            : asset('images/default-avatar.png') }}" 
+                                    alt="Profile Photo"
                                     class="rounded-circle img-fluid"
                                     style="width: 120px; height: 120px; object-fit: cover;">
+
                             </div>
 
                             <div class="col-md-9">
@@ -24,20 +28,25 @@
 
                                 <div class="mb-3">
                                     <label class="form-label fw-semibold">Username</label>
-                                    <input type="text" class="form-control" value="{{ session('customer.nama_pembeli') ?? 'User' }}"
+                                    <input type="text" class="form-control" value="{{ $pembeli->nama_pembeli }}"
                                         disabled>
                                 </div>
 
                                 <div class="mb-3">
                                     <label class="form-label fw-semibold">Email</label>
-                                    <input type="email" class="form-control" value="{{ session('user.email') ?? '' }}"
+                                    <input type="email" class="form-control" value="{{ $pembeli->email_pembeli }}"
                                         disabled>
                                 </div>
 
                                 <div class="mb-3">
                                     <label class="form-label fw-semibold">Phone</label>
-                                    <input type="text" class="form-control" value="{{ session('user.no_telp') ?? '' }}"
+                                    <input type="text" class="form-control" value="{{ $pembeli->nomor_telepon }}"
                                         disabled>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Poin Reward</label>
+                                    <input type="text" class="form-control" value="{{ $pembeli->poin_pembeli ?? 0 }}" disabled>
                                 </div>
 
                                 <div class="text-end">
@@ -58,7 +67,7 @@
             aria-hidden="true">
             <div class="modal-dialog modal-lg modal-dialog-centered">
                 <div class="modal-content">
-                    <form action="{{ route('pembeli.update', ['id' => auth('pembeli')->id()]) }}" method="POST"
+                    <form action="{{ route('pembeli.update', ['id' => $pembeli->id_pembeli]) }}" method="POST"
                         enctype="multipart/form-data">
                         @csrf
                         @method('PUT')
@@ -73,24 +82,28 @@
                                 <div class="col-md-6">
                                     <label for="nama" class="form-label">Name</label>
                                     <input type="text" id="nama" name="nama" class="form-control"
-                                        value="{{ session('user.nama') ?? '' }}" required>
+                                        value="{{ $pembeli->nama_pembeli }}" required>
                                 </div>
 
                                 <div class="col-md-6">
                                     <label for="nomor_telepon" class="form-label">Phone Number</label>
                                     <input type="text" id="nomor_telepon" name="nomor_telepon" class="form-control"
-                                        value="{{ session('user.no_telp') ?? '' }}" required>
+                                        value="{{ $pembeli->nomor_telepon }}" required>
                                 </div>
 
                                 <div class="col-12">
                                     <label for="email" class="form-label">Email</label>
                                     <input type="email" id="email" name="email" class="form-control"
-                                        value="{{ session('user.email') ?? '' }}" required>
+                                        value="{{ $pembeli->email_pembeli }}" required>
                                 </div>
 
                                 <div class="col-12 d-flex align-items-center gap-3 mt-2">
-                                    <img src="{{ asset('images/default-avatar.png') }}" alt="Current Photo"
+                                    <img src="{{ $pembeli->profil_pict 
+                                                ? asset('uploads/profil_pembeli/' . $pembeli->profil_pict) 
+                                                : asset('images/default-avatar.png') }}" 
+                                        alt="Current Photo"
                                         class="rounded-circle" width="80" height="80" style="object-fit: cover;">
+
                                     <div class="flex-grow-1">
                                         <label for="profile_pict" class="form-label">Profile Photo</label>
                                         <input type="file" id="profile_pict" name="profile_pict" accept=".jpg,.jpeg,.png"

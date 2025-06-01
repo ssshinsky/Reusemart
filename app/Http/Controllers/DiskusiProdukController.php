@@ -29,19 +29,21 @@ class DiskusiProdukController extends Controller
     {
         $request->validate([
             'id_barang' => 'required|exists:barang,id_barang',
-            'id_pembeli' => 'nullable|exists:pembeli,id_pembeli',
-            'id_pegawai' => 'nullable|exists:pegawai,id_pegawai',
-            'diskusi' => 'required|string',
+            'diskusi' => 'required|string|max:1000',
         ]);
 
-        $diskusiProduk = DiskusiProduk::create([
+        $pembeli = auth('api_pembeli')->user();
+
+        $diskusi = DiskusiProduk::create([
             'id_barang' => $request->id_barang,
-            'id_pembeli' => $request->id_pembeli,
-            'id_pegawai' => $request->id_pegawai,
             'diskusi' => $request->diskusi,
+            'id_pembeli' => $pembeli->id_pembeli,
         ]);
 
-        return response()->json($diskusiProduk, 201);
+        return response()->json([
+            'diskusi' => $diskusi->diskusi,
+            'created_at' => now()->format('d M Y, H:i')
+        ]);
     }
 
     // Mengupdate diskusi produk berdasarkan ID

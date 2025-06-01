@@ -5,7 +5,7 @@
 @section('content')
 <h2 style="margin-bottom: 1.5rem;">Edit Item Owner</h2>
 
-<form action="{{ route($prefix . '.penitip.update', $penitip->id_penitip) }}" method="POST" class="form-container">
+<form action="{{ route('cs.penitip.update', $penitip->id_penitip) }}"method="POST" class="form-container">
     @csrf
     @method('PUT')
 

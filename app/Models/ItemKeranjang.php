@@ -11,6 +11,7 @@ class ItemKeranjang extends Model
 
     // Nama tabel yang digunakan oleh model
     protected $table = 'item_keranjang';
+    protected $primaryKey = 'id_item_keranjang';
 
     // Kolom yang dapat diisi (Mass Assignment)
     protected $fillable = [

@@ -185,7 +185,8 @@
                             <p class="card-title small">{{ $item->nama_barang }}</p>
                             <p class="fw-bold text-success">Rp{{ number_format($item->harga_barang, 0, ',', '.') }}</p>
                             <div class="mt-auto">
-                                <a href="{{ route('umum.show', $item->id_barang) }}" class="btn btn-success btn-sm w-100">View Details</a>
+                                <a href="{{ route('umum.show', $item->id_barang) }}"
+                                    class="btn btn-success btn-sm w-100">View Details</a>
                             </div>
                         </div>
                     </div>

@@ -24,8 +24,8 @@
 
                                 <div class="mb-3">
                                     <label class="form-label fw-semibold">Username</label>
-                                    <input type="text" class="form-control" value="{{ session('user.nama') ?? 'User' }}"
-                                        disabled>
+                                    <input type="text" class="form-control"
+                                        value="{{ session('customer.nama_pembeli') ?? 'User' }}" disabled>
                                 </div>
 
                                 <div class="mb-3">
@@ -58,7 +58,7 @@
             aria-hidden="true">
             <div class="modal-dialog modal-lg modal-dialog-centered">
                 <div class="modal-content">
-                    <form action="{{ route('pembeli.update', session('user.id')) }}" method="POST"
+                    <form action="{{ route('pembeli.update', ['id' => auth('pembeli')->id()]) }}" method="POST"
                         enctype="multipart/form-data">
                         @csrf
                         @method('PUT')

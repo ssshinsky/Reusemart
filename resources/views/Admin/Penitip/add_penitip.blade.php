@@ -57,7 +57,26 @@
         </div>
     </div>
 </form>
-
+<script>
+    document.querySelectorAll('.form-container').forEach(form => {
+        form.addEventListener('.btn-submit', function(e) {
+            e.preventDefault();
+            Swal.fire({
+                title: 'ppp',
+                text: 'This employee will regain access to the system.',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#28a745',
+                cancelButtonColor: '#aaa',
+                confirmButtonText: 'Yes, reactivate!'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    form.submit();
+                }
+            });
+        });
+    });
+</script>
 <style>
     .form-container {
         width: 100%;

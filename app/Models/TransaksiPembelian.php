@@ -11,6 +11,10 @@ class TransaksiPembelian extends Model
 
     // Nama tabel yang digunakan oleh model
     protected $table = 'transaksi_pembelian';
+    protected $primaryKey = 'id_pembelian';
+    public $incrementing = true;
+    protected $keyType = 'int';
+
 
     // Kolom yang dapat diisi (Mass Assignment)
     protected $fillable = [

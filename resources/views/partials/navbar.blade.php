@@ -23,8 +23,8 @@
                 <div class="d-flex align-items-center me-3">
                     <a href="{{ route('welcome') }}" class="me-3 text-decoration-none text-dark">Home</a>
                     <a href="{{ route('about') }}" class="me-3 text-decoration-none text-dark">About</a>
-                    <a href="{{ route('cart') }}" class="text-success position-relative me-3">
-                        <i class="bi bi-cart-fill fs-4"></i>
+                    <a href="{{ route('pembeli.keranjang') }}" class="text-success position-relative">
+                        <i class="fa-solid fa-cart-shopping fs-4"></i>
                     </a>
                 </div>
 
@@ -33,14 +33,14 @@
                         data-bs-toggle="dropdown" aria-expanded="false">
                         <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center me-2"
                             style="width: 32px; height: 32px;">
-                            <i class="bi bi-person-fill"></i>
+                            <i class="fa-solid fa-user fs-6"></i>
                         </div>
                         {{ $user['nama'] ?? 'User' }}
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end">
                         @if ($role === 'pembeli')
                             <li><a class="dropdown-item" href="{{ route('pembeli.profile') }}">My Account</a></li>
-                            <li><a class="dropdown-item" href="{{ route('pembeli.purchase') }}">My Order</a></li>
+                            {{-- <li><a class="dropdown-item" href="{{ route('pembeli.purchase') }}">My Order</a></li> --}}
                         @elseif ($role === 'penitip')
                             <li><a class="dropdown-item" href="{{ route('penitip.profile') }}">My Account</a></li>
                             <li><a class="dropdown-item" href="{{ route('penitip.myproduct') }}">My Product</a></li>

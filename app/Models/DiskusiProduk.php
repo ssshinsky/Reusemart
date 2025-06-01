@@ -18,6 +18,8 @@ class DiskusiProduk extends Model
         'id_pembeli',
         'id_pegawai',
         'diskusi',
+        'create_at',
+        'update_at',
     ];
 
     // Relasi dengan model Barang

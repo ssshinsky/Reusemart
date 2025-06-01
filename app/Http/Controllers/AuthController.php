@@ -70,6 +70,7 @@ class AuthController extends Controller
                 ],
                 'role' => 'penitip',
             ]);
+            $request->session()->regenerate();
             return redirect('/');
         }
 
@@ -82,10 +83,12 @@ class AuthController extends Controller
                     'id' => $pembeli->id_pembeli,
                     'nama' => $pembeli->nama_pembeli,
                     'email' => $pembeli->email_pembeli,
+                    'poin_pembeli' => $pembeli->poin_pembeli ?? 0, // Tambahkan poin_pembeli
                 ],
                 'role' => 'pembeli',
             ]);
-            return redirect()->route('/');
+            $request->session()->regenerate();
+            return redirect('/');
         }
 
         // 4. Cek Organisasi

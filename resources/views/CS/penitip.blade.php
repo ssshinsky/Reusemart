@@ -106,6 +106,8 @@
                 if (tbody) {
                     tbody.innerHTML = html;
                     rebindEditToggle();
+                    bindDeactivateButtons();
+                    bindReactivateButtons();
                 }
             })
             .catch(err => console.error('Live search error:', err));
@@ -149,6 +151,48 @@
             });
         });
     });
+
+    function bindDeactivateButtons() {
+        document.querySelectorAll('.form-nonaktif').forEach(form => {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                Swal.fire({
+                    title: 'Are you sure?',
+                    text: 'This employee will be deactivated!',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#aaa',
+                    confirmButtonText: 'Yes, deactivate!'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        form.submit();
+                    }
+                });
+            });
+        });
+    }
+
+    function bindReactivateButtons() {
+        document.querySelectorAll('.form-reactivate').forEach(form => {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                Swal.fire({
+                    title: 'Reactivate this employee?',
+                    text: 'This employee will regain access to the system.',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#28a745',
+                    cancelButtonColor: '#aaa',
+                    confirmButtonText: 'Yes, reactivate!'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        form.submit();
+                    }
+                });
+            });
+        });
+    }
 </script>
 
 <style>

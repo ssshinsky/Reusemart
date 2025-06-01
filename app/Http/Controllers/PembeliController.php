@@ -2,13 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Pembeli;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use App\Models\Pembeli;
 
 class PembeliController extends Controller
 {
+
     private function ensureAdmin()
     {
         if (!Auth::guard('pegawai')->check() || Auth::guard('pegawai')->user()->id_role != 2) {
@@ -18,8 +19,12 @@ class PembeliController extends Controller
     
     public function profile()
     {
-        $user = session('user');
-        return view('pembeli.profile', compact('user'));
+        if (!Auth::guard('pembeli')->check()) {
+            return redirect('/')->with('error', 'Anda belum login sebagai pembeli.');
+        }
+
+        $pembeli = Auth::guard('pembeli')->user();
+        return view('pembeli.profile', compact('pembeli'));
     }
 
     // Web: Menampilkan halaman daftar pembeli (admin panel)
@@ -48,9 +53,10 @@ class PembeliController extends Controller
     // Web: Menyimpan data pembeli baru
     public function store(Request $request)
     {
-        $this->ensureAdmin();
-        
-        $request->validate([
+        // Cek apakah ini request dari admin
+        $isAdmin = Auth::guard('pegawai')->check() && Auth::guard('pegawai')->user()->id_role == 2;
+
+        $validated = $request->validate([
             'nama_pembeli' => 'required|string',
             'email_pembeli' => 'required|email|unique:pembeli,email_pembeli',
             'tanggal_lahir' => 'required|date',
@@ -58,19 +64,31 @@ class PembeliController extends Controller
             'password' => 'required|string|min:6',
         ]);
 
-        Pembeli::create([
-            'nama_pembeli' => $request->nama_pembeli,
-            'email_pembeli' => $request->email_pembeli,
-            'tanggal_lahir' => $request->tanggal_lahir,
-            'nomor_telepon' => $request->nomor_telepon,
-            'password' => Hash::make($request->password),
-            'profil_pict' => $request->profil_pict,
+        $pembeli = Pembeli::create([
+            'nama_pembeli' => $validated['nama_pembeli'],
+            'email_pembeli' => $validated['email_pembeli'],
+            'tanggal_lahir' => $validated['tanggal_lahir'],
+            'nomor_telepon' => $validated['nomor_telepon'],
+            'password' => Hash::make($validated['password']),
+            'profil_pict' => $request->profil_pict ?? 'default.png',
             'status_pembeli' => 'Active',
             'poin_pembeli' => 0,
         ]);
 
-        return redirect()->route('admin.pembeli.index')->with('success', 'Pembeli berhasil ditambahkan');
+        if ($isAdmin) {
+            return redirect()->route('admin.pembeli.index')->with('success', 'Pembeli berhasil ditambahkan');
+        }
+
+        // Auto login jika dari register umum
+        Auth::guard('pembeli')->login($pembeli);
+        session([
+            'user' => ['id' => $pembeli->id_pembeli, 'nama' => $pembeli->nama_pembeli],
+            'role' => 'pembeli'
+        ]);
+
+        return redirect()->route('pembeli.profile');
     }
+
 
     // Web: Form edit pembeli
     public function edit($id)
@@ -204,8 +222,4 @@ class PembeliController extends Controller
         return $this->update($request, $id);
     }
 
-    public function apiDestroy($id)
-    {
-        return $this->destroy($id);
-    }
 }

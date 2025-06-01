@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PegawaiController;
 use App\Http\Controllers\RoleController;
@@ -31,7 +32,14 @@ Route::get('/', function () {
     ]);
 })->name('welcome');
 
-Route::get('/about', function () {return view('about');})->name('about');
+Route::get('/about', function () {
+    return view('about');
+})->name('about');
+
+Route::get('/login', function () {
+    return redirect('/');
+})->name('login');
+
 Route::post('/login', [AuthController::class, 'login'])->name('login.submit');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 Route::post('/admin/logout', function () {
@@ -101,19 +109,15 @@ Route::get('/barang/{id}', [BarangController::class, 'show'])->name('umum.show')
 Route::prefix('admin')->group(function () {
     //Dashboard
     Route::get('/', [DashboardController::class, 'index'])->name('admin.dashboard');
-
-    // EMPLOYEES
     Route::get('/employees', [PegawaiController::class, 'indexView'])->name('admin.employees.index');
     Route::get('/employees/add', [PegawaiController::class, 'create'])->name('admin.employees.create');
-    Route::get('/employees/search', [PegawaiController::class, 'search'])->name('admin.employees.search');
     Route::post('/employees', [PegawaiController::class, 'store'])->name('admin.employees.store');
+    Route::get('/employees/search', [PegawaiController::class, 'search'])->name('admin.employees.search');
     Route::get('/employees/{id}/edit', [PegawaiController::class, 'edit'])->name('admin.employees.edit');
     Route::put('/employees/{id}', [PegawaiController::class, 'update'])->name('admin.employees.update');
     Route::put('/employees/{id}/reset-password', [PegawaiController::class, 'resetPassword'])->name('admin.employees.reset-password');
     Route::put('/employees/{id}/deactivate', [PegawaiController::class, 'deactivate'])->name('admin.employees.deactivate');
     Route::put('/employees/{id}/reactivate', [PegawaiController::class, 'reactivate'])->name('admin.employees.reactivate');
-
-    // ROLES
     Route::get('/roles', [RoleController::class, 'index'])->name('admin.roles.index');
     Route::get('/roles/add', [RoleController::class, 'create'])->name('admin.roles.create');
     Route::post('/roles', [RoleController::class, 'store'])->name('admin.roles.store');
@@ -142,8 +146,6 @@ Route::prefix('admin')->group(function () {
     Route::put('/customers/{id}', [PembeliController::class, 'update'])->name('admin.pembeli.update');
     Route::put('/customers/{id}/deactivate', [PembeliController::class, 'deactivate'])->name('admin.pembeli.deactivate');
     Route::put('/customers/{id}/reactivate', [PembeliController::class, 'reactivate'])->name('admin.pembeli.reactivate');
-
-    // ORGANIZATIONS
     Route::get('/organizations', [OrganisasiController::class, 'index'])->name('admin.organisasi.index');
     Route::get('/organizations/add', [OrganisasiController::class, 'create'])->name('admin.organisasi.create');
     Route::post('/organizations', [OrganisasiController::class, 'store'])->name('admin.organisasi.store');
@@ -153,8 +155,6 @@ Route::prefix('admin')->group(function () {
     Route::put('/organizations/{id}/deactivate', [OrganisasiController::class, 'deactivate'])->name('admin.organisasi.deactivate');
     Route::put('/organizations/{id}/reactivate', [OrganisasiController::class, 'reactivate'])->name('admin.organisasi.reactivate');
     Route::delete('/organizations/{id}', [OrganisasiController::class, 'destroy'])->name('admin.organisasi.destroy');
-
-    // PRODUCTS
     Route::get('/products', [BarangController::class, 'index'])->name('admin.produk.index');
     Route::get('/products/add', [BarangController::class, 'create'])->name('admin.produk.create');
     Route::post('/products', [BarangController::class, 'store'])->name('admin.produk.store');
@@ -163,8 +163,6 @@ Route::prefix('admin')->group(function () {
     Route::put('/products/{id}', [BarangController::class, 'update'])->name('admin.produk.update');
     Route::put('/products/{id}/deactivate', [BarangController::class, 'deactivate'])->name('admin.produk.deactivate');
     Route::put('/products/{id}/reactivate', [BarangController::class, 'reactivate'])->name('admin.produk.reactivate');
-
-    // MERCHANDISE
     Route::get('/merchandise', [MerchandiseController::class, 'index'])->name('admin.merch.index');
     Route::get('/merchandise/add', [MerchandiseController::class, 'create'])->name('admin.merchandise.create');
     Route::post('/merchandise', [MerchandiseController::class, 'store'])->name('admin.merchandise.store');
@@ -177,7 +175,6 @@ Route::prefix('cs')->group(function () {
     Route::get('/dashboard', function () {
         return redirect()->route('cs.penitip.index');
     })->name('cs.dashboard');
-
     Route::get('/item-owners', [PenitipController::class, 'index'])->name('cs.penitip.index');
     Route::get('/item-owners/add', [PenitipController::class, 'create'])->name('cs.penitip.create');
     Route::post('/item-owners', [PenitipController::class, 'store'])->name('cs.penitip.store');

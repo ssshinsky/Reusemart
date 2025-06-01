@@ -42,21 +42,23 @@ class AuthController extends Controller
             session([
                 'user' => [
                     'id' => $pegawai->id_pegawai,
-                    'nama' => $pegawai->nama_pegawai,
-                    'email' => $pegawai->email_pegawai,
+                    'nama' => $pegawai->nama_pegawai
                 ],
-                'role' => 'admin',
+                'role' => match ($pegawai->id_role) {
+                    1 => 'owner', 2 => 'admin', 3 => 'cs', 4 => 'gudang', 5 => 'kurir', 6 => 'hunter'
+                }
             ]);
             return match ($pegawai->id_role) {
-                1 => redirect('/owner/dashboard'),    
-                2 => redirect('/admin'),    
-                3 => redirect('/cs/dashboard'),       
+                1 => redirect('/owner/dashboard'),
+                2 => redirect('/admin'),
+                3 => redirect('/cs/dashboard'),
                 4 => redirect('/gudang'),
                 5 => redirect('/kurir'),
                 6 => redirect('/hunter'),
                 default => redirect('/pegawai'),
             };
         }
+
 
         // 2. Cek Penitip
         $penitip = Penitip::where('email_penitip', $email)->first();
@@ -95,15 +97,7 @@ class AuthController extends Controller
         $organisasi = Organisasi::where('email_organisasi', $email)->first();
         if ($organisasi && Hash::check($password, $organisasi->password)) {
             Auth::guard('organisasi')->login($organisasi);
-            session([
-                'user' => [
-                    'id' => $organisasi->id_organisasi,
-                    'nama' => $organisasi->nama_organisasi,
-                    'email' => $organisasi->email_organisasi,
-                ],
-                'role' => 'organisasi',
-            ]);
-            return redirect('/');
+            return redirect('/organisasi');
         }
 
         return back()->with('error', 'Email atau password salah.');

@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>@yield('title', 'Admin Panel')</title>
+    <title>@yield('title', 'CS Panel')</title>
     <link rel="icon" type="image/png" href="{{ asset('assets/images/logo.png') }}">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -149,7 +149,7 @@
 <body>
     <div class="topbar">
         <div class="topbar-left">
-            <a href="{{ route('admin.dashboard') }}">
+            <a href="{{ route('cs.dashboard') }}">
                 <img src="{{ asset('images/Reusemart kiri.png') }}" alt="ReUse Mart">
             </a>
         </div>

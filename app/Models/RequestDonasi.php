@@ -21,6 +21,11 @@ class RequestDonasi extends Model
         'status_request',
     ];
 
+     // Setelah create default akan 'Pending'
+    protected $attributes = [
+        'status_request' => 'Pending',
+    ];
+
     // Relasi ke model Organisasi
     public function organisasi()
     {
@@ -37,5 +42,15 @@ class RequestDonasi extends Model
     public function donasi()
     {
         return $this->hasOne(Donasi::class, 'id_request', 'id_request');
+    }
+
+    public function getStatusLabelAttribute()
+    {
+        return match ($this->status_request) {
+            'Pending' => '⏳ Pending',
+            'Approved' => '✅ Approved',
+            'Rejected' => '❌ Rejected',
+            default => $this->status_request,
+        };
     }
 }

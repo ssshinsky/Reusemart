@@ -283,11 +283,4 @@ class PegawaiController extends Controller
         }
         return response()->json(['message' => 'Not logged in'], 401);
     }
-
-    protected function authorizeCS()
-    {
-        if (auth()->user()->id_role != 3) {
-            throw new \Illuminate\Auth\Access\AuthorizationException();
-        }
-    }
 }

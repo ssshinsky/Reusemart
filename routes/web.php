@@ -18,7 +18,9 @@ use App\Http\Controllers\DonasiController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\KeranjangController;
 use App\Http\Controllers\ResetPasswordController;
+use App\Http\Controllers\TransaksiPembelianController;
 use App\Models\Barang;
+use Illuminate\Routing\Route as RoutingRoute;
 
 Route::get('/', function () {
     $barangTerbatas = Barang::with('gambar')->take(12)->get();
@@ -57,6 +59,16 @@ Route::post('/organisasi', [OrganisasiController::class, 'store']);
 
 Route::get('/produk/allProduct', [BarangController::class, 'allProduct'])->name('produk.allproduct'); 
 
+// ================= RESET PASSWORD ROUTES ===============
+Route::get('/reset-password', [ResetPasswordController::class, 'showEmailForm'])->name('reset.form');
+Route::post('/password/send-code', [ResetPasswordController::class, 'sendCode'])->name('password.sendCode');
+Route::post('/password/verify-code', [ResetPasswordController::class, 'verifyCode'])->name('password.verifyCode');
+Route::post('/password/update', [ResetPasswordController::class, 'updatePassword'])->name('password.update');
+
+
+Route::get('/barang/{id}', [BarangController::class, 'show'])->name('umum.show');
+// Route::post('/diskusi/store', [DiskusiProdukController::class, 'store'])->name('diskusi.store')->middleware('auth:pembeli');
+
 // =================== PENITIP ROUTES ===================
 Route::prefix('penitip')->middleware('auth:penitip')->group(function () {
     Route::get('/profile', [PenitipController::class, 'profile'])->name('penitip.profile');
@@ -73,6 +85,7 @@ Route::prefix('penitip')->middleware('auth:penitip')->group(function () {
 // =================== PEMBELI ROUTES ===================
 Route::prefix('pembeli')->middleware('auth:pembeli')->group(function () {
     Route::get('/profile', [PembeliController::class, 'profile'])->name('pembeli.profile');
+    Route::get('/pembeli/riwayat', [TransaksiPembelianController::class, 'riwayat']);
     Route::get('/{id}/edit', [PembeliController::class, 'editProfile'])->name('pembeli.edit');
     Route::put('/{id}/update', [PembeliController::class, 'updateProfile'])->name('pembeli.update');
 
@@ -91,20 +104,16 @@ Route::prefix('pembeli')->middleware('auth:pembeli')->group(function () {
     // Route::post('/diskusi/store', [DiskusiProdukController::class, 'store'])->name('pembeli.diskusi.store');
 });
 
-
-// ================= RESET PASSWORD ROUTES ===============
-Route::get('/reset-password', [ResetPasswordController::class, 'showEmailForm'])->name('reset.form');
-Route::post('/password/send-code', [ResetPasswordController::class, 'sendCode'])->name('password.sendCode');
-Route::post('/password/verify-code', [ResetPasswordController::class, 'verifyCode'])->name('password.verifyCode');
-Route::post('/password/update', [ResetPasswordController::class, 'updatePassword'])->name('password.update');
-
-
-Route::get('/barang/{id}', [BarangController::class, 'show'])->name('umum.show');
-// Route::post('/diskusi/store', [DiskusiProdukController::class, 'store'])->name('diskusi.store')->middleware('auth:pembeli');
-
 // Organisasi Route
-Route::prefix('organisasi')->middleware('auth:organisasi')->group(function () {
-    Route::get('/dashboard', fn() => view('organisasi.dashboard'))->name('organisasi.dashboard');
+Route::prefix('organisasi')->middleware('auth:organisasi')->name('organisasi.')->group(function () {
+    Route::get('/', [RequestDonasiController::class, 'index'])->name('index');
+    Route::get('/request-donasi/add', [RequestDonasiController::class, 'create'])->name('request.create');
+    Route::post('/request-donasi', [RequestDonasiController::class, 'store'])->name('request.store');
+    Route::get('/request-donasi/{id}/edit', [RequestDonasiController::class, 'edit'])->name('request.edit');
+    Route::put('/request-donasi/{id}', [RequestDonasiController::class, 'update'])->name('request.update');
+    Route::get('/request-donasi/search', [RequestDonasiController::class, 'search'])->name('request.search');
+    Route::delete('/request-donasi/{id}', [RequestDonasiController::class, 'destroy'])->name('request.destroy');
+    Route::get('/profile', fn() => view('organisasi.profile'))->name('profile');
 });
 
 // Owner routes

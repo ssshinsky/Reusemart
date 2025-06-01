@@ -10,7 +10,7 @@ class RequestDonasi extends Model
     use HasFactory;
 
     // Nama tabel yang digunakan oleh model
-    protected $table = 'requestdonasi';
+    protected $table = 'request_donasi';
     protected $primaryKey = 'id_request';
 
     // Kolom yang dapat diisi (Mass Assignment)
@@ -19,6 +19,11 @@ class RequestDonasi extends Model
         'id_pegawai',
         'request',
         'status_request',
+    ];
+
+     // Setelah create default akan 'Pending'
+    protected $attributes = [
+        'status_request' => 'Pending',
     ];
 
     // Relasi ke model Organisasi
@@ -37,5 +42,15 @@ class RequestDonasi extends Model
     public function donasi()
     {
         return $this->hasOne(Donasi::class, 'id_request', 'id_request');
+    }
+
+    public function getStatusLabelAttribute()
+    {
+        return match ($this->status_request) {
+            'Pending' => '⏳ Pending',
+            'Approved' => '✅ Approved',
+            'Rejected' => '❌ Rejected',
+            default => $this->status_request,
+        };
     }
 }

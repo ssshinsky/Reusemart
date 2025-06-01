@@ -78,7 +78,7 @@ class AuthController extends Controller
         $organisasi = Organisasi::where('email_organisasi', $email)->first();
         if ($organisasi && Hash::check($password, $organisasi->password)) {
             Auth::guard('organisasi')->login($organisasi);
-            return redirect('/dashboard-organisasi');
+            return redirect('/organisasi');
         }
         return back()->with('error', 'Email atau password salah.');
     }

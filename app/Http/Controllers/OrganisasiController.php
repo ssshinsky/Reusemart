@@ -77,7 +77,7 @@ class OrganisasiController extends Controller
             'role' => 'organisasi'
         ]);
 
-        return redirect()->route('organisasi.dashboard');
+        return redirect()->route('organisasi.organisasi');
     }
 
 
@@ -173,6 +173,13 @@ class OrganisasiController extends Controller
                         <button type="submit" class="redeactivate-btn" title="Aktifkan kembali">♻️</button>
                     </form>';
             }
+
+            $formDelete = '
+                <form action="'.route('admin.organisasi.destroy', $organisasi->id_organisasi).'" method="POST" class="form-delete" style="display:inline;">
+                    '.csrf_field().method_field('DELETE').'
+                    <button type="submit" class="delete-btn" title="Hapus">🗑️</button>
+                </form>';
+            $html .= $formDelete;
 
             $html .= '</td></tr>';
         }

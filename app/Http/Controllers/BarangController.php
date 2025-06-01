@@ -28,14 +28,14 @@ class BarangController extends Controller
         return view('Admin.Produk.produk', compact('barangs'));
     }
 
-    //ini untuk dihalaman utama
+    // Ini untuk di halaman utama
     public function indexLanding()
     {
         $barangTerbatas = Barang::with('gambar')->take(12)->get();
         return view('welcome', compact('barangTerbatas'));
     }
 
-    //ini untuk all product
+    // Ini untuk all product
     public function allProduct()
     {
         $produk = Barang::with('gambar')->get();
@@ -45,8 +45,6 @@ class BarangController extends Controller
     // Daftar barang titipan (termasuk pencarian)
     public function itemList(Request $request)
     {
-        // $this->ensureAdmin();
-
         $query = Barang::with(['transaksiPenitipan.penitip', 'kategori', 'gambar']);
 
         // Pencarian berdasarkan keyword
@@ -101,13 +99,10 @@ class BarangController extends Controller
     // Detail barang
     public function itemDetail($id)
     {
-        // $this->ensureAdmin();
-
         $barang = Barang::with(['transaksiPenitipan.penitip', 'kategori', 'gambar'])->findOrFail($id);
         return view('gudang.item_detail', compact('barang'));
     }
     
-
     public function search(Request $request)
     {
         $this->ensureAdmin();
@@ -192,14 +187,7 @@ class BarangController extends Controller
         return redirect()->route('admin.produk.index')->with('success', 'Produk ditandai sebagai Available');
     }
 
-    
-    // ====================== API ======================
-
-    public function apiIndex()
-    {
-        return response()->json(Barang::all());
-    }
-
+    // Detail barang untuk frontend (umum.show)
     public function show($id)
     {
         try {
@@ -274,5 +262,32 @@ class BarangController extends Controller
         $barang->update($request->all());
 
         return response()->json($barang);
+    }
+
+    // ====================== API ======================
+
+    // API untuk list semua barang
+    public function apiIndex()
+    {
+        $barangs = Barang::with(['kategori', 'gambar', 'transaksiPenitipan.penitip'])->get();
+        return response()->json($barangs);
+    }
+
+    // API untuk detail barang berdasarkan ID
+    public function apiShow($id)
+    {
+        try {
+            $barang = Barang::with(['kategori', 'gambar', 'transaksiPenitipan.penitip'])->findOrFail($id);
+            return response()->json($barang);
+        } catch (\Exception $e) {
+            \Log::error('Error in BarangController@apiShow: ' . $e->getMessage() . ' | Stack: ' . $e->getTraceAsString());
+            return response()->json(['error' => 'Barang tidak ditemukan'], 404);
+        }
+    }
+
+    public function getKategoriApi()
+    {
+        $kategori = Kategori::all();
+        return response()->json($kategori);
     }
 }

@@ -28,6 +28,7 @@ class Penitip extends Authenticatable
         'poin_penitip',
         'profil_pict',
         'badge',
+        'banyak_rating',
     ];
 
     protected $hidden = [
@@ -38,6 +39,7 @@ class Penitip extends Authenticatable
         'rata_rating' => 'float',
         'saldo_penitip' => 'double',
         'badge' => 'boolean',
+        'banyak_rating' => 'integer',
     ];
 
     // Relasi ke Komisi

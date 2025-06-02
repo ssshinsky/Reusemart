@@ -5,6 +5,10 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PegawaiController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\BarangController;
+use App\Http\Controllers\AuthController;
+
+Route::post('/login', [AuthController::class, 'loginapi']);
+Route::middleware('auth:sanctum')->post('/logout', [AuthController::class, 'logoutapi']);
 
 Route::post('/pegawai/register', [PegawaiController::class, 'register']);
 Route::post('/pegawai/login', [PegawaiController::class, 'login']);

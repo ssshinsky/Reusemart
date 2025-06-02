@@ -42,23 +42,21 @@ class AuthController extends Controller
             session([
                 'user' => [
                     'id' => $pegawai->id_pegawai,
-                    'nama' => $pegawai->nama_pegawai
+                    'nama' => $pegawai->nama_pegawai,
+                    'email' => $pegawai->email_pegawai,
                 ],
-                'role' => match ($pegawai->id_role) {
-                    1 => 'owner', 2 => 'admin', 3 => 'cs', 4 => 'gudang', 5 => 'kurir', 6 => 'hunter'
-                }
+                'role' => 'admin',
             ]);
             return match ($pegawai->id_role) {
-                1 => redirect('/owner/dashboard'),
-                2 => redirect('/admin'),
-                3 => redirect('/cs/dashboard'),
-                4 => redirect('/gudang/dashboard'),
+                1 => redirect('/owner/dashboard'),    
+                2 => redirect('/admin'),    
+                3 => redirect('/cs/dashboard'),       
+                4 => redirect('/gudang'),
                 5 => redirect('/kurir'),
                 6 => redirect('/hunter'),
                 default => redirect('/pegawai'),
             };
         }
-
 
         // 2. Cek Penitip
         $penitip = Penitip::where('email_penitip', $email)->first();
@@ -97,10 +95,104 @@ class AuthController extends Controller
         $organisasi = Organisasi::where('email_organisasi', $email)->first();
         if ($organisasi && Hash::check($password, $organisasi->password)) {
             Auth::guard('organisasi')->login($organisasi);
-            return redirect('/organisasi');
+            session([
+                'user' => [
+                    'id' => $organisasi->id_organisasi,
+                    'nama' => $organisasi->nama_organisasi,
+                    'email' => $organisasi->email_organisasi,
+                ],
+                'role' => 'organisasi',
+            ]);
+            return redirect('/');
         }
 
         return back()->with('error', 'Email atau password salah.');
     }
+
+    public function loginapi(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'password' => 'required|string'
+        ]);
+
+        $email = $request->email;
+        $password = $request->password;
+
+        // 1. Cek Pegawai
+        $pegawai = Pegawai::where('email_pegawai', $email)->first();
+        if ($pegawai && Hash::check($password, $pegawai->password)) {
+            $token = $pegawai->createToken('mobile_token')->plainTextToken;
+            return response()->json([
+                'status' => 'success',
+                'token' => $token,
+                'user' => [
+                    'id' => $pegawai->id_pegawai,
+                    'nama' => $pegawai->nama_pegawai,
+                    'email' => $pegawai->email_pegawai,
+                ],
+                'role' => 'pegawai',
+            ]);
+        }
+
+        // 2. Cek Penitip
+        $penitip = Penitip::where('email_penitip', $email)->first();
+        if ($penitip && Hash::check($password, $penitip->password)) {
+            $token = $penitip->createToken('mobile_token')->plainTextToken;
+            return response()->json([
+                'status' => 'success',
+                'token' => $token,
+                'user' => [
+                    'id' => $penitip->id_penitip,
+                    'nama' => $penitip->nama_penitip,
+                    'email' => $penitip->email_penitip,
+                ],
+                'role' => 'penitip',
+            ]);
+        }
+
+        // 3. Cek Pembeli
+        $pembeli = Pembeli::where('email_pembeli', $email)->first();
+        if ($pembeli && Hash::check($password, $pembeli->password)) {
+            $token = $pembeli->createToken('mobile_token')->plainTextToken;
+            return response()->json([
+                'status' => 'success',
+                'token' => $token,
+                'user' => [
+                    'id' => $pembeli->id_pembeli,
+                    'nama' => $pembeli->nama_pembeli,
+                    'email' => $pembeli->email_pembeli,
+                    'poin' => $pembeli->poin_pembeli ?? 0,
+                ],
+                'role' => 'pembeli',
+            ]);
+        }
+
+        // 4. Cek Organisasi
+        $organisasi = Organisasi::where('email_organisasi', $email)->first();
+        if ($organisasi && Hash::check($password, $organisasi->password)) {
+            $token = $organisasi->createToken('mobile_token')->plainTextToken;
+            return response()->json([
+                'status' => 'success',
+                'token' => $token,
+                'user' => [
+                    'id' => $organisasi->id_organisasi,
+                    'nama' => $organisasi->nama_organisasi,
+                    'email' => $organisasi->email_organisasi,
+                ],
+                'role' => 'organisasi',
+            ]);
+        }
+
+        return response()->json(['status' => 'error', 'message' => 'Email atau password salah'], 401);
+    }
+
+
+    public function logoutapi(Request $request)
+    {
+        $request->user()->tokens()->delete(); // Menghapus semua token
+        return response()->json(['status' => 'success', 'message' => 'Berhasil logout']);
+    }
+
 }
 

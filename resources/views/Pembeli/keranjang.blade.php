@@ -22,7 +22,7 @@
             Keranjang Anda kosong. <a href="{{ route('produk.allproduct') }}">Belanja sekarang!</a>
         </div>
     @else
-        <form method="POST" action="{{ route('cart.checkout') }}">
+        <form method="GET" action="{{ route('cart.checkout') }}">
             @csrf
             <!-- Daftar Item di Keranjang -->
             <div class="table-responsive mb-4">

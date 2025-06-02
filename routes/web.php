@@ -45,10 +45,9 @@ Route::get('/produk/allProduct', [BarangController::class, 'allProduct'])->name(
 
 Route::get('/keranjang', [ItemKeranjangController::class, 'index'])->name('pembeli.keranjang');
 Route::post('/keranjang/tambah/{id}', [ItemKeranjangController::class, 'tambah'])->name('cart.add');
-Route::post('/keranjang/hapus/{id}', [ItemKeranjangController::class, 'hapus'])->name('cart.remove');
+Route::delete('/keranjang/hapus/{id}', [ItemKeranjangController::class, 'hapus'])->name('cart.remove');
 Route::post('/keranjang/toggle/{id}', [ItemKeranjangController::class, 'toggleSelect'])->name('cart.toggle');
-Route::post('/keranjang/checkout', [ItemKeranjangController::class, 'checkout'])->name('cart.checkout');
-
+Route::get('/keranjang/checkout', [ItemKeranjangController::class, 'checkout'])->name('cart.checkout');
 
 // =================== PENITIP ROUTES ===================
 Route::prefix('penitip')->group(function () {
@@ -72,7 +71,6 @@ Route::prefix('pembeli')->group(function () {
     Route::get('/history', [PembeliController::class, 'history'])->name('pembeli.history');
     Route::get('/reward', [PembeliController::class, 'reward'])->name('pembeli.reward');
     Route::get('/pembelian', [TransaksiPembelianController::class, 'index'])->name('pembeli.pembelian');
-    Route::get('/process-payment', [ItemKeranjangController::class, 'processPayment'])->name('pembeli.processPayment');
     Route::post('/bayar', [TransaksiPembelianController::class, 'bayar'])->name('pembeli.bayar');
     Route::get('/batal-checkout/{id}', [TransaksiPembelianController::class, 'batalkanOtomatis'])->name('pembeli.batalCheckout');
     // Route::get('/reset-password', [ResetPasswordController::class, 'showResetForm'])->name('pembeli.password');

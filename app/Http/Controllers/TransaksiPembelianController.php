@@ -4,9 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Models\TransaksiPembelian;
 use App\Models\Keranjang;
+use App\Models\Pembeli;
 use App\Models\DetailKeranjang;
+use App\Models\ItemKeranjang;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 
 
 class TransaksiPembelianController extends Controller
@@ -156,30 +159,17 @@ class TransaksiPembelianController extends Controller
 
     public function bayar(Request $request)
     {
-        // Debugging input
         Log::info('Bayar Request:', ['input' => $request->all()]);
 
-        // Validasi input dari form
         $request->validate([
             'poin_ditukar' => 'required|numeric|min:0',
             'bukti_pembayaran' => 'required|image|mimes:jpeg,png,jpg|max:2048',
             'total_final' => 'required|numeric|min:0',
             'bonus_poin' => 'required|numeric|min:0',
-        ], [
-            'poin_ditukar.required' => 'Masukkan jumlah poin yang ditukar.',
-            'poin_ditukar.numeric' => 'Jumlah poin yang ditukar harus berupa angka.',
-            'poin_ditukar.min' => 'Jumlah poin yang ditukar tidak boleh kurang dari 0.',
-            'bukti_pembayaran.required' => 'Upload bukti pembayaran diperlukan.',
-            'bukti_pembayaran.image' => 'Bukti pembayaran harus berupa gambar.',
-            'total_final.required' => 'Total pembayaran tidak valid.',
-            'bonus_poin.required' => 'Bonus poin tidak valid.',
         ]);
 
-        // Ambil data dari session
         $user = session('user');
         $role = session('role');
-
-        // Cek apakah yang login adalah pembeli
         if ($role !== 'pembeli' || !$user) {
             Log::error('User not logged in or not pembeli', ['user' => $user, 'role' => $role]);
             return redirect()->route('login')->with('error', 'Anda harus login sebagai pembeli.');
@@ -192,22 +182,27 @@ class TransaksiPembelianController extends Controller
             return redirect()->back()->with('error', 'Data pembeli tidak ditemukan.');
         }
 
-        // Ambil data dari session
         $keranjangId = session('checkout_keranjang_id');
         $alamatId = session('checkout_id_alamat');
         $metode = session('checkout_metode_pengiriman');
         $totalHarga = session('checkout_total_harga');
 
-        // Cek keranjang
+        if (!$keranjangId || !$metode || !$totalHarga) {
+            Log::error('Session data missing', [
+                'keranjang_id' => $keranjangId,
+                'metode' => $metode,
+                'total_harga' => $totalHarga
+            ]);
+            return redirect()->back()->with('error', 'Data checkout tidak lengkap.');
+        }
+
         $keranjang = Keranjang::with('detailKeranjang.itemKeranjang.barang')->findOrFail($keranjangId);
         $items = $keranjang->detailKeranjang->map->itemKeranjang;
-
         if ($items->isEmpty()) {
             Log::error('No items in keranjang', ['keranjang_id' => $keranjangId]);
             return redirect()->back()->with('error', 'Keranjang kosong atau tidak valid.');
         }
 
-        // Hitung total harga barang (kuantitas = 1)
         $totalHargaBarang = $items->sum(fn($item) => $item->barang->harga_barang);
         $ongkir = ($totalHargaBarang >= 1500000 || $metode !== 'kurir') ? 0 : 100000;
         $tahunBulan = now()->format('Y.m.');
@@ -217,7 +212,6 @@ class TransaksiPembelianController extends Controller
         $nomorUrut = $lastTransaksi ? (int)substr($lastTransaksi->no_resi, -3) + 1 : 1;
         $noResi = $tahunBulan . str_pad($nomorUrut, 3, '0', STR_PAD_LEFT);
 
-        // Cek poin yang ditukar
         $poinDitukar = (int)$request->poin_ditukar;
         if ($poinDitukar > $pembeli->poin_pembeli) {
             Log::error('Poin ditukar lebih besar dari poin dimiliki', [
@@ -227,60 +221,65 @@ class TransaksiPembelianController extends Controller
             return redirect()->back()->with('error', 'Poin yang ditukar melebihi poin yang dimiliki.');
         }
 
-        // Simpan bukti pembayaran
         $path = $request->file('bukti_pembayaran')->store('pembayaran', 'public');
 
-        // Buat transaksi (tanpa poin_ditukar)
-        $transaksi = TransaksiPembelian::create([
-            'no_resi' => $noResi,
-            'id_pembeli' => $idPembeli,
-            'id_keranjang' => $keranjangId,
-            'id_alamat' => $metode === 'kurir' ? $alamatId : null,
-            'tanggal_pembelian' => now(),
-            'total_harga_barang' => $totalHargaBarang,
-            'metode_pengiriman' => $metode,
-            'ongkir' => $ongkir,
-            'total_harga' => $request->total_final,
-            'status_transaksi' => 'diproses',
-            'bukti_pembayaran' => $path,
-            'poin_terpakai' => $poinDitukar,
-        ]);
+        try {
+            DB::beginTransaction();
 
-        // Update poin pembeli dengan bonus poin (hanya di database)
-        $bonusPoin = (int)$request->bonus_poin;
-        $pembeli->poin_pembeli = ($pembeli->poin_pembeli - $poinDitukar) + $bonusPoin;
-        $pembeli->save();
+            $transaksi = TransaksiPembelian::create([
+                'no_resi' => $noResi,
+                'id_keranjang' => $keranjangId,
+                'id_alamat' => $metode === 'kurir' ? $alamatId : null,
+                'tanggal_pembelian' => now(),
+                'waktu_pembayaran' => now(),
+                'bukti_tf' => $path,
+                'total_harga_barang' => $totalHargaBarang,
+                'metode_pengiriman' => $metode,
+                'ongkir' => $ongkir,
+                'tanggal_ambil' => null,
+                'tanggal_pengiriman' => null,
+                'total_harga' => $request->total_final,
+                'status_transaksi' => 'diproses',
+                'poin_terpakai' => $poinDitukar,
+                'poin_pembeli' => (int)$request->bonus_poin,
+                'poin_penitip' => 0,
+            ]);
 
-        foreach ($items as $item) {
-            $item->barang->update(['status_barang' => 'sold']);
+            $bonusPoin = (int)$request->bonus_poin;
+            $pembeli->poin_pembeli = ($pembeli->poin_pembeli - $poinDitukar) + $bonusPoin;
+            $pembeli->save();
+
+            foreach ($items as $item) {
+                $item->barang->update(['status_barang' => 'sold']);
+            }
+
+            $selectedItems = session('checkout_selected_items');
+            ItemKeranjang::whereIn('id_item_keranjang', $selectedItems)->delete();
+            DetailKeranjang::where('id_keranjang', $keranjangId)->delete();
+            $keranjang->delete();
+
+            session()->forget([
+                'checkout_keranjang_id',
+                'checkout_selected_items',
+                'checkout_metode_pengiriman',
+                'checkout_id_alamat',
+                'checkout_total_harga',
+            ]);
+
+            DB::commit();
+            Log::info('Transaksi berhasil', [
+                'transaksi_id' => $transaksi->id_pembelian,
+                'poin_ditukar' => $poinDitukar,
+                'bonus_poin' => $bonusPoin,
+                'poin_pembeli_baru' => $pembeli->poin_pembeli,
+            ]);
+
+            return redirect()->route('produk.allproduct');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Database error: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Terjadi kesalahan saat menyimpan transaksi.');
         }
-
-        // Hapus item keranjang
-        $selectedItems = session('checkout_selected_items');
-        ItemKeranjang::whereIn('id_item_keranjang', $selectedItems)->delete();
-
-        // Hapus detail keranjang dan keranjang
-        DetailKeranjang::where('id_keranjang', $keranjangId)->delete();
-        $keranjang->delete();
-
-        // Hapus session checkout
-        session()->forget([
-            'checkout_keranjang_id',
-            'checkout_selected_items',
-            'checkout_metode_pengiriman',
-            'checkout_id_alamat',
-            'checkout_total_harga',
-        ]);
-
-        Log::info('Transaksi berhasil', [
-            'transaksi_id' => $transaksi->id_transaksi,
-            'poin_ditukar' => $poinDitukar,
-            'bonus_poin' => $bonusPoin,
-            'poin_pembeli_baru' => $pembeli->poin_pembeli,
-        ]);
-
-        return redirect()->route('pembeli.detailTransaksi', $transaksi->id_transaksi)
-                        ->with('success', 'Transaksi berhasil dibuat. Silakan lakukan pembayaran.');
     }
 
 

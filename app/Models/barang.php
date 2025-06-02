@@ -13,6 +13,7 @@ class Barang extends Model
     // Nama tabel yang digunakan oleh model
     protected $table = 'barang';
     protected $primaryKey = 'id_barang';
+    public $timestamps = false;
 
     // Kolom yang dapat diisi (Mass Assignment)
     protected $fillable = [

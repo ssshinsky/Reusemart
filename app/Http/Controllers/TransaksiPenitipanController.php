@@ -10,14 +10,26 @@ use App\Models\Pegawai;
 use App\Models\Kategori;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
 
 class TransaksiPenitipanController extends Controller
 {
+    /**
+     * Memastikan pengguna adalah gudang (id_role = 4)
+     */
+    private function ensureGudang()
+    {
+        if (!Auth::guard('pegawai')->check() || Auth::guard('pegawai')->user()->id_role != 4) {
+            abort(403, 'Akses ditolak. Hanya pengguna gudang yang diizinkan.');
+        }
+    }
+
     public function dashboard()
     {
+        $this->ensureGudang();
         $totalTransactions = TransaksiPenitipan::whereDate('tanggal_penitipan', Carbon::today())->count();
         $totalItems = Barang::whereHas('transaksiPenitipan')->count();
         return view('gudang.dashboard', compact('totalTransactions', 'totalItems'));
@@ -25,18 +37,20 @@ class TransaksiPenitipanController extends Controller
 
     public function create()
     {
-        $penitips = \App\Models\Penitip::all();
-        $qcs = \App\Models\Pegawai::whereHas('role', function($query) {
+        $this->ensureGudang();
+        $penitips = Penitip::all();
+        $qcs = Pegawai::whereHas('role', function($query) {
             $query->where('nama_role', 'gudang');
         })->get();
-        $hunters = \App\Models\Pegawai::where('id_pegawai', 6)->get();
-        $kategoris = \App\Models\Kategori::all();
+        $hunters = Pegawai::where('id_role', 6)->get(); // Perbaikan: Gunakan id_role untuk hunter
+        $kategoris = Kategori::all();
 
         return view('gudang.add_transaction', compact('penitips', 'qcs', 'hunters', 'kategoris'));
     }
 
     public function storeTransaction(Request $request)
     {
+        $this->ensureGudang();
         try {
             $validated = $request->validate([
                 'id_penitip' => 'required|exists:penitip,id_penitip',
@@ -181,11 +195,13 @@ class TransaksiPenitipanController extends Controller
 
     public function store(Request $request)
     {
+        $this->ensureGudang();
         return $this->storeTransaction($request);
     }
 
     public function searchTransaction(Request $request)
     {
+        $this->ensureGudang();
         $query = TransaksiPenitipan::with(['penitip', 'barang']);
         if ($request->id_transaksi) {
             $query->where('id_transaksi_penitipan', $request->id_transaksi);
@@ -201,6 +217,7 @@ class TransaksiPenitipanController extends Controller
 
     public function editTransaction($id)
     {
+        $this->ensureGudang();
         $transaction = TransaksiPenitipan::with(['barang.gambar'])->findOrFail($id);
         $penitips = Penitip::all();
         $qcs = Pegawai::whereHas('role', function ($query) {
@@ -209,13 +226,11 @@ class TransaksiPenitipanController extends Controller
         $hunters = $qcs;
         $kategoris = Kategori::all();
 
-        // Format tanggal di barang
         foreach ($transaction->barang as $item) {
             $item->tanggal_garansi_formatted = $item->tanggal_garansi ? Carbon::parse($item->tanggal_garansi)->format('Y-m-d') : '';
             $item->tanggal_berakhir_formatted = $item->tanggal_berakhir ? Carbon::parse($item->tanggal_berakhir)->format('Y-m-d') : '';
         }
 
-        // Format tanggal transaksi
         $transaction->tanggal_penitipan_formatted = $transaction->tanggal_penitipan ? Carbon::parse($transaction->tanggal_penitipan)->format('Y-m-d') : '';
 
         return view('gudang.edit_transaction', compact('transaction', 'penitips', 'qcs', 'hunters', 'kategoris'));
@@ -223,6 +238,7 @@ class TransaksiPenitipanController extends Controller
 
     public function updateTransaction(Request $request, $id)
     {
+        $this->ensureGudang();
         try {
             $transaction = TransaksiPenitipan::with(['barang', 'barang.gambar'])->findOrFail($id);
 
@@ -249,7 +265,6 @@ class TransaksiPenitipanController extends Controller
 
             Log::info('Validasi update berhasil', $validated);
 
-            // Update transaksi
             $transaction->update([
                 'id_qc' => $validated['id_qc'],
                 'id_hunter' => $validated['id_hunter'] ?? null,
@@ -259,7 +274,6 @@ class TransaksiPenitipanController extends Controller
 
             Log::info('Transaksi diperbarui', ['id' => $transaction->id_transaksi_penitipan]);
 
-            // Update atau tambah barang
             foreach ($validated['items'] as $index => $item) {
                 $barang = Barang::findOrFail($item['id_barang']);
 
@@ -278,7 +292,6 @@ class TransaksiPenitipanController extends Controller
 
                 Log::info('Barang diperbarui', ['id' => $barang->id_barang]);
 
-                // Handle hapus gambar
                 if ($request->has("items.{$index}.delete_images")) {
                     $imagesToDelete = $request->input("items.{$index}.delete_images");
                     foreach ($imagesToDelete as $imageId) {
@@ -301,7 +314,6 @@ class TransaksiPenitipanController extends Controller
                     }
                 }
 
-                // Handle upload gambar baru
                 if ($request->hasFile("items.{$index}.images")) {
                     $images = $request->file("items.{$index}.images");
                     Log::info("Jumlah gambar yang diupload untuk item $index:", ['count' => count($images)]);
@@ -344,6 +356,7 @@ class TransaksiPenitipanController extends Controller
 
     public function myProduct()
     {
+        $this->ensureGudang();
         $penitipId = session('user.id');
         $products = Barang::whereHas('transaksiPenitipan', function ($query) use ($penitipId) {
             $query->where('id_penitip', $penitipId);
@@ -354,12 +367,14 @@ class TransaksiPenitipanController extends Controller
 
     public function index()
     {
+        $this->ensureGudang();
         $transaksiPenitipan = TransaksiPenitipan::all();
         return response()->json($transaksiPenitipan);
     }
 
     public function show($id)
     {
+        $this->ensureGudang();
         $transaksiPenitipan = TransaksiPenitipan::find($id);
         if (!$transaksiPenitipan) {
             return response()->json(['message' => 'Transaksi penitipan not found'], 404);
@@ -369,6 +384,7 @@ class TransaksiPenitipanController extends Controller
 
     public function update(Request $request, $id)
     {
+        $this->ensureGudang();
         $transaksiPenitipan = TransaksiPenitipan::find($id);
         if (!$transaksiPenitipan) {
             return response()->json(['message' => 'Transaksi penitipan not found'], 404);
@@ -393,6 +409,7 @@ class TransaksiPenitipanController extends Controller
 
     public function destroy($id)
     {
+        $this->ensureGudang();
         $transaksiPenitipan = TransaksiPenitipan::find($id);
         if (!$transaksiPenitipan) {
             return response()->json(['message' => 'Transaksi penitipan not found'], 404);
@@ -404,30 +421,25 @@ class TransaksiPenitipanController extends Controller
 
     public function transactionList(Request $request)
     {
+        $this->ensureGudang();
         $query = TransaksiPenitipan::with(['penitip', 'barang.gambar', 'qc', 'hunter']);
 
-        // Pencarian berdasarkan keyword
         if ($request->filled('keyword')) {
             $keyword = $request->input('keyword');
             $query->where(function ($q) use ($keyword) {
-                // Field di tabel transaksi_penitipan
                 $q->where('id_transaksi_penitipan', 'like', "%{$keyword}%")
                   ->orWhere('tanggal_penitipan', 'like', "%{$keyword}%")
-                  // Relasi penitip
                   ->orWhereHas('penitip', function ($q) use ($keyword) {
                       $q->where('nama_penitip', 'like', "%{$keyword}%");
                   })
-                  // Relasi qc
                   ->orWhereHas('qc', function ($q) use ($keyword) {
                       $q->where('nama_pegawai', 'like', "%{$keyword}%")
                         ->orWhere('id_pegawai', 'like', "%{$keyword}%");
                   })
-                  // Relasi hunter
                   ->orWhereHas('hunter', function ($q) use ($keyword) {
                       $q->where('nama_pegawai', 'like', "%{$keyword}%")
                         ->orWhere('id_pegawai', 'like', "%{$keyword}%");
                   })
-                  // Relasi barang
                   ->orWhereHas('barang', function ($q) use ($keyword) {
                       $q->where('kode_barang', 'like', "%{$keyword}%")
                         ->orWhere('nama_barang', 'like', "%{$keyword}%")
@@ -446,7 +458,6 @@ class TransaksiPenitipanController extends Controller
             });
         }
 
-        // Filter berdasarkan tanggal
         if ($request->filled('tanggal_mulai')) {
             $tanggal_mulai = $request->input('tanggal_mulai');
             $query->where('tanggal_penitipan', '>=', $tanggal_mulai);
@@ -463,23 +474,21 @@ class TransaksiPenitipanController extends Controller
 
     public function printNote($id)
     {
+        $this->ensureGudang();
         try {
             $transaction = TransaksiPenitipan::with(['penitip', 'barang', 'qc', 'hunter'])->findOrFail($id);
 
-            // Format No Nota: tahun.bulan.nomor_urut
-            $year = \Carbon\Carbon::parse($transaction->created_at)->format('y');
-            $month = \Carbon\Carbon::parse($transaction->created_at)->format('m');
+            $year = Carbon::parse($transaction->created_at)->format('y');
+            $month = Carbon::parse($transaction->created_at)->format('m');
             $nomorUrut = str_pad($transaction->id_transaksi_penitipan, 3, '0', STR_PAD_LEFT);
             $noNota = "$year.$month.$nomorUrut";
 
-            // Logika Delivery: kosong jadi "-", ambil nama hunter kalo ada
             $delivery = $transaction->id_hunter ? 'Hunter ReuseMart (' . ($transaction->hunter->nama_pegawai ?? 'N/A') . ')' : '-';
 
-            // Persiapan data untuk PDF
             $formattedData = [
                 'no_nota' => $noNota,
-                'tanggal_penitipan' => \Carbon\Carbon::parse($transaction->created_at)->format('d/m/Y H:i:s'),
-                'masa_penitipan' => \Carbon\Carbon::parse($transaction->barang->max('tanggal_berakhir'))->format('d/m/Y'),
+                'tanggal_penitipan' => Carbon::parse($transaction->created_at)->format('d/m/Y H:i:s'),
+                'masa_penitipan' => Carbon::parse($transaction->barang->max('tanggal_berakhir'))->format('d/m/Y'),
                 'penitip_nama' => ($transaction->penitip->id_penitip ?? 'N/A') . ' / ' . ($transaction->penitip->nama_penitip ?? 'N/A'),
                 'penitip_alamat' => $transaction->penitip->alamat ?? 'N/A',
                 'delivery' => $delivery,
@@ -487,7 +496,7 @@ class TransaksiPenitipanController extends Controller
                 'qc_nama' => $transaction->qc->nama_pegawai ?? 'N/A',
                 'barang_list' => $transaction->barang->map(function ($item) {
                     $garansi = $item->status_garansi == 'garansi' 
-                        ? 'Garansi ON ' . \Carbon\Carbon::parse($item->tanggal_garansi)->format('M Y')
+                        ? 'Garansi ON ' . Carbon::parse($item->tanggal_garansi)->format('M Y')
                         : '';
                     return [
                         'nama' => $item->nama_barang,
@@ -498,7 +507,6 @@ class TransaksiPenitipanController extends Controller
                 })->all(),
             ];
 
-            // Generate PDF
             $pdf = PDF::loadView('gudang.print_note', compact('transaction', 'formattedData'));
             $pdf->setPaper('A4', 'portrait');
             
@@ -510,18 +518,14 @@ class TransaksiPenitipanController extends Controller
         }
     }
 
-    // Daftar barang titipan (termasuk pencarian)
     public function itemList(Request $request)
     {
-        // $this->ensureAdmin();
-
+        $this->ensureGudang();
         $query = Barang::with(['transaksiPenitipan.penitip', 'kategori', 'gambar']);
 
-        // Pencarian berdasarkan keyword
         if ($request->filled('keyword')) {
             $keyword = $request->input('keyword');
             $query->where(function ($q) use ($keyword) {
-                // Field di tabel barang
                 $q->where('kode_barang', 'like', "%{$keyword}%")
                   ->orWhere('nama_barang', 'like', "%{$keyword}%")
                   ->orWhere('status_barang', 'like', "%{$keyword}%")
@@ -532,11 +536,9 @@ class TransaksiPenitipanController extends Controller
                   ->orWhere('perpanjangan', 'like', "%{$keyword}%")
                   ->orWhere('tanggal_garansi', 'like', "%{$keyword}%")
                   ->orWhere('tanggal_berakhir', 'like', "%{$keyword}%")
-                  // Relasi kategori
                   ->orWhereHas('kategori', function ($q) use ($keyword) {
                       $q->where('nama_kategori', 'like', "%{$keyword}%");
                   })
-                  // Relasi transaksiPenitipan dan penitip
                   ->orWhereHas('transaksiPenitipan', function ($q) use ($keyword) {
                       $q->where('tanggal_penitipan', 'like', "%{$keyword}%")
                         ->orWhere('id_qc', 'like', "%{$keyword}%")
@@ -548,7 +550,6 @@ class TransaksiPenitipanController extends Controller
             });
         }
 
-        // Filter berdasarkan tanggal
         if ($request->filled('tanggal_mulai')) {
             $tanggal_mulai = $request->input('tanggal_mulai');
             $query->whereHas('transaksiPenitipan', function ($q) use ($tanggal_mulai) {
@@ -565,11 +566,9 @@ class TransaksiPenitipanController extends Controller
         return view('gudang.item_list', compact('barangs'));
     }
 
-    // Detail barang
     public function itemDetail($id)
     {
-        // $this->ensureAdmin();
-
+        $this->ensureGudang();
         $barang = Barang::with(['transaksiPenitipan.penitip', 'kategori', 'gambar'])->findOrFail($id);
         return view('gudang.item_detail', compact('barang'));
     }

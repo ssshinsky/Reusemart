@@ -21,6 +21,7 @@ use App\Http\Controllers\ItemKeranjangController;
 use App\Http\Controllers\ResetPasswordController;
 use App\Http\Controllers\TransaksiPenitipanController;
 use App\Http\Controllers\TransaksiPembelianController;
+use App\Http\Controllers\DiskusiProdukController;
 use App\Models\Barang;
 
 Route::get('/', function () {
@@ -47,20 +48,27 @@ Route::post('/admin/logout', function () {
     return redirect('/login');
 })->name('admin.logout');
 
-  
-Route::post('/pembeli', [PembeliController::class, 'store']);
-Route::post('/organisasi', [OrganisasiController::class, 'store']);
-Route::get('/produk/allProduct', [BarangController::class, 'allProduct'])->name('produk.allproduct'); 
+// Public Routes
+Route::post('/pembeli', [PembeliController::class, 'store'])->name('pembeli.store');
+Route::post('/organisasi', [OrganisasiController::class, 'store'])->name('organisasi.store');
+Route::get('/produk/allProduct', [BarangController::class, 'allProduct'])->name('produk.allproduct');
+Route::get('/barang/{id}', [BarangController::class, 'show'])->name('umum.show');
+Route::post('/diskusi/store', [DiskusiProdukController::class, 'store'])->name('diskusi.store')->middleware('auth:pembeli');
 
-Route::get('/keranjang', [ItemKeranjangController::class, 'index'])->name('pembeli.keranjang');
+// Cart Routes
 Route::post('/keranjang/tambah/{id}', [ItemKeranjangController::class, 'tambah'])->name('cart.add');
 Route::post('/keranjang/hapus/{id}', [ItemKeranjangController::class, 'hapus'])->name('cart.remove');
 Route::post('/keranjang/toggle/{id}', [ItemKeranjangController::class, 'toggleSelect'])->name('cart.toggle');
 Route::post('/keranjang/checkout', [ItemKeranjangController::class, 'checkout'])->name('cart.checkout');
 
+// Reset Password Routes
+Route::get('/reset-password', [ResetPasswordController::class, 'showEmailForm'])->name('password.reset');
+Route::post('/password/send-code', [ResetPasswordController::class, 'sendCode'])->name('password.sendCode');
+Route::post('/password/verify-code', [ResetPasswordController::class, 'verifyCode'])->name('password.verifyCode');
+Route::post('/password/update', [ResetPasswordController::class, 'updatePassword'])->name('password.update');
 
-// =================== PENITIP ROUTES ===================
-Route::prefix('penitip')->group(function () {
+// Penitip Routes
+Route::prefix('penitip')->middleware('auth:penitip')->group(function () {
     Route::get('/profile', [PenitipController::class, 'profile'])->name('penitip.profile');
     Route::get('/{id}/edit', [PenitipController::class, 'editProfile'])->name('penitip.edit');
     Route::put('/{id}/update', [PenitipController::class, 'updateProfile'])->name('penitip.update');
@@ -69,45 +77,61 @@ Route::prefix('penitip')->group(function () {
     Route::get('/myproduct', [PenitipController::class, 'myproduct'])->name('penitip.myproduct');
     Route::get('/transaction', [PenitipController::class, 'transaction'])->name('penitip.transaction');
     Route::get('/transaction/filter/{type}', [PenitipController::class, 'filterTransaction'])->name('penitip.transaction.filter');
-    // Route::get('/reset-password', [ResetPasswordController::class, 'showResetForm'])->name('penitip.password');
     Route::get('/transaksi/hasil', [PenitipController::class, 'showSearchResult'])->name('penitip.detail');
+    Route::get('/reset-password', [ResetPasswordController::class, 'showResetForm'])->name('penitip.password');
 });
 
-// =================== PEMBELI ROUTES ===================
-Route::prefix('pembeli')->group(function () {
+// Pembeli Routes
+Route::prefix('pembeli')->middleware('auth:pembeli')->group(function () {
     Route::get('/profile', [PembeliController::class, 'profile'])->name('pembeli.profile');
     Route::get('/{id}/edit', [PembeliController::class, 'editProfile'])->name('pembeli.edit');
     Route::put('/{id}/update', [PembeliController::class, 'updateProfile'])->name('pembeli.update');
     Route::get('/history', [PembeliController::class, 'history'])->name('pembeli.history');
-    Route::get('/reward', [PembeliController::class, 'reward'])->name('pembeli.reward');
+    Route::get('/riwayat', [TransaksiPembelianController::class, 'riwayat'])->name('pembeli.riwayat');
     Route::get('/pembelian', [TransaksiPembelianController::class, 'index'])->name('pembeli.pembelian');
+    Route::get('/purchase', [PembeliController::class, 'purchase'])->name('pembeli.purchase');
+    Route::get('/reward', [PembeliController::class, 'reward'])->name('pembeli.reward');
     Route::get('/process-payment', [ItemKeranjangController::class, 'processPayment'])->name('pembeli.processPayment');
     Route::post('/bayar', [TransaksiPembelianController::class, 'bayar'])->name('pembeli.bayar');
     Route::get('/batal-checkout/{id}', [TransaksiPembelianController::class, 'batalkanOtomatis'])->name('pembeli.batalCheckout');
-    // Route::get('/reset-password', [ResetPasswordController::class, 'showResetForm'])->name('pembeli.password');
-
+    Route::get('/reset-password', [ResetPasswordController::class, 'showResetForm'])->name('pembeli.password');
     Route::get('/alamat', [AlamatController::class, 'alamatPembeli'])->name('pembeli.alamat');
     Route::post('/alamat', [AlamatController::class, 'store'])->name('pembeli.alamat.store');
     Route::put('/alamat/{id}', [AlamatController::class, 'update'])->name('pembeli.alamat.update');
     Route::delete('/alamat/{id}', [AlamatController::class, 'destroy'])->name('pembeli.alamat.destroy');
     Route::post('/alamat/{id}/set-default', [AlamatController::class, 'setDefault'])->name('pembeli.alamat.set_default');
+    Route::get('/keranjang', [KeranjangController::class, 'index'])->name('pembeli.cart'); // Restored to fix RouteNotFoundException
 });
 
-// ================= RESET PASSWORD ROUTES ===============
-Route::get('/reset-password', [ResetPasswordController::class, 'showEmailForm'])->name('password.reset');
-Route::post('/password/send-code', [ResetPasswordController::class, 'sendCode'])->name('password.sendCode');
-Route::post('/password/verify-code', [ResetPasswordController::class, 'verifyCode'])->name('password.verifyCode');
-Route::post('/password/update', [ResetPasswordController::class, 'updatePassword'])->name('password.update');
+// Organisasi Routes
+Route::prefix('organisasi')->middleware('auth:organisasi')->name('organisasi.')->group(function () {
+    Route::get('/', [RequestDonasiController::class, 'index'])->name('index');
+    Route::get('/request-donasi/add', [RequestDonasiController::class, 'create'])->name('request.create');
+    Route::post('/request-donasi', [RequestDonasiController::class, 'store'])->name('request.store');
+    Route::get('/request-donasi/{id}/edit', [RequestDonasiController::class, 'edit'])->name('request.edit');
+    Route::put('/request-donasi/{id}', [RequestDonasiController::class, 'update'])->name('request.update');
+    Route::get('/request-donasi/search', [RequestDonasiController::class, 'search'])->name('request.search');
+    Route::delete('/request-donasi/{id}', [RequestDonasiController::class, 'destroy'])->name('request.destroy');
+    Route::get('/profile', fn() => view('organisasi.profile'))->name('profile');
+});
 
-// ================= DISKUSI PRODUK ================
-Route::post('/diskusi/store', [DiskusiProdukController::class, 'store'])->name('diskusi.store');
+// Owner Routes
+Route::prefix('owner')->middleware(['auth:pegawai', 'pegawai.role:1'])->group(function () {
+    Route::get('/dashboard', [OwnerController::class, 'dashboard'])->name('owner.dashboard');
+    Route::get('/donation/requests', [OwnerController::class, 'donationRequests'])->name('owner.donation.requests');
+    Route::get('/donation/history', [OwnerController::class, 'donationHistory'])->name('owner.donation.history');
+    Route::get('/allocate-items', [OwnerController::class, 'allocateItems'])->name('owner.allocate.items');
+    Route::post('/allocate-items', [OwnerController::class, 'storeAllocation'])->name('owner.store.allocation');
+    Route::get('/update-donation', [OwnerController::class, 'updateDonation'])->name('owner.update.donation');
+    Route::post('/update-donation', [OwnerController::class, 'updateDonasiStore'])->name('owner.update.donasi.store');
+    Route::get('/rewards', [OwnerController::class, 'rewards'])->name('owner.rewards');
+    Route::get('/donasi', [OwnerController::class, 'getDonasi'])->name('owner.get.donasi');
+    Route::get('/requests-by-organisasi', [OwnerController::class, 'getRequestsByOrganisasi'])->name('owner.requests.by_organisasi');
+    Route::delete('/request/{id}', [OwnerController::class, 'deleteRequest'])->name('owner.delete.request');
+});
 
-Route::get('/barang/{id}', [BarangController::class, 'show'])->name('umum.show');
-// Route::post('/diskusi/store', [DiskusiProdukController::class, 'store'])->name('diskusi.store')->middleware('auth:pembeli');
-
-// Admin routes
-Route::prefix('admin')->group(function () {
-    //Dashboard
+// Admin Routes
+Route::prefix('admin')->middleware(['auth:pegawai', 'pegawai.role:2'])->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('admin.dashboard');
     Route::get('/employees', [PegawaiController::class, 'indexView'])->name('admin.employees.index');
     Route::get('/employees/add', [PegawaiController::class, 'create'])->name('admin.employees.create');
@@ -126,8 +150,6 @@ Route::prefix('admin')->group(function () {
     Route::put('/roles/{id}/deactivate', [RoleController::class, 'deactivate'])->name('admin.roles.deactivate');
     Route::put('/roles/{id}/reactivate', [RoleController::class, 'reactivate'])->name('admin.roles.reactivate');
     Route::get('/roles/search', [RoleController::class, 'search'])->name('admin.roles.search');
-
-    // ITEM OWNERS
     Route::get('/item-owners', [PenitipController::class, 'index'])->name('admin.penitip.index');
     Route::get('/item-owners/add', [PenitipController::class, 'create'])->name('admin.penitip.create');
     Route::post('/item-owners', [PenitipController::class, 'store'])->name('admin.penitip.store');
@@ -136,8 +158,6 @@ Route::prefix('admin')->group(function () {
     Route::put('/item-owners/{id}', [PenitipController::class, 'update'])->name('admin.penitip.update');
     Route::put('/item-owners/{id}/deactivate', [PenitipController::class, 'deactivate'])->name('admin.penitip.deactivate');
     Route::put('/item-owners/{id}/reactivate', [PenitipController::class, 'reactivate'])->name('admin.penitip.reactivate');
-
-    // CUSTOMERS
     Route::get('/customers', [PembeliController::class, 'index'])->name('admin.pembeli.index');
     Route::get('/customers/add', [PembeliController::class, 'create'])->name('admin.pembeli.create');
     Route::post('/customers', [PembeliController::class, 'store'])->name('admin.pembeli.store');
@@ -171,7 +191,8 @@ Route::prefix('admin')->group(function () {
     Route::put('/merchandise/{id}', [MerchandiseController::class, 'update'])->name('admin.merchandise.update');
 });
 
-Route::prefix('cs')->group(function () {
+// CS Routes
+Route::prefix('cs')->middleware(['auth:pegawai', 'pegawai.role:3'])->group(function () {
     Route::get('/dashboard', function () {
         return redirect()->route('cs.penitip.index');
     })->name('cs.dashboard');
@@ -185,46 +206,25 @@ Route::prefix('cs')->group(function () {
     Route::put('/item-owners/{id}/reactivate', [PenitipController::class, 'reactivate'])->name('cs.penitip.reactivate');
 });
 
-Route::prefix('owner')->middleware(['auth:pegawai'])->group(function () {
-    Route::get('/dashboard', [OwnerController::class, 'dashboard'])->name('owner.dashboard');
-    Route::get('/donation/requests', [OwnerController::class, 'donationRequests'])->name('owner.donation.requests');
-    Route::get('/donation/history', [OwnerController::class, 'donationHistory'])->name('owner.donation.history');
-    Route::get('/allocate-items', [OwnerController::class, 'allocateItems'])->name('owner.allocate.items');
-    Route::post('/allocate-items', [OwnerController::class, 'storeAllocation'])->name('owner.store.allocation');
-    Route::get('/update-donation', [OwnerController::class, 'updateDonation'])->name('owner.update.donation');
-    Route::post('/update-donation', [OwnerController::class, 'updateDonasiStore'])->name('owner.update.donasi.store');
-    Route::get('/rewards', [OwnerController::class, 'rewards'])->name('owner.rewards');
-    Route::get('/donasi', [OwnerController::class, 'getDonasi'])->name('owner.get.donasi');
-    Route::get('/requests-by-organisasi', [OwnerController::class, 'getRequestsByOrganisasi'])->name('owner.requests.by_organisasi');
-    Route::delete('/request/{id}', [OwnerController::class, 'deleteRequest'])->name('owner.delete.request');
-    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
-});
-
-Route::prefix('gudang')->name('gudang.')->group(function () {
-    // Dashboard
+// Gudang Routes
+Route::prefix('gudang')->middleware(['auth:pegawai', 'pegawai.role:4'])->name('gudang.')->group(function () {
     Route::get('/dashboard', [TransaksiPenitipanController::class, 'dashboard'])->name('dashboard');
-
-    // Tambah transaksi baru
     Route::get('/add-transaction', [TransaksiPenitipanController::class, 'create'])->name('add.transaction');
     Route::post('/store-transaction', [TransaksiPenitipanController::class, 'store'])->name('store.transaction');
-
-    // Daftar transaksi
     Route::get('/transaction-list', [TransaksiPenitipanController::class, 'transactionList'])->name('transaction.list');
-
-    // Pencarian transaksi
     Route::get('/search-transaction', [TransaksiPenitipanController::class, 'searchTransaction'])->name('transaction.search');
-
-    // Edit transaksi
     Route::get('/edit-transaction/{id}', [TransaksiPenitipanController::class, 'editTransaction'])->name('transaction.edit');
     Route::put('/update-transaction/{id}', [TransaksiPenitipanController::class, 'updateTransaction'])->name('transaction.update');
-
-    // Cetak nota
     Route::get('/print-note/{id}', [TransaksiPenitipanController::class, 'printNote'])->name('transaction.print');
-    
-    // Daftar barang (termasuk pencarian)
     Route::get('/item-list', [BarangController::class, 'itemList'])->name('item.list');
 });
 
-Route::get('/login', function () {
-    return redirect('/');
-})->name('login');
+// Kurir Routes
+Route::prefix('kurir')->middleware(['auth:pegawai', 'pegawai.role:5'])->group(function () {
+    Route::get('/dashboard', fn() => view('kurir.dashboard'))->name('kurir.dashboard');
+});
+
+// Hunter Routes
+Route::prefix('hunter')->middleware(['auth:pegawai', 'pegawai.role:6'])->group(function () {
+    Route::get('/dashboard', fn() => view('hunter.dashboard'))->name('hunter.dashboard');
+});

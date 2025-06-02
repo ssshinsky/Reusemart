@@ -45,9 +45,10 @@ class OrganisasiController extends Controller
     // Menambahkan organisasi baru
     public function store(Request $request)
     {
-        $this->ensureAdmin();
-       
-        $request->validate([
+        // Admin
+        $isAdmin = Auth::guard('pegawai')->check() && Auth::guard('pegawai')->user()->id_role == 2;
+
+        $validated = $request->validate([
             'nama_organisasi' => 'required|string',
             'alamat' => 'required|string',
             'kontak' => 'required|string',
@@ -56,18 +57,29 @@ class OrganisasiController extends Controller
         ]);
 
         $organisasi = Organisasi::create([
-            'nama_organisasi' => $request->nama_organisasi,
-            'alamat' => $request->alamat,
-            'kontak' => $request->kontak,
-            'email_organisasi' => $request->email_organisasi,
-            'password' => Hash::make($request->password),
+            'nama_organisasi' => $validated['nama_organisasi'],
+            'alamat' => $validated['alamat'],
+            'kontak' => $validated['kontak'],
+            'email_organisasi' => $validated['email_organisasi'],
+            'password' => Hash::make($validated['password']),
             'status_organisasi' => 'Active',
+            'profil_pict' => $request->profil_pict ?? 'default.png',
         ]);
 
-        return redirect()->route('admin.organisasi.index')->with('success', 'Organisasi berhasil ditambahkan.');
+        if ($isAdmin) {
+            return redirect()->route('admin.organisasi.index')->with('success', 'Organisasi berhasil ditambahkan.');
+        }
 
-        return response()->json($organisasi, 201);
+        // UMUM
+        Auth::guard('organisasi')->login($organisasi);
+        session([
+            'user' => ['id' => $organisasi->id_organisasi, 'nama' => $organisasi->nama_organisasi],
+            'role' => 'organisasi'
+        ]);
+
+        return redirect()->route('organisasi.organisasi');
     }
+
 
     public function edit($id)
     {
@@ -161,6 +173,13 @@ class OrganisasiController extends Controller
                         <button type="submit" class="redeactivate-btn" title="Aktifkan kembali">♻️</button>
                     </form>';
             }
+
+            $formDelete = '
+                <form action="'.route('admin.organisasi.destroy', $organisasi->id_organisasi).'" method="POST" class="form-delete" style="display:inline;">
+                    '.csrf_field().method_field('DELETE').'
+                    <button type="submit" class="delete-btn" title="Hapus">🗑️</button>
+                </form>';
+            $html .= $formDelete;
 
             $html .= '</td></tr>';
         }

@@ -59,8 +59,7 @@
                                 @endif
 
                                 <form action="{{ route('admin.organisasi.destroy', $organisasi->id_organisasi) }}"
-                                    method="POST" style="display:inline;"
-                                    onsubmit="return confirm('Yakin ingin menghapus organisasi ini?');">
+                                    method="POST" class="form-delete" style="display:inline;">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="delete-btn">🗑️</button>
@@ -116,6 +115,7 @@
                 if (tbody) {
                     tbody.innerHTML = html;
                     rebindEditToggle();
+                    bindConfirmButtons();
                 }
             })
             .catch(err => console.error('Live search error:', err));
@@ -127,7 +127,7 @@
             e.preventDefault();
             Swal.fire({
                 title: 'Are you sure?',
-                text: 'This employee will be deactivated!',
+                text: 'This Organization will be deactivated!',
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#d33',
@@ -145,8 +145,8 @@
         form.addEventListener('submit', function(e) {
             e.preventDefault();
             Swal.fire({
-                title: 'Reactivate this employee?',
-                text: 'This employee will regain access to the system.',
+                title: 'Reactivate this Organization?',
+                text: 'This Organization will regain access to the system.',
                 icon: 'question',
                 showCancelButton: true,
                 confirmButtonColor: '#28a745',
@@ -159,6 +159,64 @@
             });
         });
     });
+    function bindConfirmButtons() {
+        document.querySelectorAll('.form-nonaktif').forEach(form => {
+            form.addEventListener('submit', function (e) {
+                e.preventDefault();
+                Swal.fire({
+                    title: 'Are you sure?',
+                    text: 'This item owner will be deactivated!',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#aaa',
+                    confirmButtonText: 'Yes, deactivate!'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        form.submit();
+                    }
+                });
+            });
+        });
+
+        document.querySelectorAll('.form-reactivate').forEach(form => {
+            form.addEventListener('submit', function (e) {
+                e.preventDefault();
+                Swal.fire({
+                    title: 'Reactivate this item owner?',
+                    text: 'They will regain access.',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#28a745',
+                    cancelButtonColor: '#aaa',
+                    confirmButtonText: 'Yes, reactivate!'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        form.submit();
+                    }
+                });
+            });
+        });
+        document.querySelectorAll('.form-delete').forEach(form => {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                Swal.fire({
+                    title: 'Delete this organization?',
+                    text: 'Data will be permanently deleted!',
+                    icon: 'error',
+                    showCancelButton: true,
+                    confirmButtonColor: '#e74c3c',
+                    cancelButtonColor: '#aaa',
+                    confirmButtonText: 'Yes, delete!'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        form.submit();
+                    }
+                });
+            });
+        });
+    }
+    document.addEventListener('DOMContentLoaded', bindConfirmButtons);
 </script>
 
 <style>

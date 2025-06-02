@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>@yield('title', 'Admin Panel')</title>
+    <title>@yield('title', 'Request Donasi')</title>
     <link rel="icon" type="image/png" href="{{ asset('assets/images/logo.png') }}">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -149,7 +149,7 @@
 <body>
     <div class="topbar">
         <div class="topbar-left">
-            <a href="{{ route('admin.dashboard') }}">
+            <a href="{{ route('cs.dashboard') }}">
                 <img src="{{ asset('images/Reusemart kiri.png') }}" alt="ReUse Mart">
             </a>
         </div>
@@ -158,7 +158,7 @@
             <img src="{{ asset('images/avatar.png') }}" alt="avatar" height="40"
                 style="border-radius: 50%; margin-right: 5px;">
             <span style="font-weight: 400;">
-                {{ Auth::guard('pegawai')->user()->nama_pegawai }} ⏷
+                {{ Auth::guard('organisasi')->user()->nama_organisasi }} ⏷
             </span>
 
             <div class="dropdown-content" id="dropdownContent">
@@ -174,18 +174,8 @@
     <div class="main-wrapper">
         <!-- SIDEBAR -->
         <div class="sidebar">
-            <a href="{{ route('admin.employees.index') }}"
-                class="menu-item {{ request()->is('admin/employees*') ? 'active' : '' }}">👥 Employees</a>
-            <a href="{{ route('admin.roles.index') }}"
-                class="menu-item {{ request()->is('admin/roles*') ? 'active' : '' }}">💼 Roles</a>
-            <a href="{{ route('admin.pembeli.index') }}"
-                class="menu-item {{ request()->is('admin/customers*') ? 'active' : '' }}">🛍️ Customers</a>
-            <a href="{{ route('admin.organisasi.index') }}"
-                class="menu-item {{ request()->is('admin/organizations*') ? 'active' : '' }}">🏢 Organizations</a>
-            <a href="{{ route('admin.produk.index') }}"
-                class="menu-item {{ request()->is('admin/products*') ? 'active' : '' }}">🏷️ Products</a>
-            <a href="{{ route('admin.merch.index') }}"
-                class="menu-item {{ request()->is('admin/merchandise*') ? 'active' : '' }}">🎁 Merchandise</a>
+            <a href="{{ route('organisasi.index') }}"
+                class="menu-item {{ request()->is('organisasi*') ? 'active' : '' }}">💝 Request Donasi</a>
         </div>
 
         <!-- DYNAMIC CONTENT -->

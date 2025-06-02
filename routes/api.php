@@ -11,6 +11,10 @@ Route::post('/pegawai/login', [PegawaiController::class, 'login']);
 Route::get('/barang/{id}', [BarangController::class, 'show'])->name('barang.show');
 // Route::post('/diskusi/store', [DiskusiProdukController::class, 'store'])->name('diskusi.store')->middleware('auth:pembeli');
 
+Route::get('/barang', [BarangController::class, 'apiIndex']);
+Route::get('/barang/{id}', [BarangController::class, 'apiShow']);
+Route::get('/kategori', [BarangController::class, 'getKategoriApi']);
+
 Route::middleware('auth:api')->group(function () {
     // Logout Pegawai
     Route::post('/pegawai/logout', [PegawaiController::class, 'logout']);

@@ -10,13 +10,13 @@
     @stack('styles')
     <style>
         :root {
-            --primary-color: #00b14f;
-            --secondary-color: #019944;
+            --primary-color: #00b14f; /* Hijau utama dari desain awal */
+            --secondary-color: #019944; /* Variasi hijau lebih gelap */
             --text-dark: #1a2c34;
             --text-muted: #6c757d;
             --bg-light: #f4f6f9;
             --border-color: #e0e4e8;
-            --sidebar-bg: rgba(19, 124, 64, 0.57);
+            --sidebar-bg: rgba(19, 124, 64, 0.57); /* Sesuai desain awal */
             --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
         }
 
@@ -34,7 +34,7 @@
             left: 0;
             height: 100vh;
             width: 260px;
-            background-color: var(--sidebar-bg);
+            background-color: var(--sidebar-bg); /* Tetap mirip desain awal */
             border-right: 1px solid var(--border-color);
             padding: 30px 20px;
             transition: transform 0.3s ease, width 0.3s ease;
@@ -121,7 +121,7 @@
 
         /* Buttons */
         .btn-primary, .btn-success {
-            background-color: var(--primary-color);
+            background-color: var(--primary-color); /* Kembali ke warna utama */
             border: none;
             border-radius: 10px;
             font-weight: 500;
@@ -131,7 +131,7 @@
         }
 
         .btn-primary:hover, .btn-success:hover {
-            background-color: var(--secondary-color);
+            background-color: var(--secondary-color); /* Variasi gelap */
             transform: translateY(-2px);
             box-shadow: 0 4px 10px rgba(0, 177, 79, 0.3);
         }
@@ -152,6 +152,22 @@
             box-shadow: 0 4px 10px rgba(220, 53, 69, 0.3);
         }
 
+        .btn-outline-primary {
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+            font-weight: 500;
+            padding: 10px 20px;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-outline-primary:hover {
+            background-color: var(--primary-color);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0, 177, 79, 0.3);
+        }
+
         /* Card */
         .card {
             border: none;
@@ -165,6 +181,11 @@
         .card:hover {
             transform: translateY(-5px);
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+        }
+
+        /* Text */
+        .text-success {
+            color: var(--primary-color) !important;
         }
 
         /* Responsive */
@@ -210,26 +231,21 @@
 <body>
     <!-- Sidebar -->
     <div class="sidebar">
-        <div class="logo">Owner Panel</div>
+        <div class="logo">Gudang Panel</div>
         <nav class="sidebar-menu">
-            <a href="{{ route('owner.dashboard') }}" class="{{ Route::is('owner.dashboard') ? 'active' : '' }}">
+            <a href="{{ route('gudang.dashboard') }}" class="{{ Route::is('gudang.dashboard') ? 'active' : '' }}">
                 <i class="bi bi-house-door"></i> Dashboard
             </a>
-            <a href="{{ route('owner.donation.requests') }}" class="{{ Route::is('owner.donation.requests') ? 'active' : '' }}">
-                <i class="bi bi-list-check"></i> Daftar Request Donasi
+            <a href="{{ route('gudang.add.transaction') }}" class="{{ Route::is('gudang.add.transaction') ? 'active' : '' }}">
+                <i class="bi bi-plus-circle"></i> Tambah Transaksi
             </a>
-            <a href="{{ route('owner.donation.history') }}" class="{{ Route::is('owner.donation.history') ? 'active' : '' }}">
-                <i class="bi bi-clock-history"></i> History Donasi
+            <a href="{{ route('gudang.transaction.list') }}" class="{{ Route::is('gudang.transaction.list') ? 'active' : '' }}">
+                <i class="bi bi-list-check"></i> Daftar Transaksi
             </a>
-            <a href="{{ route('owner.allocate.items') }}" class="{{ Route::is('owner.allocate.items') ? 'active' : '' }}">
-                <i class="bi bi-box-seam"></i> Alokasi Barang
+            <a href="{{ route('gudang.item.list') }}" class="{{ Route::is('gudang.item.list') ? 'active' : '' }}">
+                <i class="bi bi-boxes"></i> Daftar Barang
             </a>
-            <a href="{{ route('owner.update.donation') }}" class="{{ Route::is('owner.update.donation') ? 'active' : '' }}">
-                <i class="bi bi-pencil-square"></i> Update Donasi
-            </a>
-            <a href="{{ route('owner.rewards') }}" class="{{ Route::is('owner.rewards') ? 'active' : '' }}">
-                <i class="bi bi-gift"></i> Poin Reward
-            </a>
+            
             <form action="{{ route('logout') }}" method="POST" class="mt-4">
                 @csrf
                 <button type="submit" class="btn btn-danger w-100">
@@ -248,7 +264,6 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         function toggleSidebar() {
             const sidebar = document.querySelector('.sidebar');

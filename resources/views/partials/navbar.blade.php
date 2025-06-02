@@ -23,8 +23,8 @@
                 <div class="d-flex align-items-center me-3">
                     <a href="{{ route('welcome') }}" class="me-3 text-decoration-none text-dark">Home</a>
                     <a href="{{ route('about') }}" class="me-3 text-decoration-none text-dark">About</a>
-                    <a href="{{ route('pembeli.keranjang') }}" class="text-success position-relative">
-                        <i class="fa-solid fa-cart-shopping fs-4"></i>
+                    <a href="{{ route('pembeli.cart') }}" class="text-success position-relative me-3">
+                        <i class="bi bi-cart-fill fs-4"></i>
                     </a>
                 </div>
 

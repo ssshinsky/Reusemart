@@ -6,36 +6,26 @@ use App\Models\Penitip;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class PenitipController extends Controller
 {
-    private function ensureAdminOrCS()
-    {
-        $user = Auth::guard('pegawai')->user();
-        if (!$user || !in_array($user->id_role, [2, 3])) {
-            abort(403, 'Akses ditolak.');
-        }
-    }
-
-
     public function create()
     {
         $pegawai = Auth::guard('pegawai')->user();
 
-        if ($pegawai->id_role == 2) {
-            return view('Admin.Penitip.add_penitip');
-        } elseif ($pegawai->id_role == 3) {
-            return view('CS.add_penitip');
-        } else {
-            abort(403, 'Akses ditolak.');
+        if ($pegawai->id_role != 3) {
+            abort(403, 'Hanya CS yang boleh mengakses.');
         }
+
+        return view('CS.add_penitip');
     }
+
 
     public function store(Request $request)
     {
-        $this->ensureAdminOrCS();
-        
         $request->validate([
+            'foto_ktp' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
             'nik_penitip' => 'required|string|unique:penitip,nik_penitip',
             'nama_penitip' => 'required|string',
             'email_penitip' => 'required|email|unique:penitip,email_penitip',
@@ -43,7 +33,13 @@ class PenitipController extends Controller
             'alamat' => 'required|string',
         ]);
 
+        $pathKTP = null;
+        if ($request->hasFile('foto_ktp')) {
+            $pathKTP = $request->file('foto_ktp')->store('ktp_penitip', 'public');
+        }
+
         Penitip::create([
+            'foto_ktp' => $pathKTP,
             'nik_penitip' => $request->nik_penitip,
             'nama_penitip' => $request->nama_penitip,
             'email_penitip' => $request->email_penitip,
@@ -54,8 +50,10 @@ class PenitipController extends Controller
             'saldo_penitip' => 0,
             'rata_rating'     => 0,
         ]);
+        $pegawai = Auth::guard('pegawai')->user();
+        $prefix = $pegawai->id_role == 3 ? 'admin' : 'cs';
 
-        return redirect()->route('admin.penitip.index')->with('success', 'Penitip berhasil ditambahkan.');
+        return redirect()->route($prefix . '.penitip.index')->with('success', 'Penitip berhasil ditambahkan.');
     }
 
     // Tampilkan profil penitip yang sedang login
@@ -79,21 +77,22 @@ class PenitipController extends Controller
     // Tampilkan halaman produk yang tersedia
     public function product()
     {
-        $produk = \App\Models\Barang::with('kategori')->where('id_penitip', auth()->id())->get();
+        $id = Auth::guard('penitip')->id();
+        $produk = \App\Models\Barang::with('kategori')->where('id_penitip', $id)->get();
         return view('Penitip.product', compact('produk'));
     }
 
     // Tampilkan riwayat transaksi penitip
     public function transaction()
     {
-        $transaksis = \App\Models\TransaksiPenitipan::with('barang')->where('id_penitip', auth()->id())->get();
+        $transaksis = \App\Models\TransaksiPenitipan::with('barang')->where('id_penitip', Auth::guard('penitip')->id());
         return view('Penitip.transaction', compact('transaksis'));
     }
 
     public function filterTransaction($type)
     {
         $query = \App\Models\TransaksiPenitipan::with('barang')
-            ->where('id_penitip', auth()->id());
+            ->where('id_penitip', Auth::guard('penitip')->id());
 
         switch ($type) {
             case 'sold':
@@ -154,33 +153,28 @@ class PenitipController extends Controller
     // Menampilkan halaman daftar penitip (item owners)
     public function index()
     {
-        $penitips = Penitip::all();
         $pegawai = Auth::guard('pegawai')->user();
 
-        if ($pegawai->id_role == 2) {
-            // Admin
-            return view('Admin.Penitip.penitip', compact('penitips'));
-        } elseif ($pegawai->id_role == 3) {
-            // CS
-            return view('CS.penitip', compact('penitips'));
-        } else {
-            bort(403, 'Akses ditolak.');
+        if ($pegawai->id_role != 3) {
+            abort(403, 'Hanya CS yang boleh mengakses.');
         }
+
+        $penitips = Penitip::all();
+        return view('CS.penitip', compact('penitips'));
     }
+
 
     // Menampilkan form edit penitip
     public function edit($id)
     {
-        $penitip = Penitip::findOrFail($id);
         $pegawai = Auth::guard('pegawai')->user();
 
-        if ($pegawai->id_role == 2) {
-            return view('Admin.Penitip.edit_penitip', compact('penitip'));
-        } elseif ($pegawai->id_role == 3) {
-            return view('CS.edit_penitip', compact('penitip'));
-        } else {
-            abort(403, 'Akses ditolak.');
+        if ($pegawai->id_role != 3) {
+            abort(403, 'Hanya CS yang boleh mengakses.');
         }
+
+        $penitip = Penitip::findOrFail($id);
+        return view('CS.edit_penitip', compact('penitip'));
     }
 
     public function editProfile($id)
@@ -227,9 +221,12 @@ class PenitipController extends Controller
     // Update data penitip
     public function update(Request $request, $id)
     {
-        $this->ensureAdminOrCS();
-
         $penitip = Penitip::findOrFail($id);
+
+        // Setelah di Add, seharusnya KTP tidak bisa dihapus atau diedit
+        if ($request->hasFile('foto_ktp')) {
+            abort(403, 'Mengubah foto KTP tidak diperbolehkan.');
+        }
 
         $request->validate([
             'nik_penitip' => 'required|string|unique:penitip,nik_penitip,' . $id . ',id_penitip',
@@ -258,49 +255,43 @@ class PenitipController extends Controller
             'profil_pict' => $penitip->profil_pict,
         ]);
 
-        return redirect()->route('admin.penitip.index')->with('success', 'Data berhasil diperbarui.');
+        return redirect()->route('cs.penitip.index')->with('success', 'Data berhasil diperbarui.');
     }
 
     // Menonaktifkan penitip
     public function deactivate($id)
     {
-        $this->ensureAdminOrCS();
-        
         $penitip = Penitip::findOrFail($id);
         $penitip->update(['status_penitip' => 'Non Active']);
 
-        return redirect()->route('admin.penitip.index')->with('success', 'Penitip dinonaktifkan.');
+        return redirect()->route('cs.penitip.index')->with('success', 'Penitip dinonaktifkan.');
     }
 
     // Mengaktifkan kembali penitip
     public function reactivate($id)
     {
-        $this->ensureAdminOrCS();
-        
         $penitip = Penitip::findOrFail($id);
         $penitip->update(['status_penitip' => 'Active']);
 
-        return redirect()->route('admin.penitip.index')->with('success', 'Penitip diaktifkan kembali.');
+        return redirect()->route('cs.penitip.index')->with('success', 'Penitip diaktifkan kembali.');
     }
 
     // Reset password penitip (ke tanggal lahir atau default tertentu, misalnya "123456")
     public function resetPassword($id)
     {
-        $this->ensureAdminOrCS();
-        
         $penitip = Penitip::findOrFail($id);
         $penitip->update([
             'password' => Hash::make('123456') // ganti dengan password default sesuai kebutuhan
         ]);
 
-        return redirect()->route('admin.penitip.index')->with('success', 'Password berhasil direset.');
+        return redirect()->route('cs.penitip.index')->with('success', 'Password berhasil direset.');
     }
 
     public function search(Request $request)
     {
         $pegawai = Auth::guard('pegawai')->user();
 
-        if (!$pegawai || !in_array($pegawai->id_role, [2, 3])) {
+        if (!$pegawai || !in_array($pegawai->id_role, [3])) {
             abort(403, 'Akses ditolak.');
         }
 
@@ -315,9 +306,7 @@ class PenitipController extends Controller
             ->orWhere('nik_penitip', 'LIKE', "%$query%")
             ->get();
 
-        // Tentukan prefix route berdasarkan role
-        $prefix = $pegawai->id_role == 2 ? 'admin' : 'cs';
-
+        $prefix = 'cs';
         $html = '';
 
         foreach ($penitips as $penitip) {
@@ -326,6 +315,7 @@ class PenitipController extends Controller
             <tr>
                 <td class="center">'.$penitip->id_penitip.'</td>
                 <td'.($status !== 'active' ? ' style="color: #E53E3E; font-weight: bold;"' : '').'>'.$penitip->nama_penitip.'</td>
+                <td>'.$penitip->nik_penitip.'</td>
                 <td>'.$penitip->email_penitip.'</td>
                 <td>'.$penitip->no_telp.'</td>
                 <td>'.$penitip->alamat.'</td>

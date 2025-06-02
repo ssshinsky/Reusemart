@@ -10,6 +10,14 @@
     @method('PUT')
 
     <div class="form-grid">
+        @if ($penitip->foto_ktp)
+            <div class="form-group">
+                <label>Foto KTP</label>
+                <img src="{{ asset('storage/' . $penitip->foto_ktp) }}"
+                    alt="Foto KTP"
+                    style="width: 320px; height: 200px; object-fit: contain; border-radius: 4px;" />
+            </div>
+        @endif
         <div class="form-column">
             <div class="form-group">
                 <label for="nik_penitip">NIK</label>

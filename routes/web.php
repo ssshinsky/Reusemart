@@ -32,7 +32,7 @@ Route::get('/', function () {
 
 Route::get('/about', function () {return view('about');})->name('about');
 Route::post('/login', [AuthController::class, 'login'])->name('login.submit');
-Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+Route::post('/logout', [AuthController::class, 'logout'])->name('logout.submit');
 Route::post('/admin/logout', function () {
     session()->flush();
     return redirect('/login');
@@ -183,6 +183,10 @@ Route::prefix('cs')->group(function () {
     Route::put('/item-owners/{id}', [PenitipController::class, 'update'])->name('cs.penitip.update');
     Route::put('/item-owners/{id}/deactivate', [PenitipController::class, 'deactivate'])->name('cs.penitip.deactivate');
     Route::put('/item-owners/{id}/reactivate', [PenitipController::class, 'reactivate'])->name('cs.penitip.reactivate');
+    Route::get('/transaksi-pembelian', [TransaksiPembelianController::class, 'show'])->name('transaksi-pembelian.index');
+    Route::post('/transaksi-pembelian/{id_pembelian}/verify', [TransaksiPembelianController::class, 'verify'])
+    ->name('cs.transaksi-pembelian.verify');
+    Route::get('/transaksi-pembelian/search', [TransaksiPembelianController::class, 'search'])->name('cs.transaksi-pembelian.search');
 });
 
 Route::prefix('owner')->middleware(['auth:pegawai'])->group(function () {

@@ -17,18 +17,22 @@ class AuthController extends Controller
         foreach (['pegawai', 'penitip', 'pembeli', 'organisasi'] as $guard) {
             if (Auth::guard($guard)->check()) {
                 Auth::guard($guard)->logout();
-                session()->forget('role');
-                session()->forget('user');
             }
         }
 
-        // Hapus semua session
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
+        // Log isi session SEBELUM invalidate (jika kamu mau debug)
+        logger('User before invalidate: ' . json_encode(session('user')));
+        logger('Role before invalidate: ' . json_encode(session('role')));
 
-        return redirect('/');
+        session()->forget(['user', 'role']);
+        $request->session()->invalidate();        // Ini menghapus semua data session
+        $request->session()->regenerateToken();   // Regenerasi CSRF token
+
+        return redirect('/')->withHeaders([
+            'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+            'Pragma' => 'no-cache',
+        ]);
     }
-
 
     public function login(Request $request)
     {

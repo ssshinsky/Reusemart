@@ -50,10 +50,11 @@
                                     Saya</a></li>
                         @endif
                         <li>
-                            <form id="logout-form" action="{{ route('logout') }}" method="POST">
+                            <form id="logout-form" action="{{ route('logout.submit') }}" method="POST">
                                 @csrf
                                 <button type="submit" class="dropdown-item">Log Out</button>
                             </form>
+
                         </li>
                     </ul>
                 </div>

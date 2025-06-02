@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\TransaksiPembelian;
 use App\Models\Keranjang;
 use App\Models\Pembeli;
+use App\Models\Penitip;
 use App\Models\DetailKeranjang;
 use App\Models\ItemKeranjang;
 use Illuminate\Http\Request;
@@ -310,6 +311,95 @@ class TransaksiPembelianController extends Controller
         }
 
         return back()->with('success', 'Bukti transfer berhasil diupload.');
+    }
+
+   public function show()
+    {
+        $transaksi = TransaksiPembelian::with([
+            'keranjang.detailKeranjang.itemKeranjang.barang.penitip',
+            'keranjang.detailKeranjang.itemKeranjang.pembeli'
+        ])
+            ->orderBy('tanggal_pembelian', 'desc')
+            ->get();
+
+        return view('cs.transaksi-pembelian.index', compact('transaksi'));
+    }
+
+    public function verify(Request $request, $id_pembelian)
+    {
+        try {
+            $transaksi = TransaksiPembelian::findOrFail($id_pembelian);
+
+            if ($transaksi->status_transaksi !== 'Menunggu Konfirmasi') {
+                \Log::warning('Transaksi sudah diproses', ['id_pembelian' => $id_pembelian, 'status' => $transaksi->status_transaksi]);
+                return redirect()->back()->with('error', 'Transaksi sudah diproses atau tidak dalam status Menunggu Konfirmasi.');
+            }
+
+            $request->validate([
+                'is_valid' => 'required|boolean',
+            ]);
+
+            \DB::beginTransaction();
+
+            if ($request->is_valid) {
+                $transaksi->status_transaksi = 'Disiapkan';
+                $transaksi->save();
+
+                $keranjang = Keranjang::find($transaksi->id_keranjang);
+                $detailKeranjang = DetailKeranjang::where('id_keranjang', $keranjang->id_keranjang)->get();
+                $penitipIds = [];
+
+                foreach ($detailKeranjang as $detail) {
+                    $item = ItemKeranjang::find($detail->id_item_keranjang);
+                    if ($item && $item->barang && $item->barang->penitip) {
+                        $penitipIds[] = $item->barang->penitip->id_penitip;
+                    }
+                }
+
+                $penitip = Penitip::whereIn('id_penitip', $penitipIds)->get();
+                if ($penitip->isNotEmpty()) {
+                    Notification::send($penitip, new TransaksiDisiapkanNotification($transaksi));
+                    \Log::info('Notifikasi dikirim ke penitip', ['id_pembelian' => $id_pembelian, 'penitip_ids' => $penitipIds]);
+                } else {
+                    \Log::warning('Tidak ada penitip ditemukan untuk transaksi', ['id_pembelian' => $id_pembelian]);
+                }
+
+                \DB::commit();
+                return redirect()->route('transaksi-pembelian.index')->with('success', 'Bukti pembayaran valid. Status transaksi diubah ke Disiapkan.');
+            } else {
+                $transaksi->status_transaksi = 'Dibatalkan';
+                $transaksi->save();
+
+                \DB::commit();
+                \Log::info('Transaksi verified as invalid', ['id_pembelian' => $id_pembelian]);
+                return redirect()->route('transaksi-pembelian.index')->with('success', 'Bukti pembayaran tidak valid. Transaksi dibatalkan.');
+            }
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            \DB::rollBack();
+            \Log::error('Validation failed in verify', ['id_pembelian' => $id_pembelian, 'errors' => $e->errors()]);
+            return redirect()->back()->withErrors($e->errors())->withInput();
+        } catch (\Exception $e) {
+            \DB::rollBack();
+            \Log::error('Failed to verify transaksi', ['id_pembelian' => $id_pembelian, 'error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+            return redirect()->back()->with('error', 'Gagal memverifikasi transaksi: ' . $e->getMessage());
+        }
+    }
+
+    public function search(Request $request)
+    {
+        $query = $request->query('q', '');
+        $transaksi = TransaksiPembelian::with([
+            'keranjang.detailKeranjang.itemKeranjang.barang.penitip',
+            'keranjang.detailKeranjang.itemKeranjang.pembeli'
+        ])
+            ->where('no_resi', 'LIKE', "%{$query}%")
+            ->orWhereHas('keranjang.detailKeranjang.itemKeranjang.pembeli', function ($q) use ($query) {
+                $q->where('nama_pembeli', 'LIKE', "%{$query}%");
+            })
+            ->orderBy('tanggal_pembelian', 'desc')
+            ->get();
+
+        return view('cs.verifikasi_transaksi_table', compact('transaksi'))->render();
     }
 
 

@@ -57,6 +57,16 @@
                                             <td colspan="4" class="text-end fw-bold">Ongkir</td>
                                             <td class="fw-bold">IDR {{ number_format(100000, 0, ',', '.') }}</td>
                                         </tr>
+                                    @elseif ($metodePengiriman === 'kurir' && $totalHarga >= 1500000)
+                                        <tr>
+                                            <td colspan="4" class="text-end fw-bold">Ongkir</td>
+                                            <td class="fw-bold">Free</td>
+                                        </tr>
+                                    @elseif ($metodePengiriman === 'ambil')
+                                        <tr>
+                                            <td colspan="4" class="text-end fw-bold">Ongkir</td>
+                                            <td class="fw-bold">IDR {{ number_format(0, 0, ',', '.') }}</td>
+                                        </tr>
                                     @endif
                                     <tr>
                                         <td colspan="4" class="text-end fw-bold">Total Setelah Poin</td>

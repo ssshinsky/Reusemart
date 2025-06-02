@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use App\Models\ItemKeranjang;
 use App\Models\Keranjang;
 use App\Models\DetailKeranjang;
@@ -58,10 +59,6 @@ class ItemKeranjangController extends Controller
             ->where('id_barang', $id)
             ->first();
 
-        if ($existingItem) {
-            return response('exists', 200);
-        }
-
         // Tambahkan ke keranjang
         ItemKeranjang::create([
             'id_pembeli' => $idPembeli,
@@ -70,8 +67,6 @@ class ItemKeranjangController extends Controller
             'created_at' => now(),
             'updated_at' => now()
         ]);
-
-        return response('added', 200);
     }
 
     // Hapus item dari keranjang
@@ -107,15 +102,25 @@ class ItemKeranjangController extends Controller
 
     $idPembeli = $user['id'];
 
+    // Konversi selected_items ke integer
+    $selectedItems = array_map('intval', $request->input('selected_items'));
+    $request->merge(['selected_items' => $selectedItems]);
+
     // Validasi input
     try {
         $request->validate([
             'selected_items' => 'required|array',
-            'selected_items.*' => 'exists:item_keranjang,id_item_keranjang',
+            'selected_items.*' => [
+                'required',
+                Rule::exists('item_keranjang', 'id_item_keranjang')->where(function ($query) use ($idPembeli) {
+                    $query->where('id_pembeli', $idPembeli);
+                }),
+            ],
             'metode_pengiriman' => 'required|string|in:kurir,ambil',
             'id_alamat' => 'required_if:metode_pengiriman,kurir|nullable|exists:alamat,id_alamat',
         ], [
             'selected_items.required' => 'Pilih setidaknya satu item untuk checkout.',
+            'selected_items.*.exists' => 'Item yang dipilih tidak ada di keranjang Anda atau tidak valid.',
             'metode_pengiriman.required' => 'Pilih metode pengiriman.',
             'id_alamat.required_if' => 'Pilih alamat pengiriman untuk metode kurir.',
             'id_alamat.exists' => 'Alamat yang dipilih tidak valid.',
@@ -145,6 +150,7 @@ class ItemKeranjangController extends Controller
         return redirect()->back()->with('error', 'Tidak ada item yang dipilih atau item tidak valid.');
     }
 
+    // Lanjutkan kode seperti sebelumnya
     $totalHargaBarang = $items->sum(fn($item) => $item->barang->harga_barang);
     $ongkir = ($totalHargaBarang >= 1500000 || $metodePengiriman !== 'kurir') ? 0 : 100000;
     $totalHarga = $totalHargaBarang + $ongkir;

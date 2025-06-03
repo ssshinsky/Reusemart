@@ -95,12 +95,13 @@ Route::prefix('pembeli')->middleware('auth:pembeli')->group(function () {
     Route::post('/bayar', [TransaksiPembelianController::class, 'bayar'])->name('pembeli.bayar');
     Route::get('/batal-checkout/{id}', [TransaksiPembelianController::class, 'batalkanOtomatis'])->name('pembeli.batalCheckout');
     Route::get('/reset-password', [ResetPasswordController::class, 'showResetForm'])->name('pembeli.password');
+    Route::get('/transaksi/{id}', [TransaksiPembelianController::class, 'detail'])->name('pembeli.transaksi.detail');
     Route::get('/alamat', [AlamatController::class, 'alamatPembeli'])->name('pembeli.alamat');
     Route::post('/alamat', [AlamatController::class, 'store'])->name('pembeli.alamat.store');
     Route::put('/alamat/{id}', [AlamatController::class, 'update'])->name('pembeli.alamat.update');
     Route::delete('/alamat/{id}', [AlamatController::class, 'destroy'])->name('pembeli.alamat.destroy');
     Route::post('/alamat/{id}/set-default', [AlamatController::class, 'setDefault'])->name('pembeli.alamat.set_default');
-    Route::get('/keranjang', [KeranjangController::class, 'index'])->name('pembeli.cart'); // Restored to fix RouteNotFoundException
+    Route::get('/keranjang', [ItemKeranjangController::class, 'index'])->name('pembeli.cart'); // Restored to fix RouteNotFoundException
 });
 
 // Organisasi Routes

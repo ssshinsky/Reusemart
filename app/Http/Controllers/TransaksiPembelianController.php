@@ -286,7 +286,7 @@ class TransaksiPembelianController extends Controller
 
             \Log::info('Transaksi created:', $transaksi->toArray());
 
-            return redirect()->route('pembeli.riwayat')->with('success', 'Pembayaran berhasil! Menunggu konfirmasi admin.');
+            return redirect()->route('pembeli.purchase')->with('success', 'Pembayaran berhasil! Menunggu konfirmasi admin.');
         } catch (\Illuminate\Validation\ValidationException $e) {
             \Log::error('Validation failed in bayar', ['errors' => $e->errors()]);
             return redirect()->back()->withErrors($e->errors())->withInput();
@@ -402,5 +402,76 @@ class TransaksiPembelianController extends Controller
         return view('cs.verifikasi_transaksi_table', compact('transaksi'))->render();
     }
 
+    public function riwayat(Request $request)
+    {
+        $user = session('user');
+        $role = session('role');
 
+        // Check if the user is a buyer and logged in
+        if ($role !== 'pembeli' || !$user) {
+            Log::error('Unauthorized access to riwayat', ['user' => $user, 'role' => $role]);
+            return response('Unauthorized', 403);
+        }
+
+        $idPembeli = $user['id'];
+        Log::info('Fetching riwayat for id_pembeli', ['id_pembeli' => $idPembeli]);
+
+        // Fetch transactions with joins
+        $transaksi = TransaksiPembelian::with(['detail.barang', 'keranjang'])
+            ->join('keranjang', 'transaksi_pembelian.id_keranjang', '=', 'keranjang.id_keranjang')
+            ->join('detail_keranjang', 'keranjang.id_keranjang', '=', 'detail_keranjang.id_keranjang')
+            ->join('item_keranjang', 'detail_keranjang.id_item_keranjang', '=', 'item_keranjang.id_item_keranjang')
+            ->where('item_keranjang.id_pembeli', $idPembeli)
+            ->orderBy('transaksi_pembelian.created_at', 'desc')
+            ->select('transaksi_pembelian.*')
+            ->distinct();
+
+        // Debug the query
+        $query = $transaksi->toSql();
+        $bindings = $transaksi->getBindings();
+        Log::info('Riwayat query', ['query' => $query, 'bindings' => $bindings]);
+
+        // Execute query with pagination
+        $transaksi = $transaksi->paginate(10);
+
+        // Log results
+        Log::info('Riwayat results', ['count' => $transaksi->count(), 'data' => $transaksi->toArray()]);
+
+        // Return the view
+        return view('pembeli.history', compact('transaksi'));
+    }
+
+    public function detail($id)
+    {
+        $user = session('user');
+        $role = session('role');
+
+        if ($role !== 'pembeli' || !$user) {
+            Log::error('Unauthorized access to detail', ['user' => $user, 'role' => $role]);
+            return response('Unauthorized', 403);
+        }
+
+        $idPembeli = $user['id'];
+        Log::info('Fetching detail for id_pembeli and transaction id', ['id_pembeli' => $idPembeli, 'id_transaksi' => $id]);
+
+        // Fetch transaction with joins
+        $transaksi = TransaksiPembelian::with(['detail.barang', 'keranjang'])
+            ->join('keranjang', 'transaksi_pembelian.id_keranjang', '=', 'keranjang.id_keranjang')
+            ->join('detail_keranjang', 'keranjang.id_keranjang', '=', 'detail_keranjang.id_keranjang')
+            ->join('item_keranjang', 'detail_keranjang.id_item_keranjang', '=', 'item_keranjang.id_item_keranjang')
+            ->where('item_keranjang.id_pembeli', $idPembeli)
+            ->where('transaksi_pembelian.id', $id)
+            ->select('transaksi_pembelian.*')
+            ->first();
+
+        // Debug the result
+        if (!$transaksi) {
+            Log::error('No transaction found', ['id_pembeli' => $idPembeli, 'id_transaksi' => $id]);
+            abort(404, 'Transaksi tidak ditemukan');
+        }
+
+        Log::info('Detail transaction', ['transaksi' => $transaksi->toArray()]);
+
+        return view('pembeli.transaksi_detail', compact('transaksi'));
+    }
 }

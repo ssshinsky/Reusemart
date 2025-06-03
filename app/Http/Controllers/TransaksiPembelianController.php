@@ -11,27 +11,14 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 
-
 class TransaksiPembelianController extends Controller
 {
-    // Menampilkan daftar semua transaksi pembelian
     public function index()
     {
         $transaksiPembelian = TransaksiPembelian::all();
         return response()->json($transaksiPembelian);
     }
 
-    // Menampilkan transaksi pembelian berdasarkan ID
-    // public function show($id)
-    // {
-    //     $transaksi = TransaksiPembelian::with(['keranjang.detailKeranjang.barang', 'alamat'])
-    //                     ->where('id_pembelian', $id)
-    //                     ->firstOrFail();
-
-    //     return view('pembeli.purchase', compact('transaksi'));
-    // }
-    
-    // Menambahkan transaksi pembelian baru
     public function store(Request $request)
     {
         $request->validate([
@@ -75,7 +62,6 @@ class TransaksiPembelianController extends Controller
         return response()->json($transaksiPembelian, 201);
     }
 
-    // Mengupdate transaksi pembelian berdasarkan ID
     public function update(Request $request, $id)
     {
         $transaksiPembelian = TransaksiPembelian::find($id);
@@ -124,7 +110,6 @@ class TransaksiPembelianController extends Controller
         return response()->json($transaksiPembelian);
     }
 
-    // Menghapus transaksi pembelian berdasarkan ID
     public function destroy($id)
     {
         $transaksiPembelian = TransaksiPembelian::find($id);
@@ -144,13 +129,11 @@ class TransaksiPembelianController extends Controller
             return redirect()->route('pembeli.cart')->with('error', 'Keranjang tidak ditemukan.');
         }
 
-        // Kembalikan stok barang
         foreach ($keranjang->detailKeranjang as $detail) {
             $barang = $detail->itemKeranjang->barang;
             $barang->save();
         }
 
-        // Hapus data keranjang dan detail
         DetailKeranjang::where('id_keranjang', $keranjang->id_keranjang)->delete();
         $keranjang->delete();
 
@@ -159,7 +142,73 @@ class TransaksiPembelianController extends Controller
 
     public function bayar(Request $request)
     {
+<<<<<<< HEAD
         \Log::info('Bayar Request:', $request->all());
+=======
+        Log::info('Bayar Request:', ['input' => $request->all()]);
+
+        $request->validate([
+            'poin_ditukar' => 'required|numeric|min:0',
+            'bukti_pembayaran' => 'required|image|mimes:jpeg,png,jpg|max:2048',
+            'total_final' => 'required|numeric|min:0',
+            'bonus_poin' => 'required|numeric|min:0',
+        ]);
+
+        $user = session('user');
+        $role = session('role');
+        if ($role !== 'pembeli' || !$user) {
+            Log::error('User not logged in or not pembeli', ['user' => $user, 'role' => $role]);
+            return redirect()->route('login')->with('error', 'Anda harus login sebagai pembeli.');
+        }
+
+        $idPembeli = $user['id'];
+        $pembeli = Pembeli::find($idPembeli);
+        if (!$pembeli) {
+            Log::error('Pembeli not found', ['id_pembeli' => $idPembeli]);
+            return redirect()->back()->with('error', 'Data pembeli tidak ditemukan.');
+        }
+
+        $keranjangId = session('checkout_keranjang_id');
+        $alamatId = session('checkout_id_alamat');
+        $metode = session('checkout_metode_pengiriman');
+        $totalHarga = session('checkout_total_harga');
+
+        if (!$keranjangId || !$metode || !$totalHarga) {
+            Log::error('Session data missing', [
+                'keranjang_id' => $keranjangId,
+                'metode' => $metode,
+                'total_harga' => $totalHarga
+            ]);
+            return redirect()->back()->with('error', 'Data checkout tidak lengkap.');
+        }
+
+        $keranjang = Keranjang::with('detailKeranjang.itemKeranjang.barang')->findOrFail($keranjangId);
+        $items = $keranjang->detailKeranjang->map->itemKeranjang;
+        if ($items->isEmpty()) {
+            Log::error('No items in keranjang', ['keranjang_id' => $keranjangId]);
+            return redirect()->back()->with('error', 'Keranjang kosong atau tidak valid.');
+        }
+
+        $totalHargaBarang = $items->sum(fn($item) => $item->barang->harga_barang);
+        $ongkir = ($totalHargaBarang >= 1500000 || $metode !== 'kurir') ? 0 : 100000;
+        $tahunBulan = now()->format('Y.m.');
+        $lastTransaksi = TransaksiPembelian::where('no_resi', 'like', $tahunBulan . '%')
+            ->orderBy('no_resi', 'desc')
+            ->first();
+        $nomorUrut = $lastTransaksi ? (int)substr($lastTransaksi->no_resi, -3) + 1 : 1;
+        $noResi = $tahunBulan . str_pad($nomorUrut, 3, '0', STR_PAD_LEFT);
+
+        $poinDitukar = (int)$request->poin_ditukar;
+        if ($poinDitukar > $pembeli->poin_pembeli) {
+            Log::error('Poin ditukar lebih besar dari poin dimiliki', [
+                'poin_ditukar' => $poinDitukar,
+                'poin_pembeli' => $pembeli->poin_pembeli,
+            ]);
+            return redirect()->back()->with('error', 'Poin yang ditukar melebihi poin yang dimiliki.');
+        }
+
+        $path = $request->file('pembayaran')->store('pembayaran', 'public');
+>>>>>>> 90baa564b3910b8abc1d582137c8a299e4072c1f
 
         try {
             // Validasi input
@@ -280,6 +329,7 @@ class TransaksiPembelianController extends Controller
             // Commit transaksi
             DB::commit();
 
+<<<<<<< HEAD
             // Clear session
             session()->forget(['checkout_keranjang_id', 'checkout_selected_items', 'checkout_metode_pengiriman', 'checkout_id_alamat', 'checkout_total_harga']);
 
@@ -289,13 +339,15 @@ class TransaksiPembelianController extends Controller
         } catch (\Illuminate\Validation\ValidationException $e) {
             \Log::error('Validation failed in bayar', ['errors' => $e->errors()]);
             return redirect()->back()->withErrors($e->errors())->withInput();
+=======
+            return redirect()->route('index');
+>>>>>>> 90baa564b3910b8abc1d582137c8a299e4072c1f
         } catch (\Exception $e) {
             DB::rollBack();
             \Log::error('Failed to create transaksi', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
             return redirect()->back()->with('error', 'Gagal menyimpan transaksi: ' . $e->getMessage());
         }
     }
-
 
     public function uploadBukti(Request $request, $id)
     {
@@ -312,5 +364,139 @@ class TransaksiPembelianController extends Controller
         return back()->with('success', 'Bukti transfer berhasil diupload.');
     }
 
+    public function history()
+    {
+        $user = session('user');
+        if (!$user || session('role') !== 'pembeli') {
+            Log::warning('Unauthorized access to history', ['user' => $user, 'role' => session('role')]);
+            return redirect()->route('login')->with('error', 'Anda harus login sebagai pembeli.');
+        }
 
+        $idPembeli = $user['id'];
+        $pembeli = Pembeli::find($idPembeli);
+        if (!$pembeli) {
+            Log::error('Pembeli not found', ['id_pembeli' => $idPembeli]);
+            return redirect()->back()->with('error', 'Data pembeli tidak ditemukan.');
+        }
+
+        $riwayat = TransaksiPembelian::with(['keranjang.detailKeranjang.itemKeranjang.barang.transaksiPenitipan.penitip'])
+            ->whereHas('keranjang.detailKeranjang.itemKeranjang', function ($query) use ($idPembeli) {
+                $query->where('id_pembeli', $idPembeli);
+            })
+            ->get();
+
+        return view('Pembeli.history', compact('riwayat'));
+    }
+
+    public function showRatingPage($id)
+    {
+        $user = session('user');
+        if (!$user || session('role') !== 'pembeli') {
+            Log::warning('Unauthorized access to rating page', ['user' => $user, 'role' => session('role')]);
+            return redirect()->route('login')->with('error', 'Anda harus login sebagai pembeli.');
+        }
+
+        $idPembeli = $user['id'];
+        $transaksi = TransaksiPembelian::with('keranjang.detailKeranjang.itemKeranjang.barang.transaksiPenitipan.penitip')
+            ->where('id_pembelian', $id)
+            ->where('status_transaksi', 'selesai')
+            ->whereHas('keranjang.detailKeranjang.itemKeranjang', function ($query) use ($idPembeli) {
+                $query->where('id_pembeli', $idPembeli);
+            })
+            ->firstOrFail();
+
+        // Periksa apakah ada barang yang belum dirating
+        $hasUnratedItems = $transaksi->keranjang->detailKeranjang->contains(function ($detail) {
+            return is_null($detail->itemKeranjang->barang->rating);
+        });
+
+        if (!$hasUnratedItems) {
+            return redirect()->route('pembeli.purchase')->with('info', 'Semua item dalam transaksi ini sudah dirating.');
+        }
+
+        return view('Pembeli.rating', compact('transaksi'));
+    }
+
+    public function rateTransaction(Request $request, $id)
+    {
+        $user = session('user');
+        if (!$user || session('role') !== 'pembeli') {
+            Log::warning('Unauthorized rating attempt', ['user' => $user, 'role' => session('role')]);
+            return redirect()->route('login')->with('error', 'Anda harus login sebagai pembeli.');
+        }
+
+        $idPembeli = $user['id'];
+        $transaksi = TransaksiPembelian::with('keranjang.detailKeranjang.itemKeranjang.barang.transaksiPenitipan.penitip')
+            ->where('id_pembelian', $id)
+            ->where('status_transaksi', 'selesai')
+            ->whereHas('keranjang.detailKeranjang.itemKeranjang', function ($query) use ($idPembeli) {
+                $query->where('id_pembeli', $idPembeli);
+            })
+            ->firstOrFail();
+
+        $request->validate([
+            'ratings' => 'required|array',
+            'ratings.*' => 'required|integer|min:1|max:5',
+        ], [
+            'ratings.required' => 'Harap berikan rating untuk semua item.',
+            'ratings.*.required' => 'Rating untuk setiap item wajib diisi.',
+            'ratings.*.integer' => 'Rating harus berupa angka bulat.',
+            'ratings.*.min' => 'Rating minimal adalah 1.',
+            'ratings.*.max' => 'Rating maksimal adalah 5.',
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $ratings = $request->ratings;
+            foreach ($transaksi->keranjang->detailKeranjang as $detail) {
+                $barang = $detail->itemKeranjang->barang;
+                $barangId = $barang->id_barang;
+                $rating = $ratings[$barangId] ?? null;
+
+                if ($rating && is_null($barang->rating)) {
+                    // Simpan rating di tabel barang
+                    $barang->update(['rating' => $rating]);
+
+                    // Update rata_rating dan banyak_rating di penitip
+                    $transaksiPenitipan = $barang->transaksiPenitipan;
+                    if ($transaksiPenitipan) {
+                        $penitip = $transaksiPenitipan->penitip;
+                        $currentAverage = $penitip->rata_rating ?? 0;
+                        $currentCount = $penitip->banyak_rating ?? 0;
+
+                        // Hitung rata-rata baru: ((rata_rating * banyak_rating) + rating) / (banyak_rating + 1)
+                        $newAverage = ($currentCount > 0)
+                            ? (($currentAverage * $currentCount) + $rating) / ($currentCount + 1)
+                            : $rating;
+
+                        // Update penitip
+                        $penitip->update([
+                            'rata_rating' => $newAverage,
+                            'banyak_rating' => $currentCount + 1,
+                        ]);
+
+                        Log::info('Rating processed', [
+                            'transaksi_id' => $id,
+                            'barang_id' => $barangId,
+                            'rating' => $rating,
+                            'penitip_id' => $penitip->id_penitip,
+                            'new_average' => $newAverage,
+                            'new_count' => $currentCount + 1,
+                        ]);
+                    }
+                }
+            }
+
+            DB::commit();
+            return redirect()->route('pembeli.purchase')->with('success', 'Rating berhasil disubmit!');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error rating transaction: ' . $e->getMessage(), [
+                'transaksi_id' => $id,
+                'user_id' => $idPembeli,
+            ]);
+            return redirect()->back()->with('error', 'Terjadi kesalahan saat menyimpan rating.');
+        }
+    }
 }

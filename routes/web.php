@@ -68,11 +68,14 @@ Route::prefix('pembeli')->group(function () {
     Route::get('/profile', [PembeliController::class, 'profile'])->name('pembeli.profile');
     Route::get('/{id}/edit', [PembeliController::class, 'editProfile'])->name('pembeli.edit');
     Route::put('/{id}/update', [PembeliController::class, 'updateProfile'])->name('pembeli.update');
-    Route::get('/history', [PembeliController::class, 'history'])->name('pembeli.history');
+    Route::get('/history', [TransaksiPembelianController::class, 'history'])->name('pembeli.purchase');
+    Route::get('/pembeli/rating/{id}', [TransaksiPembelianController::class, 'showRatingPage'])->name('pembeli.rating');
+    Route::post('/pembeli/rate/{id}', [TransaksiPembelianController::class, 'rateTransaction'])->name('pembeli.rate');
     Route::get('/reward', [PembeliController::class, 'reward'])->name('pembeli.reward');
     Route::get('/pembelian', [TransaksiPembelianController::class, 'index'])->name('pembeli.pembelian');
     Route::post('/bayar', [TransaksiPembelianController::class, 'bayar'])->name('pembeli.bayar');
     Route::get('/batal-checkout/{id}', [TransaksiPembelianController::class, 'batalkanOtomatis'])->name('pembeli.batalCheckout');
+    Route::post('/rate/{id}', [TransaksiPembelianController::class, 'rateTransaction'])->name('pembeli.rate');
     // Route::get('/reset-password', [ResetPasswordController::class, 'showResetForm'])->name('pembeli.password');
 
     Route::get('/alamat', [AlamatController::class, 'alamatPembeli'])->name('pembeli.alamat');

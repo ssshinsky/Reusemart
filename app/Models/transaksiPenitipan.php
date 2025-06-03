@@ -12,6 +12,7 @@ class transaksiPenitipan extends Model
     // Nama tabel yang digunakan oleh model
     protected $table = 'transaksi_penitipan';
     protected $primaryKey = 'id_transaksi_penitipan';
+    public $timestamps = false;
 
     // Kolom yang dapat diisi (Mass Assignment)
     protected $fillable = [
@@ -41,9 +42,8 @@ class transaksiPenitipan extends Model
         return $this->belongsTo(Penitip::class, 'id_penitip');
     }
 
-    // Relasi ke Barang
-    public function barang()
+    public function barangs()
     {
-        return $this->hasMany(Barang::class, 'id_transaksi_penitipan', 'id_transaksi_penitipan');
+        return $this->hasMany(Barang::class, 'id_transaksi_penitipan');
     }
 }

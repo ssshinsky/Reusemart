@@ -6,25 +6,32 @@ use App\Models\Barang;
 use App\Models\Kategori;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use App\Models\DiskusiProduk;
 use Carbon\Carbon;
 
 class BarangController extends Controller
 {
-    private function ensureAdmin()
+    private function ensurePegawaiCSOrAdmin()
     {
-        if (!Auth::guard('pegawai')->check() || Auth::guard('pegawai')->user()->id_role != 2) {
+        $pegawai = Auth::guard('pegawai')->user();
+
+        if (!$pegawai || !in_array($pegawai->id_role, [2, 3])) {
             abort(403, 'Akses ditolak.');
         }
     }
 
+
     // Halaman utama admin (produk.blade.php)
     public function index()
     {
-        $this->ensureAdmin();
+        $this->ensurePegawaiCSOrAdmin();
        
         $barangs = Barang::with(['transaksiPenitipan.penitip', 'kategori'])->get();
-        return view('Admin.Produk.produk', compact('barangs'));
+        $pegawai = Auth::guard('pegawai')->user();
+        $view = $pegawai->id_role == 3 ? 'CS.produk' : 'Admin.Produk.produk';
+        return view($view, compact('barangs'));
+
     }
 
     //ini untuk dihalaman utama
@@ -43,7 +50,7 @@ class BarangController extends Controller
 
     public function search(Request $request)
     {
-        $this->ensureAdmin();
+        $this->ensurePegawaiCSOrAdmin();
        
         if (!$request->ajax()) {
             return response('', 204);
@@ -60,6 +67,7 @@ class BarangController extends Controller
             ->get();
 
         $html = '';
+        $prefix = Auth::guard('pegawai')->user()->id_role == 3 ? 'cs' : 'admin';
 
         foreach ($barangs as $barang) {
             $kategori = $barang->kategori->nama_kategori ?? '-';
@@ -91,7 +99,7 @@ class BarangController extends Controller
                 <td>'.$penitip.'</td>
                 <td>'.$barang->deskripsi_barang.'</td>
                 <td class="action-cell" style="background-color:rgb(255, 245, 220)">
-                    <a href="'.route('admin.produk.edit', $barang->id_barang).'" class="edit-btn">✏️</a>
+                    <a href="'.route($prefix.'.produk.edit', $barang->id_barang).'" class="edit-btn">✏️</a>
                 </td>
             </tr>';
         }
@@ -107,18 +115,20 @@ class BarangController extends Controller
     // Ubah status jadi Donated
     public function deactivate($id)
     {
-        $this->ensureAdmin();
+        $this->ensurePegawaiCSOrAdmin();
        
         $barang = Barang::findOrFail($id);
         $barang->update(['status_barang' => 'Donated']);
 
-        return redirect()->route('admin.produk.index')->with('success', 'Produk ditandai sebagai Donated');
+        $prefix = Auth::guard('pegawai')->user()->id_role == 3 ? 'cs' : 'admin';
+        return redirect()->route($prefix . '.produk.index')->with('success', 'Produk ditandai sebagai Donated');
+
     }
 
     // Ubah status jadi Available
     public function reactivate($id)
     {
-        $this->ensureAdmin();
+        $this->ensurePegawaiCSOrAdmin();
        
         $barang = Barang::findOrFail($id);
         $barang->update(['status_barang' => 'Available']);
@@ -157,14 +167,14 @@ class BarangController extends Controller
 
             return view('umum.show', compact('barang', 'diskusi', 'statusGaransi', 'garansiBerlaku'));
         } catch (\Exception $e) {
-            \Log::error('Error in BarangController@show: ' . $e->getMessage() . ' | Stack: ' . $e->getTraceAsString());
+            Log::error('Error in BarangController@show: ' . $e->getMessage() . ' | Stack: ' . $e->getTraceAsString());
             dd($e->getMessage(), $e->getTraceAsString()); // Tampilkan error di browser
         }
     }
 
     public function store(Request $request)
     {        
-        $this->ensureAdmin();
+        $this->ensurePegawaiCSOrAdmin();
 
         $request->validate([
             'id_kategori' => 'required|exists:kategori,id_kategori',
@@ -186,7 +196,7 @@ class BarangController extends Controller
 
     public function update(Request $request, $id)
     {
-        $this->ensureAdmin();
+        $this->ensurePegawaiCSOrAdmin();
 
         $barang = Barang::find($id);
         if (!$barang) {

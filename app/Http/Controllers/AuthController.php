@@ -64,7 +64,7 @@ class AuthController extends Controller
         $penitip = Penitip::where('email_penitip', $email)->first();
         if ($penitip && Hash::check($password, $penitip->password)) {
             Auth::guard('penitip')->login($penitip);
-            return redirect('/dashboard-penitip');
+            return redirect('/penitip/myProduct');
         }
 
         // 3. Cek Pembeli

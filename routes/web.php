@@ -76,10 +76,14 @@ Route::prefix('penitip')->middleware('auth:penitip')->group(function () {
     Route::put('/{id}/update', [PenitipController::class, 'updateProfile'])->name('penitip.update');
     Route::get('/reward', [PenitipController::class, 'rewards'])->name('penitip.rewards');
     Route::get('/product', [PenitipController::class, 'product'])->name('penitip.product');
-    Route::get('/myproduct', [PenitipController::class, 'myproduct'])->name('penitip.myproduct');
+    Route::get('/myProduct', [PenitipController::class, 'myProduct'])->name('penitip.myproduct');
     Route::get('/transaction', [PenitipController::class, 'transaction'])->name('penitip.transaction');
     Route::get('/transaction/filter/{type}', [PenitipController::class, 'filterTransaction'])->name('penitip.transaction.filter');
     Route::get('/reset-password', [ResetPasswordController::class, 'showResetForm'])->name('penitip.password');
+    Route::get('/myProduct/search', [PenitipController::class, 'searchProducts'])->name('penitip.products.search');
+    Route::post('/perpanjang/{id}', [PenitipController::class, 'perpanjang'])->name('penitip.perpanjang');
+    Route::patch('/barang/{id}/confirm-pickup', [PenitipController::class, 'confirmPickup']);
+    Route::get('/api/barang/{id}/check-pickup-info', [PenitipController::class, 'getPickupDeadline']);
 });
 
 // =================== PEMBELI ROUTES ===================
@@ -217,6 +221,7 @@ Route::prefix('cs')->middleware(['auth:pegawai', 'pegawai.role:3'])->group(funct
 
 Route::prefix('gudang')->middleware(['auth:pegawai', 'pegawai.role:4'])->group(function () {
     Route::get('/dashboard', fn() => view('gudang.dashboard'))->name('gudang.dashboard');
+    Route::get('/transaksi-pengiriman', [GudangController::class, 'indexPengiriman'])->name('gudang.pengiriman');
 });
 
 Route::prefix('kurir')->middleware(['auth:pegawai', 'pegawai.role:5'])->group(function () {

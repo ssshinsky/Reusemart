@@ -3,10 +3,6 @@
         class="list-group-item {{ request()->routeIs('penitip.profile') ? 'active' : '' }}">
         <i class="bi bi-person"></i> My Account
     </a>
-    <a href="{{ route('penitip.profile') }}"
-        class="list-group-item {{ request()->routeIs('penitip.profile') ? 'active' : '' }}">
-        <i class="bi bi-key"></i> Change Password
-    </a>
     <a href="{{ route('penitip.myproduct') }}"
         class="list-group-item {{ request()->routeIs('penitip.myproduct') ? 'active' : '' }}">
         <i class="bi bi-box-seam"></i> My Product

@@ -25,7 +25,10 @@ class Barang extends Model
         'deskripsi_barang', 
         'status_garansi', 
         'status_barang', 
-        'tanggal_garansi'
+        'tanggal_garansi',
+        'perpanjangan',
+        'batas_pengambilan',
+        'tanggal_konfirmasi_pengambilan',
     ];
 
     // Relasi dengan model Kategori
@@ -37,7 +40,7 @@ class Barang extends Model
     // Relasi dengan model TransaksiPenitipan
     public function transaksiPenitipan()
     {
-        return $this->belongsTo(transaksiPenitipan::class, 'id_transaksi_penitipan', 'id_transaksi_penitipan');
+        return $this->belongsTo(TransaksiPenitipan::class, 'id_transaksi_penitipan');
     }
 
     // Relasi ke DiskusiProduk

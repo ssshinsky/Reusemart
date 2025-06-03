@@ -114,7 +114,8 @@ class PembeliController extends Controller
         return view('Admin.Pembeli.edit_pembeli', compact('pembeli'));
     }
 
-    public function update(Request $request, $id)
+    // Web: Update pembeli
+    public function updateProfile(Request $request, $id)
     {
         $pembeli = Pembeli::findOrFail($id);
 

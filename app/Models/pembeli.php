@@ -39,6 +39,11 @@ class Pembeli extends Authenticatable
         'poin_pembeli' => 'integer', // Mengonversi poin_pembeli menjadi tipe integer
     ];
 
+    public function getPoinAttribute()
+    {
+        return $this->poin_pembeli;
+    }
+
     // public function keranjangs() {
     //     return $this->hasMany(Keranjang::class, 'id_pembeli');
     // }

@@ -11,18 +11,18 @@ use App\Models\Organisasi;
 
 class AuthController extends Controller
 {
+
     public function logout(Request $request)
     {
-        if (Auth::guard('pegawai')->check()) {
-            Auth::guard('pegawai')->logout();
-        } elseif (Auth::guard('penitip')->check()) {
-            Auth::guard('penitip')->logout();
-        } elseif (Auth::guard('pembeli')->check()) {
-            Auth::guard('pembeli')->logout();
-        } elseif (Auth::guard('organisasi')->check()) {
-            Auth::guard('organisasi')->logout();
+        foreach (['pegawai', 'penitip', 'pembeli', 'organisasi'] as $guard) {
+            if (Auth::guard($guard)->check()) {
+                Auth::guard($guard)->logout();
+                session()->forget('role');
+                session()->forget('user');
+            }
         }
 
+        // Hapus semua session
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
@@ -52,18 +52,26 @@ class AuthController extends Controller
                 1 => redirect('/owner/dashboard'),
                 2 => redirect('/admin'),
                 3 => redirect('/cs/dashboard'),
-                4 => redirect('/gudang'),
+                4 => redirect('/gudang/dashboard'),
                 5 => redirect('/kurir'),
                 6 => redirect('/hunter'),
                 default => redirect('/pegawai'),
             };
         }
 
-
         // 2. Cek Penitip
         $penitip = Penitip::where('email_penitip', $email)->first();
         if ($penitip && Hash::check($password, $penitip->password)) {
             Auth::guard('penitip')->login($penitip);
+            session([
+                'user' => [
+                    'id' => $penitip->id_penitip,
+                    'nama' => $penitip->nama_penitip,
+                    'email' => $penitip->email_penitip,
+                ],
+                'role' => 'penitip',
+            ]);
+            $request->session()->regenerate();
             return redirect('/penitip/myProduct');
         }
 
@@ -71,7 +79,17 @@ class AuthController extends Controller
         $pembeli = Pembeli::where('email_pembeli', $email)->first();
         if ($pembeli && Hash::check($password, $pembeli->password)) {
             Auth::guard('pembeli')->login($pembeli);
-            return redirect()->route('pembeli.profile');
+            session([
+                'user' => [
+                    'id' => $pembeli->id_pembeli,
+                    'nama' => $pembeli->nama_pembeli,
+                    'email' => $pembeli->email_pembeli,
+                    'poin_pembeli' => $pembeli->poin_pembeli ?? 0, // Tambahkan poin_pembeli
+                ],
+                'role' => 'pembeli',
+            ]);
+            $request->session()->regenerate();
+            return redirect('/');
         }
 
         // 4. Cek Organisasi
@@ -80,6 +98,7 @@ class AuthController extends Controller
             Auth::guard('organisasi')->login($organisasi);
             return redirect('/organisasi');
         }
+
         return back()->with('error', 'Email atau password salah.');
     }
 }

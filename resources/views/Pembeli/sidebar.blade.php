@@ -9,8 +9,8 @@
             class="list-group-item list-group-item-action {{ request()->routeIs('pembeli.alamat') ? 'active' : '' }}">
             Address
         </a>
-        <a href="{{ route('pembeli.password') }}"
-            class="list-group-item list-group-item-action {{ request()->routeIs('pembeli.password') ? 'active' : '' }}">
+        <a href="{{ route('password.reset') }}"
+            class="list-group-item list-group-item-action {{ request()->routeIs('password.reset') ? 'active' : '' }}">
             Change Password
         </a>
 

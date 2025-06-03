@@ -15,8 +15,8 @@
 
         <div class="d-flex align-items-center">
             @php
-                $role = $role ?? session('role');
-                $user = $user ?? session('user');
+                $role = session('role');
+                $user = session('user');
             @endphp
 
             @if ($role && $user)
@@ -33,14 +33,14 @@
                         data-bs-toggle="dropdown" aria-expanded="false">
                         <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center me-2"
                             style="width: 32px; height: 32px;">
-                            <i class="bi bi-person-fill"></i>
+                            <i class="fa-solid fa-user fs-6"></i>
                         </div>
                         {{ $user['nama'] ?? 'User' }}
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end">
                         @if ($role === 'pembeli')
                             <li><a class="dropdown-item" href="{{ route('pembeli.profile') }}">My Account</a></li>
-                            <li><a class="dropdown-item" href="{{ route('pembeli.purchase') }}">My Order</a></li>
+                            {{-- <li><a class="dropdown-item" href="{{ route('pembeli.purchase') }}">My Order</a></li> --}}
                         @elseif ($role === 'penitip')
                             <li><a class="dropdown-item" href="{{ route('penitip.profile') }}">My Account</a></li>
                             <li><a class="dropdown-item" href="{{ route('penitip.myproduct') }}">My Product</a></li>
@@ -50,10 +50,10 @@
                                     Saya</a></li>
                         @endif
                         <li>
-                            <a class="dropdown-item" href="#"
-                                onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
-                                Log Out
-                            </a>
+                            <form id="logout-form" action="{{ route('logout') }}" method="POST">
+                                @csrf
+                                <button type="submit" class="dropdown-item">Log Out</button>
+                            </form>
                         </li>
                     </ul>
                 </div>
@@ -69,7 +69,3 @@
         </div>
     </div>
 </nav>
-
-<form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
-    @csrf
-</form>

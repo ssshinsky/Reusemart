@@ -13,6 +13,9 @@ class TransaksiPembelian extends Model
 
     // Nama tabel yang digunakan oleh model
     protected $table = 'transaksi_pembelian';
+    protected $primaryKey = 'id_pembelian';
+    public $incrementing = true;
+    protected $keyType = 'int';
 
     // Kolom yang dapat diisi (Mass Assignment)
     protected $fillable = [
@@ -63,6 +66,7 @@ class TransaksiPembelian extends Model
     {
         return $this->hasMany(Komisi::class, 'id_pembelian', 'id_pembelian');
     }
+  
     public function detailPembelians()
     {
         return $this->hasMany(DetailPembelian::class, 'id_transaksi');

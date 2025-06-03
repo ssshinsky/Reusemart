@@ -11,6 +11,7 @@ class Gambar extends Model
 
     // Nama tabel yang digunakan oleh model
     protected $table = 'gambar';
+    protected $primaryKey = 'id_gambar';
 
     // Kolom yang dapat diisi (Mass Assignment)
     protected $fillable = [

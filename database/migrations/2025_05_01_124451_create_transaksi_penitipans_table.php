@@ -20,8 +20,6 @@ class CreateTransaksiPenitipansTable extends Migration
             $table->foreign('id_penitip')->references('id_penitip')->on('penitip')->onDelete('cascade');
 
             $table->dateTime('tanggal_penitipan');
-            $table->date('tanggal_berakhir');
-            $table->integer('perpanjangan');
             $table->timestamps();
         });
     }

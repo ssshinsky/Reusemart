@@ -40,3 +40,8 @@ Route::middleware('auth:api')->group(function () {
     Route::delete('/role/delete/{id}', [RoleController::class, 'destroy']);
     
 });
+
+Route::prefix('kurir')->middleware(['auth:pegawai', 'pegawai.role:5'])->group(function () {
+    Route::get('/deliveries', [KurirController::class, 'getDeliveries']);
+    Route::post('/deliveries/update', [KurirController::class, 'updateDeliveryStatus']);
+});

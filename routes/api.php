@@ -6,9 +6,14 @@ use App\Http\Controllers\PegawaiController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\BarangController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\FcmTokenController;
+use App\Http\Controllers\NotificationController;
 
 Route::post('/login', [AuthController::class, 'loginapi']);
 Route::middleware('auth:sanctum')->post('/logout', [AuthController::class, 'logoutapi']);
+
+Route::middleware('auth:sanctum')->post('/save-fcm-token', [FcmTokenController::class, 'saveToken']);
+Route::middleware('auth:sanctum')->post('/send-notification', [NotificationController::class, 'sendNotification']);
 
 Route::post('/pegawai/register', [PegawaiController::class, 'register']);
 Route::post('/pegawai/login', [PegawaiController::class, 'login']);

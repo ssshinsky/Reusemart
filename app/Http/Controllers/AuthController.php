@@ -59,7 +59,6 @@ class AuthController extends Controller
             };
         }
 
-
         // 2. Cek Penitip
         $penitip = Penitip::where('email_penitip', $email)->first();
         if ($penitip && Hash::check($password, $penitip->password)) {
@@ -73,7 +72,7 @@ class AuthController extends Controller
                 'role' => 'penitip',
             ]);
             $request->session()->regenerate();
-            return redirect('/');
+            return redirect('/penitip/myProduct');
         }
 
         // 3. Cek Pembeli

@@ -3,6 +3,7 @@
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use App\Console\Commands\UpdateExpiredItems;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -16,6 +17,10 @@ return Application::configure(basePath: dirname(__DIR__))
             'pegawai.role' => \App\Http\Middleware\PegawaiRoleMiddleware::class,
         ]);
     })
+    ->withSchedule(function ($schedule) {
+        $schedule->command(UpdateExpiredItems::class)->everyMinute();
+    })
     ->withExceptions(function (Exceptions $exceptions) {
         //
-    })->create();
+    })
+    ->create();

@@ -16,16 +16,17 @@ class Barang extends Model
     protected $fillable = [
         'id_kategori',
         'id_transaksi_penitipan',
-        'kode_barang',
-        'nama_barang',
-        'harga_barang',
-        'berat_barang',
-        'deskripsi_barang',
-        'status_garansi',
-        'status_barang',
-        'tanggal_garansi',
-        'tanggal_berakhir',
+        'kode_barang', 
+        'nama_barang', 
+        'harga_barang', 
+        'berat_barang', 
+        'deskripsi_barang', 
+        'status_garansi', 
+        'status_barang', 
+        'tanggal_garansi_berakhir',
         'perpanjangan',
+        'batas_pengambilan',
+        'tanggal_konfirmasi_pengambilan',
     ];
 
     public function kategori()
@@ -35,7 +36,7 @@ class Barang extends Model
 
     public function transaksiPenitipan()
     {
-        return $this->belongsTo(TransaksiPenitipan::class, 'id_transaksi_penitipan', 'id_transaksi_penitipan');
+        return $this->belongsTo(TransaksiPenitipan::class, 'id_transaksi_penitipan');
     }
 
     public function diskusiProduk()

@@ -42,7 +42,7 @@ Route::get('/login', function () {
 })->name('login');
 
 Route::post('/login', [AuthController::class, 'login'])->name('login.submit');
-Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+Route::post('/logout', [AuthController::class, 'logout'])->name('logout.submit');
 Route::post('/admin/logout', function () {
     session()->flush();
     return redirect('/login');
@@ -204,27 +204,27 @@ Route::prefix('cs')->middleware(['auth:pegawai', 'pegawai.role:3'])->group(funct
     Route::put('/item-owners/{id}', [PenitipController::class, 'update'])->name('cs.penitip.update');
     Route::put('/item-owners/{id}/deactivate', [PenitipController::class, 'deactivate'])->name('cs.penitip.deactivate');
     Route::put('/item-owners/{id}/reactivate', [PenitipController::class, 'reactivate'])->name('cs.penitip.reactivate');
+    Route::get('/transaksi-pembelian', [TransaksiPembelianController::class, 'show'])->name('transaksi-pembelian.index');
+    Route::post('/transaksi-pembelian/{id_pembelian}/verify', [TransaksiPembelianController::class, 'verify'])
+    ->name('cs.transaksi-pembelian.verify');
+    Route::get('/transaksi-pembelian/search', [TransaksiPembelianController::class, 'search'])->name('cs.transaksi-pembelian.search');
 });
 
-// Gudang Routes
-Route::prefix('gudang')->middleware(['auth:pegawai', 'pegawai.role:4'])->name('gudang.')->group(function () {
-    Route::get('/dashboard', [TransaksiPenitipanController::class, 'dashboard'])->name('dashboard');
-    Route::get('/add-transaction', [TransaksiPenitipanController::class, 'create'])->name('add.transaction');
-    Route::post('/store-transaction', [TransaksiPenitipanController::class, 'store'])->name('store.transaction');
-    Route::get('/transaction-list', [TransaksiPenitipanController::class, 'transactionList'])->name('transaction.list');
-    Route::get('/search-transaction', [TransaksiPenitipanController::class, 'searchTransaction'])->name('transaction.search');
-    Route::get('/edit-transaction/{id}', [TransaksiPenitipanController::class, 'editTransaction'])->name('transaction.edit');
-    Route::put('/update-transaction/{id}', [TransaksiPenitipanController::class, 'updateTransaction'])->name('transaction.update');
-    Route::get('/print-note/{id}', [TransaksiPenitipanController::class, 'printNote'])->name('transaction.print');
-    Route::get('/item-list', [BarangController::class, 'itemList'])->name('item.list');
+Route::prefix('owner')->middleware(['auth:pegawai'])->group(function () {
+    Route::get('/dashboard', [OwnerController::class, 'dashboard'])->name('owner.dashboard');
+    Route::get('/donation/requests', [OwnerController::class, 'donationRequests'])->name('owner.donation.requests');
+    Route::get('/donation/history', [OwnerController::class, 'donationHistory'])->name('owner.donation.history');
+    Route::get('/allocate-items', [OwnerController::class, 'allocateItems'])->name('owner.allocate.items');
+    Route::post('/allocate-items', [OwnerController::class, 'storeAllocation'])->name('owner.store.allocation');
+    Route::get('/update-donation', [OwnerController::class, 'updateDonation'])->name('owner.update.donation');
+    Route::post('/update-donation', [OwnerController::class, 'updateDonasiStore'])->name('owner.update.donasi.store');
+    Route::get('/rewards', [OwnerController::class, 'rewards'])->name('owner.rewards');
+    Route::get('/donasi', [OwnerController::class, 'getDonasi'])->name('owner.get.donasi');
+    Route::get('/requests-by-organisasi', [OwnerController::class, 'getRequestsByOrganisasi'])->name('owner.requests.by_organisasi');
+    Route::delete('/request/{id}', [OwnerController::class, 'deleteRequest'])->name('owner.delete.request');
+    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 });
 
-// Kurir Routes
-Route::prefix('kurir')->middleware(['auth:pegawai', 'pegawai.role:5'])->group(function () {
-    Route::get('/dashboard', fn() => view('kurir.dashboard'))->name('kurir.dashboard');
-});
-
-// Hunter Routes
-Route::prefix('hunter')->middleware(['auth:pegawai', 'pegawai.role:6'])->group(function () {
-    Route::get('/dashboard', fn() => view('hunter.dashboard'))->name('hunter.dashboard');
-});
+Route::get('/login', function () {
+    return redirect('/');
+})->name('login');

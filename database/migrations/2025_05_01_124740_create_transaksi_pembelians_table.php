@@ -10,12 +10,10 @@ class CreateTransaksiPembeliansTable extends Migration
     {
         Schema::create('transaksi_pembelian', function (Blueprint $table) {
             $table->id('id_pembelian');
-            $table->unsignedBigInteger('id_keranjang');
+            $table->integer('id_keranjang');
             $table->foreign('id_keranjang')->references('id_keranjang')->on('keranjang')->onDelete('cascade');
-
-            $table->unsignedBigInteger('id_alamat');
-            $table->foreign('id_alamat')->references('id_alamat')->on('alamat')->onDelete('cascade');
-
+            $table->integer('id_alamat')->nullable(); // Ubah menjadi nullable
+            $table->foreign('id_alamat')->references('id_alamat')->on('alamat')->onDelete('set null');
             $table->string('no_resi');
             $table->dateTime('tanggal_pembelian');
             $table->dateTime('waktu_pembayaran')->nullable();
@@ -38,4 +36,4 @@ class CreateTransaksiPembeliansTable extends Migration
     {
         Schema::dropIfExists('transaksi_pembelian');
     }
-};
+}

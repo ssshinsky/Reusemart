@@ -7,6 +7,9 @@
     <link rel="icon" type="image/png" href="{{ asset('assets/images/logo.png') }}">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
 
     <style>
         * {
@@ -41,7 +44,7 @@
         }
 
         .sidebar {
-            width: 220px;
+            width: 230px;
             background: #E2E8E6;
             padding: 1.5rem 1rem;
         }
@@ -60,7 +63,7 @@
             gap: 10px;
             color: #212529;
             text-decoration: none;
-            font-size: 16px;
+            font-size: 15px;
             padding: 6px 0;
             transition: background 0.2s;
         }
@@ -91,7 +94,7 @@
         }
 
         .card-stat span:first-child {
-            font-size: 16px;
+            font-size: 12px;
             font-weight: 400;
         }
 
@@ -176,6 +179,9 @@
         <div class="sidebar">
             <a href="{{ route('cs.penitip.index') }}"
                 class="menu-item {{ request()->is('cs/item-owners*') ? 'active' : '' }}">📦 Item Owners</a>
+            <a href="{{ route('transaksi-pembelian.index') }}"
+                class="menu-item {{ request()->is('cs/transaksi-pembelian*') ? 'active' : '' }}">💳 Konfirmasi
+                Transaksi</a>
         </div>
 
         <!-- DYNAMIC CONTENT -->

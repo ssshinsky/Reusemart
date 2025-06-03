@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\TransaksiPembelian;
 use App\Models\Keranjang;
 use App\Models\Pembeli;
+use App\Models\Penitip;
 use App\Models\DetailKeranjang;
 use App\Models\ItemKeranjang;
 use Illuminate\Http\Request;
@@ -159,126 +160,140 @@ class TransaksiPembelianController extends Controller
 
     public function bayar(Request $request)
     {
-        Log::info('Bayar Request:', ['input' => $request->all()]);
-
-        $request->validate([
-            'poin_ditukar' => 'required|numeric|min:0',
-            'bukti_pembayaran' => 'required|image|mimes:jpeg,png,jpg|max:2048',
-            'total_final' => 'required|numeric|min:0',
-            'bonus_poin' => 'required|numeric|min:0',
-        ]);
-
-        $user = session('user');
-        $role = session('role');
-        if ($role !== 'pembeli' || !$user) {
-            Log::error('User not logged in or not pembeli', ['user' => $user, 'role' => $role]);
-            return redirect()->route('login')->with('error', 'Anda harus login sebagai pembeli.');
-        }
-
-        $idPembeli = $user['id'];
-        $pembeli = Pembeli::find($idPembeli);
-        if (!$pembeli) {
-            Log::error('Pembeli not found', ['id_pembeli' => $idPembeli]);
-            return redirect()->back()->with('error', 'Data pembeli tidak ditemukan.');
-        }
-
-        $keranjangId = session('checkout_keranjang_id');
-        $alamatId = session('checkout_id_alamat');
-        $metode = session('checkout_metode_pengiriman');
-        $totalHarga = session('checkout_total_harga');
-
-        if (!$keranjangId || !$metode || !$totalHarga) {
-            Log::error('Session data missing', [
-                'keranjang_id' => $keranjangId,
-                'metode' => $metode,
-                'total_harga' => $totalHarga
-            ]);
-            return redirect()->back()->with('error', 'Data checkout tidak lengkap.');
-        }
-
-        $keranjang = Keranjang::with('detailKeranjang.itemKeranjang.barang')->findOrFail($keranjangId);
-        $items = $keranjang->detailKeranjang->map->itemKeranjang;
-        if ($items->isEmpty()) {
-            Log::error('No items in keranjang', ['keranjang_id' => $keranjangId]);
-            return redirect()->back()->with('error', 'Keranjang kosong atau tidak valid.');
-        }
-
-        $totalHargaBarang = $items->sum(fn($item) => $item->barang->harga_barang);
-        $ongkir = ($totalHargaBarang >= 1500000 || $metode !== 'kurir') ? 0 : 100000;
-        $tahunBulan = now()->format('Y.m.');
-        $lastTransaksi = TransaksiPembelian::where('no_resi', 'like', $tahunBulan . '%')
-            ->orderBy('no_resi', 'desc')
-            ->first();
-        $nomorUrut = $lastTransaksi ? (int)substr($lastTransaksi->no_resi, -3) + 1 : 1;
-        $noResi = $tahunBulan . str_pad($nomorUrut, 3, '0', STR_PAD_LEFT);
-
-        $poinDitukar = (int)$request->poin_ditukar;
-        if ($poinDitukar > $pembeli->poin_pembeli) {
-            Log::error('Poin ditukar lebih besar dari poin dimiliki', [
-                'poin_ditukar' => $poinDitukar,
-                'poin_pembeli' => $pembeli->poin_pembeli,
-            ]);
-            return redirect()->back()->with('error', 'Poin yang ditukar melebihi poin yang dimiliki.');
-        }
-
-        $path = $request->file('bukti_pembayaran')->store('pembayaran', 'public');
+        \Log::info('Bayar Request:', $request->all());
 
         try {
-            DB::beginTransaction();
+            // Validasi input
+            $request->validate([
+                'bukti_pembayaran' => 'required|image|mimes:jpeg,png,jpg|max:2048',
+                'poin_ditukar' => 'nullable|integer|min:0',
+                'total_final' => 'required|numeric|min:0',
+                'bonus_poin' => 'nullable|integer|min:0',
+            ]);
 
-            $transaksi = TransaksiPembelian::create([
-                'no_resi' => $noResi,
+            $user = session('user');
+            $idPembeli = $user['id'];
+            $keranjangId = session('checkout_keranjang_id');
+            $metodePengiriman = session('checkout_metode_pengiriman');
+            $idAlamat = $metodePengiriman === 'ambil' ? null : session('checkout_id_alamat');
+            $totalHarga = session('checkout_total_harga');
+
+            // Validasi session
+            if (!$keranjangId || !$metodePengiriman || !$totalHarga) {
+                \Log::error('Missing session data', [
+                    'keranjangId' => $keranjangId,
+                    'metodePengiriman' => $metodePengiriman,
+                    'totalHarga' => $totalHarga,
+                ]);
+                return redirect()->back()->with('error', 'Data checkout tidak lengkap.');
+            }
+
+            // Validasi keranjang
+            $keranjang = Keranjang::find($keranjangId);
+            if (!$keranjang) {
+                \Log::error('Keranjang not found', ['keranjangId' => $keranjangId]);
+                return redirect()->back()->with('error', 'Keranjang tidak ditemukan.');
+            }
+
+            // Validasi alamat (jika metode bukan 'ambil')
+            if ($metodePengiriman === 'kurir' && $idAlamat && !Alamat::find($idAlamat)) {
+                \Log::error('Alamat not found', ['idAlamat' => $idAlamat]);
+                return redirect()->back()->with('error', 'Alamat tidak ditemukan.');
+            }
+
+            // Simpan bukti pembayaran
+            $buktiTf = null;
+            if ($request->hasFile('bukti_pembayaran')) {
+                try {
+                    $buktiTf = $request->file('bukti_pembayaran')->store('pembayaran', 'public');
+                    \Log::info('File stored successfully', ['path' => $buktiTf]);
+                } catch (\Exception $e) {
+                    \Log::error('Failed to store file', ['error' => $e->getMessage()]);
+                    return redirect()->back()->with('error', 'Gagal menyimpan bukti pembayaran: ' . $e->getMessage());
+                }
+            } else {
+                \Log::error('No file uploaded');
+                return redirect()->back()->with('error', 'Bukti pembayaran tidak ditemukan.');
+            }
+
+            // Hitung ongkir
+            $ongkir = ($totalHarga >= 1500000 || $metodePengiriman !== 'kurir') ? 0 : 100000;
+
+            // Log data sebelum create
+            \Log::info('Data to create transaksi:', [
                 'id_keranjang' => $keranjangId,
-                'id_alamat' => $metode === 'kurir' ? $alamatId : null,
+                'id_alamat' => $idAlamat,
+                'no_resi' => 'RESI-' . strtoupper(uniqid()),
                 'tanggal_pembelian' => now(),
                 'waktu_pembayaran' => now(),
-                'bukti_tf' => $path,
-                'total_harga_barang' => $totalHargaBarang,
-                'metode_pengiriman' => $metode,
+                'bukti_tf' => $buktiTf,
+                'total_harga_barang' => $totalHarga - $ongkir,
+                'metode_pengiriman' => $metodePengiriman,
                 'ongkir' => $ongkir,
-                'tanggal_ambil' => null,
-                'tanggal_pengiriman' => null,
                 'total_harga' => $request->total_final,
-                'status_transaksi' => 'diproses',
-                'poin_terpakai' => $poinDitukar,
-                'poin_pembeli' => (int)$request->bonus_poin,
+                'status_transaksi' => 'Menunggu Konfirmasi',
+                'poin_terpakai' => $request->poin_ditukar ?? 0,
+                'poin_pembeli' => $request->bonus_poin ?? 0,
                 'poin_penitip' => 0,
             ]);
 
-            $bonusPoin = (int)$request->bonus_poin;
-            $pembeli->poin_pembeli = ($pembeli->poin_pembeli - $poinDitukar) + $bonusPoin;
+            $tahun = now()->format('Y');
+            $bulan = now()->format('m');
+
+            $jumlahTransaksiBulanIni = TransaksiPembelian::whereYear('created_at', $tahun)
+                ->whereMonth('created_at', $bulan)
+                ->count();
+
+            $nomorUrut = str_pad($jumlahTransaksiBulanIni + 1, 3, '0', STR_PAD_LEFT);
+            $noResi = $tahun . '.' . $bulan . '.' . $nomorUrut;
+
+            // Simpan transaksi dalam transaksi database
+            DB::beginTransaction();
+            $transaksi = TransaksiPembelian::create([
+                'id_keranjang' => $keranjangId,
+                'id_alamat' => $idAlamat,
+                'no_resi' => $noResi,
+                'tanggal_pembelian' => now(),
+                'waktu_pembayaran' => now(),
+                'bukti_tf' => $buktiTf,
+                'total_harga_barang' => $totalHarga - $ongkir,
+                'metode_pengiriman' => $metodePengiriman,
+                'ongkir' => $ongkir,
+                'total_harga' => $request->total_final,
+                'status_transaksi' => 'Menunggu Konfirmasi',
+                'poin_terpakai' => $request->poin_ditukar ?? 0,
+                'poin_pembeli' => $request->bonus_poin ?? 0,
+                'poin_penitip' => 0,
+            ]);
+
+            // Update poin pembeli
+            $pembeli = Pembeli::find($idPembeli);
+            $newPoin = ($pembeli->poin_pembeli - ($request->poin_ditukar ?? 0)) + ($request->bonus_poin ?? 0);
+            if ($newPoin < 0) {
+                throw new \Exception('Poin pembeli tidak mencukupi.');
+            }
+            $pembeli->poin_pembeli = $newPoin;
             $pembeli->save();
 
-            foreach ($items as $item) {
-                $item->barang->update(['status_barang' => 'sold']);
-            }
+            // Hapus item keranjang
+            ItemKeranjang::whereIn('id_item_keranjang', session('checkout_selected_items'))->delete();
 
-            $selectedItems = session('checkout_selected_items');
-            ItemKeranjang::whereIn('id_item_keranjang', $selectedItems)->delete();
-            DetailKeranjang::where('id_keranjang', $keranjangId)->delete();
-            $keranjang->delete();
-
-            session()->forget([
-                'checkout_keranjang_id',
-                'checkout_selected_items',
-                'checkout_metode_pengiriman',
-                'checkout_id_alamat',
-                'checkout_total_harga',
-            ]);
-
+            // Commit transaksi
             DB::commit();
-            Log::info('Transaksi berhasil', [
-                'transaksi_id' => $transaksi->id_pembelian,
-                'poin_ditukar' => $poinDitukar,
-                'bonus_poin' => $bonusPoin,
-                'poin_pembeli_baru' => $pembeli->poin_pembeli,
-            ]);
 
-            return redirect()->route('produk.allproduct');
+            // Clear session
+            session()->forget(['checkout_keranjang_id', 'checkout_selected_items', 'checkout_metode_pengiriman', 'checkout_id_alamat', 'checkout_total_harga']);
+
+            \Log::info('Transaksi created:', $transaksi->toArray());
+
+            return redirect()->route('pembeli.riwayat')->with('success', 'Pembayaran berhasil! Menunggu konfirmasi admin.');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            \Log::error('Validation failed in bayar', ['errors' => $e->errors()]);
+            return redirect()->back()->withErrors($e->errors())->withInput();
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Database error: ' . $e->getMessage());
-            return redirect()->back()->with('error', 'Terjadi kesalahan saat menyimpan transaksi.');
+            \Log::error('Failed to create transaksi', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+            return redirect()->back()->with('error', 'Gagal menyimpan transaksi: ' . $e->getMessage());
         }
     }
 
@@ -296,6 +311,95 @@ class TransaksiPembelianController extends Controller
         }
 
         return back()->with('success', 'Bukti transfer berhasil diupload.');
+    }
+
+   public function show()
+    {
+        $transaksi = TransaksiPembelian::with([
+            'keranjang.detailKeranjang.itemKeranjang.barang.penitip',
+            'keranjang.detailKeranjang.itemKeranjang.pembeli'
+        ])
+            ->orderBy('tanggal_pembelian', 'desc')
+            ->get();
+
+        return view('cs.transaksi-pembelian.index', compact('transaksi'));
+    }
+
+    public function verify(Request $request, $id_pembelian)
+    {
+        try {
+            $transaksi = TransaksiPembelian::findOrFail($id_pembelian);
+
+            if ($transaksi->status_transaksi !== 'Menunggu Konfirmasi') {
+                \Log::warning('Transaksi sudah diproses', ['id_pembelian' => $id_pembelian, 'status' => $transaksi->status_transaksi]);
+                return redirect()->back()->with('error', 'Transaksi sudah diproses atau tidak dalam status Menunggu Konfirmasi.');
+            }
+
+            $request->validate([
+                'is_valid' => 'required|boolean',
+            ]);
+
+            \DB::beginTransaction();
+
+            if ($request->is_valid) {
+                $transaksi->status_transaksi = 'Disiapkan';
+                $transaksi->save();
+
+                $keranjang = Keranjang::find($transaksi->id_keranjang);
+                $detailKeranjang = DetailKeranjang::where('id_keranjang', $keranjang->id_keranjang)->get();
+                $penitipIds = [];
+
+                foreach ($detailKeranjang as $detail) {
+                    $item = ItemKeranjang::find($detail->id_item_keranjang);
+                    if ($item && $item->barang && $item->barang->penitip) {
+                        $penitipIds[] = $item->barang->penitip->id_penitip;
+                    }
+                }
+
+                $penitip = Penitip::whereIn('id_penitip', $penitipIds)->get();
+                if ($penitip->isNotEmpty()) {
+                    Notification::send($penitip, new TransaksiDisiapkanNotification($transaksi));
+                    \Log::info('Notifikasi dikirim ke penitip', ['id_pembelian' => $id_pembelian, 'penitip_ids' => $penitipIds]);
+                } else {
+                    \Log::warning('Tidak ada penitip ditemukan untuk transaksi', ['id_pembelian' => $id_pembelian]);
+                }
+
+                \DB::commit();
+                return redirect()->route('transaksi-pembelian.index')->with('success', 'Bukti pembayaran valid. Status transaksi diubah ke Disiapkan.');
+            } else {
+                $transaksi->status_transaksi = 'Dibatalkan';
+                $transaksi->save();
+
+                \DB::commit();
+                \Log::info('Transaksi verified as invalid', ['id_pembelian' => $id_pembelian]);
+                return redirect()->route('transaksi-pembelian.index')->with('success', 'Bukti pembayaran tidak valid. Transaksi dibatalkan.');
+            }
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            \DB::rollBack();
+            \Log::error('Validation failed in verify', ['id_pembelian' => $id_pembelian, 'errors' => $e->errors()]);
+            return redirect()->back()->withErrors($e->errors())->withInput();
+        } catch (\Exception $e) {
+            \DB::rollBack();
+            \Log::error('Failed to verify transaksi', ['id_pembelian' => $id_pembelian, 'error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+            return redirect()->back()->with('error', 'Gagal memverifikasi transaksi: ' . $e->getMessage());
+        }
+    }
+
+    public function search(Request $request)
+    {
+        $query = $request->query('q', '');
+        $transaksi = TransaksiPembelian::with([
+            'keranjang.detailKeranjang.itemKeranjang.barang.penitip',
+            'keranjang.detailKeranjang.itemKeranjang.pembeli'
+        ])
+            ->where('no_resi', 'LIKE', "%{$query}%")
+            ->orWhereHas('keranjang.detailKeranjang.itemKeranjang.pembeli', function ($q) use ($query) {
+                $q->where('nama_pembeli', 'LIKE', "%{$query}%");
+            })
+            ->orderBy('tanggal_pembelian', 'desc')
+            ->get();
+
+        return view('cs.verifikasi_transaksi_table', compact('transaksi'))->render();
     }
 
 

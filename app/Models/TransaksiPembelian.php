@@ -15,6 +15,10 @@ class TransaksiPembelian extends Model
     public $incrementing = true;
     protected $keyType = 'int';
 
+    protected $casts = [
+        'tanggal_pembelian' => 'datetime',
+        'waktu_pembayaran' => 'datetime', // Ensure this is cast
+    ];
 
     // Kolom yang dapat diisi (Mass Assignment)
     protected $fillable = [

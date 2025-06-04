@@ -13,21 +13,24 @@ class NotificationController extends Controller
         $request->validate([
             'title' => 'required|string',
             'body' => 'required|string',
-            'user_id' => 'nullable|integer', // Opsional
-            'role' => 'nullable|in:pembeli,penitip,pegawai,organisasi', // Opsional
+            'user_id' => 'nullable|integer',
+            'role' => 'nullable|in:pembeli,penitip,pegawai',
+            'type' => 'required|in:barang_laku,jadwal_pengiriman,jadwal_pengambilan,barang_dikirim', // Tambahkan tipe notifikasi
+            'id' => 'nullable|string', // ID terkait (barang, transaksi, atau jadwal)
         ]);
 
         $title = $request->title;
         $body = $request->body;
         $userId = $request->user_id;
         $role = $request->role;
+        $type = $request->type;
+        $id = $request->id;
 
         // Mapping role ke model
         $modelMap = [
             'pembeli' => 'App\Models\Pembeli',
             'penitip' => 'App\Models\Penitip',
             'pegawai' => 'App\Models\Pegawai',
-            'organisasi' => 'App\Models\Organisasi',
         ];
 
         // Ambil token berdasarkan user_id atau role
@@ -56,8 +59,8 @@ class NotificationController extends Controller
                 'body' => $body,
             ],
             'data' => [
-                'type' => 'order',
-                'order_id' => $request->input('order_id', '123'), // Sesuaikan
+                'type' => $type,
+                'id' => $id ?? '', // ID terkait (barang, transaksi, atau jadwal)
             ],
         ];
 
@@ -67,9 +70,19 @@ class NotificationController extends Controller
                 'Content-Type' => 'application/json',
             ])->post($fcmUrl, $data);
 
+            // Tangani token yang tidak valid
             if ($response->successful()) {
                 return response()->json(['message' => 'Notification sent successfully'], 200);
             } else {
+                $responseData = $response->json();
+                if (isset($responseData['results'])) {
+                    foreach ($responseData['results'] as $index => $result) {
+                        if (isset($result['error']) && in_array($result['error'], ['NotRegistered', 'InvalidRegistration'])) {
+                            // Hapus token yang tidak valid
+                            FcmToken::where('token', $tokens[$index])->delete();
+                        }
+                    }
+                }
                 return response()->json(['message' => 'Failed to send notification: ' . $response->body()], 500);
             }
         } catch (\Exception $e) {

@@ -96,14 +96,21 @@ class ItemKeranjangController extends Controller
     $role = session('role');
 
     if ($role !== 'pembeli' || !$user) {
-        \Log::error('User not logged in or not pembeli', ['user' => $user, 'role' => $role]);
+        \Log::error('Pengguna tidak login atau bukan pembeli', ['user' => $user, 'role' => $role]);
         return redirect()->back()->with('error', 'Anda harus login sebagai pembeli.');
     }
 
     $idPembeli = $user['id'];
 
+    // Periksa selected_items
+    $selectedItemsInput = $request->input('selected_items');
+    if (!is_array($selectedItemsInput) || empty($selectedItemsInput)) {
+        \Log::warning('Tidak ada item yang dipilih untuk checkout', ['id_pembeli' => $idPembeli, 'selected_items' => $selectedItemsInput]);
+        return redirect()->back()->with('error', 'Pilih setidaknya satu item untuk checkout.');
+    }
+
     // Konversi selected_items ke integer
-    $selectedItems = array_map('intval', $request->input('selected_items'));
+    $selectedItems = array_map('intval', $selectedItemsInput);
     $request->merge(['selected_items' => $selectedItems]);
 
     // Validasi input
@@ -126,17 +133,17 @@ class ItemKeranjangController extends Controller
             'id_alamat.exists' => 'Alamat yang dipilih tidak valid.',
         ]);
     } catch (\Illuminate\Validation\ValidationException $e) {
-        \Log::error('Validation failed', ['errors' => $e->errors()]);
+        \Log::error('Validasi gagal', ['errors' => $e->errors()]);
         return redirect()->back()->withErrors($e->validator)->withInput();
     }
 
-    $selectedItems = $request->selected_items;
+    // Lanjutkan logika checkout seperti sebelumnya
     $metodePengiriman = $request->metode_pengiriman;
     $idAlamat = $metodePengiriman === 'ambil' ? null : $request->id_alamat;
 
     $pembeli = Pembeli::find($idPembeli);
     if (!$pembeli) {
-        \Log::error('Pembeli not found', ['id_pembeli' => $idPembeli]);
+        \Log::error('Pembeli tidak ditemukan', ['id_pembeli' => $idPembeli]);
         return redirect()->back()->with('error', 'Data pembeli tidak ditemukan.');
     }
 
@@ -146,11 +153,10 @@ class ItemKeranjangController extends Controller
         ->get();
 
     if ($items->isEmpty()) {
-        \Log::error('No items found', ['selected_items' => $selectedItems, 'id_pembeli' => $idPembeli]);
+        \Log::error('Tidak ada item yang ditemukan', ['selected_items' => $selectedItems, 'id_pembeli' => $idPembeli]);
         return redirect()->back()->with('error', 'Tidak ada item yang dipilih atau item tidak valid.');
     }
 
-    // Lanjutkan kode seperti sebelumnya
     $totalHargaBarang = $items->sum(fn($item) => $item->barang->harga_barang);
     $ongkir = ($totalHargaBarang >= 1500000 || $metodePengiriman !== 'kurir') ? 0 : 100000;
     $totalHarga = $totalHargaBarang + $ongkir;
@@ -180,7 +186,7 @@ class ItemKeranjangController extends Controller
 
     $alamat = $idAlamat ? Alamat::where('id_alamat', $idAlamat)->where('id_pembeli', $idPembeli)->first() : null;
 
-    \Log::info('Checkout data', [
+    \Log::info('Data checkout', [
         'items' => $items->toArray(),
         'totalHarga' => $totalHarga,
         'poinDimiliki' => $poinDimiliki,
@@ -197,5 +203,4 @@ class ItemKeranjangController extends Controller
         'ongkir' => $ongkir,
     ]);
 }
-
 }

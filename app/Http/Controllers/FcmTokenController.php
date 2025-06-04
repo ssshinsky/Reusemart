@@ -11,7 +11,7 @@ class FcmTokenController extends Controller
     {
         $request->validate([
             'token' => 'required|string',
-            'role' => 'required|in:pembeli,penitip,pegawai,organisasi',
+            'role' => 'required|in:pembeli,penitip,pegawai',
         ]);
 
         $user = auth()->user();
@@ -24,7 +24,6 @@ class FcmTokenController extends Controller
             'pembeli' => 'App\Models\Pembeli',
             'penitip' => 'App\Models\Penitip',
             'pegawai' => 'App\Models\Pegawai',
-            'organisasi' => 'App\Models\Organisasi',
         ];
 
         $modelClass = $modelMap[$request->role] ?? null;

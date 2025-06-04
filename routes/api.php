@@ -50,3 +50,14 @@ Route::prefix('kurir')->middleware(['auth:pegawai', 'pegawai.role:5'])->group(fu
     Route::get('/deliveries', [KurirController::class, 'getDeliveries']);
     Route::post('/deliveries/update', [KurirController::class, 'updateDeliveryStatus']);
 });
+
+Route::middleware('auth:api')->group(function () {
+    Route::post('/send-notification', [NotificationController::class, 'sendNotification']);
+    Route::post('/transaksi-pembelian', [TransaksiPembelianController::class, 'store']);
+    Route::post('/transaksi-pembelian/{id}/verify', [TransaksiPembelianController::class, 'verify']);
+    Route::post('/delivery-schedule', [TransaksiPembelianController::class, 'createDeliverySchedule']);
+    Route::post('/pickup-schedule', [TransaksiPembelianController::class, 'createPickupSchedule']);
+    Route::post('/update-delivery-status/{id}', [TransaksiPembelianController::class, 'updateDeliveryStatus']);
+    Route::get('/keranjang/{id}/barang', [KeranjangController::class, 'getBarangByKeranjang']);
+
+});

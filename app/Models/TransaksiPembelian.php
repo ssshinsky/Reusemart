@@ -36,6 +36,7 @@ class TransaksiPembelian extends Model
         'poin_pembeli',
         'poin_penitip',
         'status_pengiriman',
+        'id_kurir',
     ];
 
     // Relasi ke model Keranjang
@@ -76,6 +77,11 @@ class TransaksiPembelian extends Model
     public function detailKeranjangs()
     {
         return $this->hasMany(DetailKeranjang::class, 'id_keranjang', 'id_keranjang');
+    }
+
+    public function kurir()
+    {
+        return $this->belongsTo(Pegawai::class, 'id_kurir', 'id_pegawai');
     }
 
     public function pengirimanDanPengambilanList()

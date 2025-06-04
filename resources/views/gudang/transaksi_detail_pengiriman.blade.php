@@ -5,7 +5,7 @@
 @section('content')
 <div class="container-fluid py-4">
     <h2 class="fw-bold mb-3 text-dark">
-        <i class="fas fa-receipt me-2"></i> Transaction Detail #{{ $transaksi->id_transaksi }}
+        <i class="fas fa-receipt me-2"></i> Transaction Detail #{{ $transaksi->id_pembelian }}
     </h2>
 
     <div class="card shadow-lg border-0 mb-4">
@@ -43,6 +43,13 @@
                 @endforeach
             </div>
         </div>
+    </div>
+
+    <!-- Button for Create Invoice -->
+    <div class="mt-3">
+        <a href="{{ route('gudang.transaksi.printInvoice', ['id' => $transaksi->id_pembelian]) }}" class="btn btn-primary">
+                <i class="fas fa-file-pdf me-2"></i> Create Invoice
+        </a>
     </div>
 </div>
 @endsection

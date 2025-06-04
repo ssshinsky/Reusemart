@@ -584,7 +584,7 @@ class TransaksiPenitipanController extends Controller
             'detailKeranjangs.itemKeranjang.barang.transaksiPenitipan.penitip',
 
         ])
-        ->whereIn('status_transaksi', ['Ready for Pickup', 'Preparing'])
+        ->whereIn('status_transaksi', ['Ready for Pickup', 'Preparing', 'In Delivery'])
         ->orderBy('tanggal_pembelian', 'asc')
         ->get();
 
@@ -596,14 +596,12 @@ class TransaksiPenitipanController extends Controller
         $now = Carbon::now();
         $today = $now->toDateString();
 
-        // 1. Perbarui ke 'In Delivery'
         TransaksiPembelian::where('status_transaksi', 'Preparing')
             ->where('metode_pengiriman', 'kurir')
             ->whereDate('tanggal_pengiriman', $today)
             ->whereNotNull('id_kurir') // pastikan kurir sudah ditugaskan
             ->update(['status_transaksi' => 'In Delivery']);
 
-        // 2. Perbarui ke 'Donated' jika > 2 hari tidak diambil
         TransaksiPembelian::where('status_transaksi', 'Ready for Pickup')
             ->whereDate('tanggal_pengambilan', '<', Carbon::now()->subDays(2)->toDateString())
             ->update(['status_transaksi' => 'Donated']);
@@ -632,7 +630,168 @@ class TransaksiPenitipanController extends Controller
             'detailKeranjangs.itemKeranjang.barang.gambar'
         ])->findOrFail($id);
 
-        return view('gudang.jadwal_pengiriman', compact('transaksi'));
+        $kurirs = Pegawai::whereHas('role', function ($query) {
+            $query->where('nama_role', 'kurir');
+        })->get();
+
+        return view('gudang.jadwal_pengiriman', compact('transaksi', 'kurirs'));
+    }
+
+    public function jadwalkanPengiriman(Request $request, $id)
+    {
+        $this->ensureGudang();
+
+        // Validasi input
+        $request->validate([
+            'tanggal_pengiriman' => 'required|date|after_or_equal:today',
+            'id_kurir' => 'required|exists:pegawai,id_pegawai'
+        ]);
+
+        $transaksi = TransaksiPembelian::findOrFail($id);
+
+        // Cek apakah transaksi dilakukan setelah jam 4 sore dan apakah tanggal pengiriman adalah hari ini
+        $jamPembelian = Carbon::parse($transaksi->tanggal_pembelian)->format('H');
+        $tanggalPembelian = Carbon::parse($transaksi->tanggal_pembelian)->toDateString();
+        $tanggalRequest = Carbon::parse($request->tanggal_pengiriman)->toDateString();
+
+        if ($jamPembelian >= 16 && $tanggalRequest == $tanggalPembelian) {
+            return back()->with('error', 'Pembelian setelah pukul 16.00 tidak bisa dijadwalkan di hari yang sama.');
+        }
+
+        // Logika Update berdasarkan status transaksi
+        if ($transaksi->status_transaksi == 'Preparing') {
+            $transaksi->update([
+                'tanggal_pengiriman' => $request->tanggal_pengiriman,
+                'id_kurir' => $request->id_kurir,
+                'status_transaksi' => 'In Delivery'  // Update status ke 'In Delivery'
+            ]);
+        } 
+        if ($transaksi->status_transaksi == 'Ready for Pickup') {
+            $transaksi->update([
+                'tanggal_ambil' => $request->tanggal_pengiriman,  // Update tanggal_ambil sesuai tanggal pengiriman
+            ]);
+        }
+
+        // Kirim notifikasi ke pembeli, penitip, dan kurir
+        $this->kirimNotifikasiJadwal($transaksi);
+
+        // Redirect dengan pesan sukses
+        return back()->with('success', 'Pengiriman berhasil dijadwalkan.');
+    }
+
+
+    private function kirimNotifikasiJadwal(TransaksiPembelian $transaksi)
+    {
+        $pembeli = $transaksi->pembeli;
+        $kurir = Pegawai::find($transaksi->id_kurir);
+
+        foreach ([$pembeli, $kurir] as $penerima) {
+            if ($penerima && $penerima->fcm_token) {
+                // misal pakai helper atau service untuk kirim FCM
+                KirimNotifikasi::send(
+                    $penerima->fcm_token,
+                    'Pengiriman Dijadwalkan',
+                    'Pesanan #'.$transaksi->no_nota.' akan dikirim pada '.$transaksi->tanggal_pengiriman->format('d M Y H:i')
+                );
+            }
+        }
+
+        // kirim ke penitip (dari barang dalam transaksi)
+        foreach ($transaksi->detailKeranjangs as $detail) {
+            $barang = $detail->itemKeranjang->barang ?? null;
+            $penitip = $barang->transaksiPenitipan->penitip ?? null;
+            if ($penitip && $penitip->fcm_token) {
+                KirimNotifikasi::send(
+                    $penitip->fcm_token,
+                    'Barang Anda Akan Dikirim',
+                    'Barang "'.$barang->nama_barang.'" akan dikirim pada '.$transaksi->tanggal_pengiriman->format('d M Y H:i')
+                );
+            }
+        }
+    }
+
+    public function confirmPickup($id)
+    {
+        $this->ensureGudang();
+
+        $transaksi = TransaksiPembelian::findOrFail($id);
+
+        if ($transaksi->status_transaksi != 'Ready for Pickup') {
+            return back()->with('error', 'Status transaksi tidak sesuai untuk konfirmasi pengambilan.');
+        }
+
+        $transaksi->update([
+            'status_transaksi' => 'Done',
+            'tanggal_ambil' => now(),
+        ]);
+
+        $this->kirimNotifikasiPengambilan($transaksi);
+
+        return back()->with('success', 'Barang telah berhasil dikonfirmasi dan status diperbarui.');
+    }
+
+    private function kirimNotifikasiPengambilan(TransaksiPembelian $transaksi)
+    {
+        $pembeli = $transaksi->pembeli;
+        $kurir = Pegawai::find($transaksi->id_kurir);
+
+        foreach ([$pembeli, $kurir] as $penerima) {
+            if ($penerima && $penerima->fcm_token) {
+                KirimNotifikasi::send(
+                    $penerima->fcm_token,
+                    'Pengambilan Dikukuhkan',
+                    'Pesanan #'.$transaksi->no_nota.' telah dikonfirmasi untuk pengambilan pada '.$transaksi->tanggal_ambil->format('d M Y H:i')
+                );
+            }
+        }
+
+        foreach ($transaksi->detailKeranjangs as $detail) {
+            $barang = $detail->itemKeranjang->barang ?? null;
+            $penitip = $barang->transaksiPenitipan->penitip ?? null;
+            if ($penitip && $penitip->fcm_token) {
+                KirimNotifikasi::send(
+                    $penitip->fcm_token,
+                    'Barang Anda Telah Dikonfirmasi',
+                    'Barang "'.$barang->nama_barang.'" telah dikonfirmasi dan siap diambil pada '.$transaksi->tanggal_ambil->format('d M Y H:i')
+                );
+            }
+        }
+    }
+
+    public function printInvoice($id)
+    {
+        $transaksi = TransaksiPembelian::with([
+            'pembeli',
+            'detailKeranjangs.itemKeranjang.barang',
+            'kurir' 
+        ])->findOrFail($id);
+
+        $kurirName = 'N/A'; 
+        if ($transaksi->id_kurir && $transaksi->kurir) {
+            $kurirName = $transaksi->kurir->nama_pegawai;
+        }
+
+        $invoiceData = [
+            'no_nota' => 'INV-' . $transaksi->id_pembelian . '-' . now()->format('Ymd'), 
+            'tanggal_pesan' => \Carbon\Carbon::parse($transaksi->tanggal_pembelian)->format('d F Y, H:i'),
+            'tanggal_kirim' => \Carbon\Carbon::parse($transaksi->tanggal_pengiriman)->format('d F Y'), 
+            'pembeli' => $transaksi->pembeli->nama_pembeli,
+            'kurir' => $kurirName, 
+            'items' => $transaksi->detailKeranjangs->map(function ($detail) {
+                $barang = $detail->itemKeranjang->barang;
+                return [
+                    'nama_barang' => $barang->nama_barang,
+                    'harga' => number_format($barang->harga_barang, 0, ',', '.'),
+                    'berat' => $barang->berat_barang,
+                    'status' => $barang->status_barang,
+                ];
+            }),
+            'transaksi' => $transaksi, 
+        ];
+
+        // Generate PDF
+        $pdf = PDF::loadView('gudang.invoice', $invoiceData);
+        return $pdf->download('invoice-' . $transaksi->id_pembelian . '.pdf'); 
     }
 
     public function transaksiPengambilan()

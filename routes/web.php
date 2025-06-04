@@ -236,12 +236,15 @@ Route::prefix('gudang')->middleware(['auth:pegawai', 'pegawai.role:4'])->name('g
     Route::get('/item-list', [BarangController::class, 'itemList'])->name('item.list');
 
     Route::get('/transaksi-pengiriman', [TransaksiPenitipanController::class, 'pengirimanDanPengambilanList'])->name('transaksi.pengiriman');
-    Route::patch('/perbarui-status-transaksi', [GudangController::class, 'perbaruiStatusOtomatis'])->name('gudang.updateStatusTransaksi');
+    Route::patch('/perbarui-status-transaksi', [TransaksiPenitipanController::class, 'perbaruiStatusOtomatis'])->name('gudang.updateStatusTransaksi');
     Route::get('/transaksi/detail/{id}', [TransaksiPenitipanController::class, 'showDetail'])->name('transaksi.detail');
-    Route::get('/transaksi/schedule/{id}', [TransaksiPenitipanController::class, 'jadwalkan'])->name('transaksi.schedule');
     Route::get('/transaksi-pengambilan', [TransaksiPenitipanController::class, 'transaksiPengambilan'])->name('transaksi.pengambilan');
     Route::patch('/mark-as-returned/{id}', [TransaksiPenitipanController::class, 'markAsReturned'])->name('markAsReturned');
-
+    Route::get('/transaksi/schedule/{id}', [TransaksiPenitipanController::class, 'jadwalkan'])->name('transaksi.schedule');  
+    Route::post('/transaksi/jadwal/{id}', [TransaksiPenitipanController::class, 'jadwalkanPengiriman'])->name('transaksi.jadwalkanPengiriman');  
+    Route::post('/transaksi/jadwalkan/{id}', [TransaksiPenitipanController::class, 'jadwalkanPengiriman'])->name('transaksi.jadwalkanPengiriman');
+    Route::post('/transaksi/confirm-pickup/{id}', [TransaksiPenitipanController::class, 'confirmPickup'])->name('transaksi.confirmPickup');
+    Route::get('/transaksi/print-invoice/{id}', [TransaksiPenitipanController::class, 'printInvoice'])->name('transaksi.printInvoice');
 });
 
 // Kurir Routes

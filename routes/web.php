@@ -217,6 +217,8 @@ Route::prefix('gudang')->middleware(['auth:pegawai', 'pegawai.role:4'])->name('g
     Route::put('/update-transaction/{id}', [TransaksiPenitipanController::class, 'updateTransaction'])->name('transaction.update');
     Route::get('/print-note/{id}', [TransaksiPenitipanController::class, 'printNote'])->name('transaction.print');
     Route::get('/item-list', [BarangController::class, 'itemList'])->name('item.list');
+    Route::get('/low-rated-penitips', [TransaksiPenitipanController::class, 'lowRatedPenitips'])->name('low_rated_penitips');
+    Route::get('/high-value-transactions', [TransaksiPenitipanController::class, 'highValueTransactions'])->name('high-value-transactions');
 });
 
 // Kurir Routes

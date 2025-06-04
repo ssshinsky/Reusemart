@@ -581,4 +581,100 @@ class TransaksiPenitipanController extends Controller
         $barang = Barang::with(['transaksiPenitipan.penitip', 'kategori', 'gambar'])->findOrFail($id);
         return view('gudang.item_detail', compact('barang'));
     }
+
+    public function lowRatedPenitips(Request $request)
+    {
+        $keyword = $request->input('keyword');
+        $tanggal_mulai = $request->input('tanggal_mulai');
+        $tanggal_selesai = $request->input('tanggal_selesai');
+
+        $query = Penitip::query()
+            ->where('rata_rating', '<=', 3)
+            ->orWhereNull('rata_rating');
+
+        // Filter berdasarkan keyword
+        if ($keyword) {
+            $query->where(function($q) use ($keyword) {
+                $q->where('nama_penitip', 'like', "%{$keyword}%")
+                ->orWhere('email_penitip', 'like', "%{$keyword}%")
+                ->orWhere('no_telp', 'like', "%{$keyword}%");
+            });
+        }
+
+        // Filter berdasarkan tanggal penitipan (relasi ke penitipan)
+        if ($tanggal_mulai) {
+            $query->whereHas('penitipan', function($q) use ($tanggal_mulai) {
+                $q->where('tanggal_penitipan', '>=', $tanggal_mulai);
+            });
+        }
+
+        if ($tanggal_selesai) {
+            $query->whereHas('penitipan', function($q) use ($tanggal_selesai) {
+                $q->where('tanggal_penitipan', '<=', $tanggal_selesai);
+            });
+        }
+
+        $penitips = $query->get();
+
+        return view('gudang.low_rated_penitips', compact('penitips'));
+    }
+
+    public function highValueTransactions(Request $request)
+{
+    $this->ensureGudang();
+
+    $keyword = $request->input('keyword');
+    $tanggal_mulai = $request->input('tanggal_mulai');
+    $tanggal_selesai = $request->input('tanggal_selesai');
+
+    $query = TransaksiPenitipan::with(['penitip', 'barang', 'qc', 'hunter'])
+        ->select('transaksi_penitipan.*')
+        ->join('barang', 'transaksi_penitipan.id_transaksi_penitipan', '=', 'barang.id_transaksi_penitipan')
+        ->groupBy(
+            'transaksi_penitipan.id_transaksi_penitipan',
+            'transaksi_penitipan.id_qc',
+            'transaksi_penitipan.id_hunter',
+            'transaksi_penitipan.id_penitip',
+            'transaksi_penitipan.tanggal_penitipan',
+            'transaksi_penitipan.created_at',
+            'transaksi_penitipan.updated_at'
+        )
+        ->havingRaw('SUM(barang.harga_barang) > 100000');
+
+    // Filter berdasarkan keyword
+    if ($keyword) {
+        $query->where(function($q) use ($keyword) {
+            $q->where('transaksi_penitipan.id_transaksi_penitipan', 'like', "%{$keyword}%")
+              ->orWhere('transaksi_penitipan.tanggal_penitipan', 'like', "%{$keyword}%")
+              ->orWhereHas('penitip', function ($q) use ($keyword) {
+                  $q->where('nama_penitip', 'like', "%{$keyword}%")
+                    ->orWhere('email_penitip', 'like', "%{$keyword}%")
+                    ->orWhere('no_telp', 'like', "%{$keyword}%");
+              })
+              ->orWhereHas('qc', function ($q) use ($keyword) {
+                  $q->where('nama_pegawai', 'like', "%{$keyword}%");
+              })
+              ->orWhereHas('hunter', function ($q) use ($keyword) {
+                  $q->where('nama_pegawai', 'like', "%{$keyword}%");
+              })
+              ->orWhereHas('barang', function ($q) use ($keyword) {
+                  $q->where('nama_barang', 'like', "%{$keyword}%")
+                    ->orWhere('harga_barang', 'like', "%{$keyword}%");
+              });
+        });
+    }
+
+    // Filter berdasarkan tanggal penitipan
+    if ($tanggal_mulai) {
+        $query->where('transaksi_penitipan.tanggal_penitipan', '>=', $tanggal_mulai);
+    }
+
+    if ($tanggal_selesai) {
+        $query->where('transaksi_penitipan.tanggal_penitipan', '<=', $tanggal_selesai);
+    }
+
+    $transactions = $query->get();
+
+    return view('gudang.high_value_transactions', compact('transactions'));
+}
 }

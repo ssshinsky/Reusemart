@@ -9,9 +9,9 @@
         <button class="btn-action" id="verifyToggle">✅ Verify Transaction</button>
     </div>
 
-    <div style="margin-bottom: 0.75rem; display: flex; gap: 0.5rem; align-items: center;">
+    <!-- <div style="margin-bottom: 0.75rem; display: flex; gap: 0.5rem; align-items: center;">
         <input type="text" id="searchInput" placeholder="🔍 Search by Receipt No. or Username" class="input-search">
-    </div>
+    </div> -->
 
     <div class="table-container">
         <div class="table-scroll-x">

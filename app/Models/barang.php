@@ -17,6 +17,7 @@ class Barang extends Model
     protected $casts = [
         'tanggal_garansi' => 'datetime',
         'tanggal_berakhir' => 'datetime',
+        'rating' => 'integer',
     ];
     protected $fillable = [
         'id_kategori',
@@ -32,10 +33,6 @@ class Barang extends Model
         'tanggal_garansi',
         'tanggal_berakhir',
         'perpanjangan',
-    ];
-
-    protected $casts = [
-        'rating' => 'integer',
     ];
 
     

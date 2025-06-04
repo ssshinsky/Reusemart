@@ -176,8 +176,6 @@
         <div class="sidebar">
             <a href="{{ route('cs.penitip.index') }}"
                 class="menu-item {{ request()->is('cs/item-owners*') ? 'active' : '' }}">📦 Item Owners</a>
-            <a href="{{ route('cs.produk.index') }}"
-                class="menu-item {{ request()->is('cs/produk*') ? 'active' : '' }}">🏷️ Products</a>
         </div>
 
         <!-- DYNAMIC CONTENT -->

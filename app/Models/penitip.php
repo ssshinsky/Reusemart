@@ -28,6 +28,7 @@ class Penitip extends Authenticatable
         'poin_penitip',
         'profil_pict',
         'badge',
+        'banyak_rating',
         'foto_ktp',
     ];
 
@@ -39,6 +40,7 @@ class Penitip extends Authenticatable
         'rata_rating' => 'float',
         'saldo_penitip' => 'double',
         'badge' => 'boolean',
+        'banyak_rating' => 'integer',
     ];
 
     // Relasi ke Komisi

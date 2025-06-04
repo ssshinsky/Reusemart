@@ -28,9 +28,14 @@ class Barang extends Model
         'deskripsi_barang',
         'status_garansi',
         'status_barang',
+        'rating',
         'tanggal_garansi',
         'tanggal_berakhir',
         'perpanjangan',
+    ];
+
+    protected $casts = [
+        'rating' => 'integer',
     ];
 
     

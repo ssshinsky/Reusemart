@@ -86,7 +86,9 @@ Route::prefix('pembeli')->middleware('auth:pembeli')->group(function () {
     Route::get('/profile', [PembeliController::class, 'profile'])->name('pembeli.profile');
     Route::get('/{id}/edit', [PembeliController::class, 'editProfile'])->name('pembeli.edit');
     Route::put('/{id}/update', [PembeliController::class, 'updateProfile'])->name('pembeli.update');
-    Route::get('/history', [PembeliController::class, 'history'])->name('pembeli.history');
+    Route::get('/history', [TransaksiPembelianController::class, 'history'])->name('pembeli.purchase');
+    Route::get('/pembeli/rating/{id}', [TransaksiPembelianController::class, 'showRatingPage'])->name('pembeli.rating');
+    Route::post('/pembeli/rate/{id}', [TransaksiPembelianController::class, 'rateTransaction'])->name('pembeli.rate');
     Route::get('/riwayat', [TransaksiPembelianController::class, 'riwayat'])->name('pembeli.riwayat');
     Route::get('/pembelian', [TransaksiPembelianController::class, 'index'])->name('pembeli.pembelian');
     Route::get('/purchase', [PembeliController::class, 'purchase'])->name('pembeli.purchase');
@@ -94,7 +96,9 @@ Route::prefix('pembeli')->middleware('auth:pembeli')->group(function () {
     Route::get('/process-payment', [ItemKeranjangController::class, 'processPayment'])->name('pembeli.processPayment');
     Route::post('/bayar', [TransaksiPembelianController::class, 'bayar'])->name('pembeli.bayar');
     Route::get('/batal-checkout/{id}', [TransaksiPembelianController::class, 'batalkanOtomatis'])->name('pembeli.batalCheckout');
-    Route::get('/reset-password', [ResetPasswordController::class, 'showResetForm'])->name('pembeli.password');
+    Route::post('/rate/{id}', [TransaksiPembelianController::class, 'rateTransaction'])->name('pembeli.rate');
+    // Route::get('/reset-password', [ResetPasswordController::class, 'showResetForm'])->name('pembeli.password');
+
     Route::get('/alamat', [AlamatController::class, 'alamatPembeli'])->name('pembeli.alamat');
     Route::post('/alamat', [AlamatController::class, 'store'])->name('pembeli.alamat.store');
     Route::put('/alamat/{id}', [AlamatController::class, 'update'])->name('pembeli.alamat.update');

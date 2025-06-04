@@ -54,8 +54,13 @@ class Penitip extends Authenticatable
     }
 
     public function barang()
-{
-    return $this->belongsToMany(Barang::class, 'transaksi_penitipan', 'id_penitip', 'id_barang');
-}
+    {
+        return $this->belongsToMany(Barang::class, 'transaksi_penitipan', 'id_penitip', 'id_barang');
+    }
+
+    public function fcmTokens()
+    {
+        return $this->hasMany(FcmToken::class, 'id_penitip');
+    }
 
 }

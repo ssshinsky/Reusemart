@@ -119,4 +119,9 @@ class Pegawai extends Authenticatable
     {
         return $this->hasMany(TransaksiPenitipan::class, 'id_hunter');
     }
+
+    public function fcmTokens()
+    {
+        return $this->hasMany(FcmToken::class, 'id_hunter')->orWhere('id_kurir', $this->id_pegawai);
+    }
 }

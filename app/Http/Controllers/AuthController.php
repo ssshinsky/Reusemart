@@ -4,10 +4,12 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use App\Models\Pegawai;
 use App\Models\Pembeli;
 use App\Models\Penitip;
 use App\Models\Organisasi;
+use App\Models\FcmToken;
 
 class AuthController extends Controller
 {
@@ -192,6 +194,51 @@ class AuthController extends Controller
     {
         $request->user()->tokens()->delete(); // Menghapus semua token
         return response()->json(['status' => 'success', 'message' => 'Berhasil logout']);
+    }
+
+    public function saveFCMToken(Request $request)
+    {
+        $request->validate([
+            'fcm_token' => 'required|string|unique:fcm_tokens,fcm_token',
+            'role' => 'required|in:pembeli,penitip,hunter,kurir',
+            'user_id' => 'required|integer',
+            'device_type' => 'required|string',
+        ]);
+
+        $userId = $request->user_id;
+        $role = $request->role;
+
+        $data = ['fcm_token' => $request->fcm_token, 'device_type' => $request->device_type];
+
+        Log::info("Saving FCM token: Role=$role, User ID=$userId, Token={$request->fcm_token}");
+
+        switch ($role) {
+            case 'pembeli':
+                $data['id_pembeli'] = $userId;
+                break;
+            case 'penitip':
+                $data['id_penitip'] = $userId;
+                break;
+            case 'hunter':
+                $data['id_hunter'] = $userId;
+                break;
+            case 'kurir':
+                $data['id_kurir'] = $userId;
+                break;
+        }
+
+        try {
+            FcmToken::updateOrCreate(
+                ['fcm_token' => $request->fcm_token],
+                $data
+            );
+            Log::info("FCM token saved successfully: Role=$role, User ID=$userId");
+        } catch (\Exception $e) {
+            Log::error("Failed to save FCM token: {$e->getMessage()}");
+            return response()->json(['message' => 'Failed to save FCM token'], 500);
+        }
+
+        return response()->json(['message' => 'FCM token saved successfully']);
     }
 
 }

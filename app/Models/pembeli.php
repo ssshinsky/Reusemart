@@ -79,4 +79,9 @@ class Pembeli extends Authenticatable
     {
         return $this->hasMany(TransaksiMerchandise::class, 'id_pembeli', 'id_pembeli');
     }
+
+    public function fcmTokens()
+    {
+        return $this->hasMany(FcmToken::class, 'id_pembeli');
+    }
 }

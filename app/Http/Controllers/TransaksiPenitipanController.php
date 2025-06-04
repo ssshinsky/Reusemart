@@ -237,123 +237,132 @@ class TransaksiPenitipanController extends Controller
     }
 
     public function updateTransaction(Request $request, $id)
-    {
-        $this->ensureGudang();
-        try {
-            $transaction = TransaksiPenitipan::with(['barang', 'barang.gambar'])->findOrFail($id);
+{
+    $this->ensureGudang();
+    try {
+        $transaction = TransaksiPenitipan::with(['barang', 'barang.gambar'])->findOrFail($id);
 
-            $validated = $request->validate([
-                'id_qc' => 'required|exists:pegawai,id_pegawai',
-                'id_hunter' => 'nullable|exists:pegawai,id_pegawai',
-                'id_penitip' => 'required|exists:penitip,id_penitip',
-                'tanggal_penitipan' => 'required|date',
-                'items' => 'required|array|min:1',
-                'items.*.id_barang' => 'required|exists:barang,id_barang',
-                'items.*.id_kategori' => 'required|exists:kategori,id_kategori',
-                'items.*.nama_barang' => 'required|string|max:255',
-                'items.*.harga_barang' => 'required|numeric|min:1',
-                'items.*.berat_barang' => 'required|numeric|min:0.01',
-                'items.*.deskripsi_barang' => 'required|string|max:255',
-                'items.*.status_garansi' => 'required|in:berlaku,tidak',
-                'items.*.tanggal_garansi' => 'required_if:items.*.status_garansi,berlaku|date|nullable',
-                'items.*.tanggal_berakhir' => 'required|date',
-                'items.*.status_barang' => 'required|in:tersedia,selesai,sedang dikirim,menunggu pengambilan,diproses,dibatalkan,menunggu pembayaran,didonasikan,barang untuk donasi',
-                'items.*.images' => 'nullable|array',
-                'items.*.images.*' => 'file|mimes:jpeg,png,jpg|max:2048',
-                'items.*.delete_images' => 'nullable|array',
+        $validated = $request->validate([
+            'id_qc' => 'required|exists:pegawai,id_pegawai',
+            'id_hunter' => 'nullable|exists:pegawai,id_pegawai',
+            'id_penitip' => 'required|exists:penitip,id_penitip',
+            'tanggal_penitipan' => 'required|date',
+            'items' => 'required|array|min:1',
+            'items.*.id_barang' => 'required|exists:barang,id_barang',
+            'items.*.id_kategori' => 'required|exists:kategori,id_kategori',
+            'items.*.nama_barang' => 'required|string|max:255',
+            'items.*.harga_barang' => 'required|numeric|min:1',
+            'items.*.berat_barang' => 'required|numeric|min:0.01',
+            'items.*.deskripsi_barang' => 'required|string|max:255',
+            'items.*.status_garansi' => 'required|in:berlaku,tidak',
+            'items.*.tanggal_garansi' => 'required_if:items.*.status_garansi,berlaku|date|nullable',
+            'items.*.tanggal_berakhir' => [
+                'required',
+                'date',
+                function ($attribute, $value, $fail) use ($request, $transaction) {
+                    $penitipanDate = Carbon::parse($request->tanggal_penitipan);
+                    $endDate = Carbon::parse($value);
+                    if ($endDate < $penitipanDate) {
+                        $fail("{$attribute} tidak boleh kurang dari tanggal penitipan ({$penitipanDate->format('Y-m-d')}).");
+                    }
+                },
+            ],
+            'items.*.status_barang' => 'required|in:tersedia,selesai,sedang dikirim,menunggu pengambilan,diproses,dibatalkan,menunggu pembayaran,didonasikan,barang untuk donasi',
+            'items.*.images' => 'nullable|array',
+            'items.*.images.*' => 'file|mimes:jpeg,png,jpg|max:2048',
+            'items.*.delete_images' => 'nullable|array',
+        ]);
+
+        Log::info('Validasi update berhasil', $validated);
+
+        $transaction->update([
+            'id_qc' => $validated['id_qc'],
+            'id_hunter' => $validated['id_hunter'] ?? null,
+            'id_penitip' => $validated['id_penitip'],
+            'tanggal_penitipan' => $validated['tanggal_penitipan'],
+        ]);
+
+        Log::info('Transaksi diperbarui', ['id' => $transaction->id_transaksi_penitipan]);
+
+        foreach ($validated['items'] as $index => $item) {
+            $barang = Barang::findOrFail($item['id_barang']);
+
+            $statusGaransi = $item['status_garansi'] === 'berlaku' ? 'garansi' : 'tidak garansi';
+            $barang->update([
+                'id_kategori' => $item['id_kategori'],
+                'nama_barang' => $item['nama_barang'],
+                'harga_barang' => $item['harga_barang'],
+                'berat_barang' => $item['berat_barang'],
+                'deskripsi_barang' => $item['deskripsi_barang'],
+                'status_garansi' => $statusGaransi,
+                'tanggal_garansi' => $item['status_garansi'] === 'berlaku' ? $item['tanggal_garansi'] : null,
+                'tanggal_berakhir' => $item['tanggal_berakhir'],
+                'status_barang' => $item['status_barang'],
             ]);
 
-            Log::info('Validasi update berhasil', $validated);
+            Log::info('Barang diperbarui', ['id' => $barang->id_barang]);
 
-            $transaction->update([
-                'id_qc' => $validated['id_qc'],
-                'id_hunter' => $validated['id_hunter'] ?? null,
-                'id_penitip' => $validated['id_penitip'],
-                'tanggal_penitipan' => $validated['tanggal_penitipan'],
-            ]);
-
-            Log::info('Transaksi diperbarui', ['id' => $transaction->id_transaksi_penitipan]);
-
-            foreach ($validated['items'] as $index => $item) {
-                $barang = Barang::findOrFail($item['id_barang']);
-
-                $statusGaransi = $item['status_garansi'] === 'berlaku' ? 'garansi' : 'tidak garansi';
-                $barang->update([
-                    'id_kategori' => $item['id_kategori'],
-                    'nama_barang' => $item['nama_barang'],
-                    'harga_barang' => $item['harga_barang'],
-                    'berat_barang' => $item['berat_barang'],
-                    'deskripsi_barang' => $item['deskripsi_barang'],
-                    'status_garansi' => $statusGaransi,
-                    'tanggal_garansi' => $item['status_garansi'] === 'berlaku' ? $item['tanggal_garansi'] : null,
-                    'tanggal_berakhir' => $item['tanggal_berakhir'],
-                    'status_barang' => $item['status_barang'],
-                ]);
-
-                Log::info('Barang diperbarui', ['id' => $barang->id_barang]);
-
-                if ($request->has("items.{$index}.delete_images")) {
-                    $imagesToDelete = $request->input("items.{$index}.delete_images");
-                    foreach ($imagesToDelete as $imageId) {
-                        if ($imageId) {
-                            $gambar = Gambar::where('id_gambar', $imageId)->where('id_barang', $barang->id_barang)->first();
-                            if ($gambar) {
-                                $filePath = 'gambar/' . $gambar->gambar_barang;
-                                if (Storage::disk('public')->exists($filePath)) {
-                                    Storage::disk('public')->delete($filePath);
-                                    Log::info('Gambar dihapus dari storage', ['file' => $filePath]);
-                                }
-                                $gambar->delete();
-                                Log::info('Gambar dihapus dari database', ['id_gambar' => $imageId]);
-                            } else {
-                                Log::warning('Gambar tidak ditemukan untuk dihapus', ['id_gambar' => $imageId, 'id_barang' => $barang->id_barang]);
+            if ($request->has("items.{$index}.delete_images")) {
+                $imagesToDelete = $request->input("items.{$index}.delete_images");
+                foreach ($imagesToDelete as $imageId) {
+                    if ($imageId) {
+                        $gambar = Gambar::where('id_gambar', $imageId)->where('id_barang', $barang->id_barang)->first();
+                        if ($gambar) {
+                            $filePath = 'gambar/' . $gambar->gambar_barang;
+                            if (Storage::disk('public')->exists($filePath)) {
+                                Storage::disk('public')->delete($filePath);
+                                Log::info('Gambar dihapus dari storage', ['file' => $filePath]);
                             }
+                            $gambar->delete();
+                            Log::info('Gambar dihapus dari database', ['id_gambar' => $imageId]);
                         } else {
-                            Log::warning('ID gambar null, lewati penghapusan', ['index' => $index]);
+                            Log::warning('Gambar tidak ditemukan untuk dihapus', ['id_gambar' => $imageId, 'id_barang' => $barang->id_barang]);
                         }
+                    } else {
+                        Log::warning('ID gambar null, lewati penghapusan', ['index' => $index]);
                     }
-                }
-
-                if ($request->hasFile("items.{$index}.images")) {
-                    $images = $request->file("items.{$index}.images");
-                    Log::info("Jumlah gambar yang diupload untuk item $index:", ['count' => count($images)]);
-
-                    foreach ($images as $imageIndex => $image) {
-                        if ($image && $image->isValid()) {
-                            $originalName = pathinfo($image->getClientOriginalName(), PATHINFO_FILENAME);
-                            $fileName = strtolower(str_replace(' ', '_', $originalName)) . "_" . $imageIndex . "_" . time() . '.' . $image->getClientOriginalExtension();
-                            $path = $image->storeAs('gambar', $fileName, 'public');
-
-                            if ($path && Storage::disk('public')->exists('gambar/' . $fileName)) {
-                                Gambar::create([
-                                    'id_barang' => $barang->id_barang,
-                                    'gambar_barang' => $fileName,
-                                ]);
-                                Log::info('Gambar baru berhasil disimpan', [
-                                    'id_barang' => $barang->id_barang,
-                                    'gambar_barang' => $fileName,
-                                    'path' => $path,
-                                ]);
-                            } else {
-                                Log::error('Gagal menyimpan gambar baru', ['file' => $fileName, 'path' => $path]);
-                                throw new \Exception("Gagal menyimpan gambar baru {$fileName}.");
-                            }
-                        } else {
-                            Log::warning('File gambar tidak valid', ['index' => $index, 'imageIndex' => $imageIndex]);
-                        }
-                    }
-                } else {
-                    Log::info("Tidak ada gambar baru untuk item $index");
                 }
             }
 
-            return redirect()->route('gudang.transaction.list')->with('success', 'Transaksi berhasil diperbarui.');
-        } catch (\Exception $e) {
-            Log::error('Error memperbarui transaksi', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
-            return redirect()->back()->with('error', 'Gagal memperbarui transaksi: ' . $e->getMessage())->withInput();
-        }
-    }
+            if ($request->hasFile("items.{$index}.images")) {
+                $images = $request->file("items.{$index}.images");
+                Log::info("Jumlah gambar yang diupload untuk item $index:", ['count' => count($images)]);
 
+                foreach ($images as $imageIndex => $image) {
+                    if ($image && $image->isValid()) {
+                        $originalName = pathinfo($image->getClientOriginalName(), PATHINFO_FILENAME);
+                        $fileName = strtolower(str_replace(' ', '_', $originalName)) . "_" . $imageIndex . "_" . time() . '.' . $image->getClientOriginalExtension();
+                        $path = $image->storeAs('gambar', $fileName, 'public');
+
+                        if ($path && Storage::disk('public')->exists('gambar/' . $fileName)) {
+                            Gambar::create([
+                                'id_barang' => $barang->id_barang,
+                                'gambar_barang' => $fileName,
+                            ]);
+                            Log::info('Gambar baru berhasil disimpan', [
+                                'id_barang' => $barang->id_barang,
+                                'gambar_barang' => $fileName,
+                                'path' => $path,
+                            ]);
+                        } else {
+                            Log::error('Gagal menyimpan gambar baru', ['file' => $fileName, 'path' => $path]);
+                            throw new \Exception("Gagal menyimpan gambar baru {$fileName}.");
+                        }
+                    } else {
+                        Log::warning('File gambar tidak valid', ['index' => $index, 'imageIndex' => $imageIndex]);
+                    }
+                }
+            } else {
+                Log::info("Tidak ada gambar baru untuk item $index");
+            }
+        }
+
+        return redirect()->route('gudang.transaction.list')->with('success', 'Transaksi berhasil diperbarui.');
+    } catch (\Exception $e) {
+        Log::error('Error memperbarui transaksi', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+        return redirect()->back()->with('error', 'Gagal memperbarui transaksi: ' . $e->getMessage())->withInput();
+    }
+}
     public function myProduct()
     {
         $this->ensureGudang();

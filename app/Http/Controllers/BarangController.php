@@ -9,7 +9,6 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use App\Models\DiskusiProduk;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\Log;
 
 class BarangController extends Controller
 {
@@ -290,7 +289,7 @@ class BarangController extends Controller
             $barang = Barang::with(['kategori', 'gambar', 'transaksiPenitipan.penitip'])->findOrFail($id);
             return response()->json($barang);
         } catch (\Exception $e) {
-            \Log::error('Error in BarangController@apiShow: ' . $e->getMessage() . ' | Stack: ' . $e->getTraceAsString());
+            Log::error('Error in BarangController@apiShow: ' . $e->getMessage() . ' | Stack: ' . $e->getTraceAsString());
             return response()->json(['error' => 'Barang tidak ditemukan'], 404);
         }
     }

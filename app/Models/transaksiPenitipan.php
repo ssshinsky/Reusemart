@@ -11,7 +11,6 @@ class TransaksiPenitipan extends Model
 
     protected $table = 'transaksi_penitipan';
     protected $primaryKey = 'id_transaksi_penitipan';
-    public $timestamps = false;
 
     protected $fillable = [
         'id_qc',
@@ -35,8 +34,8 @@ class TransaksiPenitipan extends Model
         return $this->belongsTo(Penitip::class, 'id_penitip', 'id_penitip');
     }
 
-    public function barangs()
+    public function barang()
     {
-        return $this->hasMany(Barang::class, 'id_transaksi_penitipan');
+        return $this->hasMany(Barang::class, 'id_transaksi_penitipan', 'id_transaksi_penitipan');
     }
 }

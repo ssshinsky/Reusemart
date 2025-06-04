@@ -453,7 +453,7 @@ class PenitipController extends Controller
         }
 
         $barang->update([
-            'status_barang' => 'Ready for Pick Up',
+            'status_barang' => 'Ready for Pickup',
             'tanggal_konfirmasi_pengambilan' => $now,
             'batas_pengambilan' => $batasAmbil,
         ]);

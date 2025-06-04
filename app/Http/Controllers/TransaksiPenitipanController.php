@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\TransaksiPembelian;
 use App\Models\TransaksiPenitipan;
 use App\Models\Barang;
 use App\Models\Gambar;
@@ -64,9 +65,9 @@ class TransaksiPenitipanController extends Controller
                 'items.*.berat_barang' => 'required|numeric|min:0.01',
                 'items.*.deskripsi_barang' => 'required|string|max:255',
                 'items.*.status_garansi' => 'required|in:berlaku,tidak',
-                'items.*.tanggal_garansi' => 'required_if:items.*.status_garansi,berlaku|date|nullable',
+                'items..tanggal_garansi' => 'required_if:items..status_garansi,berlaku|date|nullable',
                 'items.*.images' => 'required|array|min:2',
-                'items.*.images.*' => 'file|mimes:jpeg,png,jpg|max:2048',
+                'items..images.' => 'file|mimes:jpeg,png,jpg|max:2048',
             ]);
 
             Log::info('Validasi berhasil', $validated);
@@ -109,7 +110,7 @@ class TransaksiPenitipanController extends Controller
                         foreach ($images as $imageIndex => $image) {
                             if ($image && $image->isValid()) {
                                 $originalName = pathinfo($image->getClientOriginalName(), PATHINFO_FILENAME);
-                                $fileName = strtolower(str_replace(' ', '_', $originalName)) . "_" . $imageIndex . "_" . time() . '.' . $image->getClientOriginalExtension();
+                                $fileName = strtolower(str_replace(' ', '', $originalName)) . "" . $imageIndex . "_" . time() . '.' . $image->getClientOriginalExtension();
                                 $fullPath = storage_path('app/public/gambar/' . $fileName);
 
                                 $directory = storage_path('app/public/gambar');
@@ -255,11 +256,11 @@ class TransaksiPenitipanController extends Controller
                 'items.*.berat_barang' => 'required|numeric|min:0.01',
                 'items.*.deskripsi_barang' => 'required|string|max:255',
                 'items.*.status_garansi' => 'required|in:berlaku,tidak',
-                'items.*.tanggal_garansi' => 'required_if:items.*.status_garansi,berlaku|date|nullable',
+                'items..tanggal_garansi' => 'required_if:items..status_garansi,berlaku|date|nullable',
                 'items.*.tanggal_berakhir' => 'required|date',
                 'items.*.status_barang' => 'required|in:tersedia,selesai,sedang dikirim,menunggu pengambilan,diproses,dibatalkan,menunggu pembayaran,didonasikan,barang untuk donasi',
                 'items.*.images' => 'nullable|array',
-                'items.*.images.*' => 'file|mimes:jpeg,png,jpg|max:2048',
+                'items..images.' => 'file|mimes:jpeg,png,jpg|max:2048',
                 'items.*.delete_images' => 'nullable|array',
             ]);
 
@@ -321,7 +322,7 @@ class TransaksiPenitipanController extends Controller
                     foreach ($images as $imageIndex => $image) {
                         if ($image && $image->isValid()) {
                             $originalName = pathinfo($image->getClientOriginalName(), PATHINFO_FILENAME);
-                            $fileName = strtolower(str_replace(' ', '_', $originalName)) . "_" . $imageIndex . "_" . time() . '.' . $image->getClientOriginalExtension();
+                            $fileName = strtolower(str_replace(' ', '', $originalName)) . "" . $imageIndex . "_" . time() . '.' . $image->getClientOriginalExtension();
                             $path = $image->storeAs('gambar', $fileName, 'public');
 
                             if ($path && Storage::disk('public')->exists('gambar/' . $fileName)) {
@@ -572,4 +573,110 @@ class TransaksiPenitipanController extends Controller
         $barang = Barang::with(['transaksiPenitipan.penitip', 'kategori', 'gambar'])->findOrFail($id);
         return view('gudang.item_detail', compact('barang'));
     }
+    
+    public function pengirimanDanPengambilanList()
+    {
+        $this->ensureGudang();
+        $transaksi = TransaksiPembelian::with([
+            'pembeli',
+            'detailKeranjangs.itemKeranjang.barang',
+            'detailKeranjangs.itemKeranjang.barang.gambar',
+            'detailKeranjangs.itemKeranjang.barang.transaksiPenitipan.penitip',
+
+        ])
+        ->whereIn('status_transaksi', ['Ready for Pickup', 'Preparing'])
+        ->orderBy('tanggal_pembelian', 'asc')
+        ->get();
+
+        return view('gudang.transaksi_pengiriman', compact('transaksi'));
+    }
+
+    public function perbaruiStatusOtomatis()
+    {
+        $now = Carbon::now();
+        $today = $now->toDateString();
+
+        // 1. Perbarui ke 'In Delivery'
+        TransaksiPembelian::where('status_transaksi', 'Preparing')
+            ->where('metode_pengiriman', 'kurir')
+            ->whereDate('tanggal_pengiriman', $today)
+            ->whereNotNull('id_kurir') // pastikan kurir sudah ditugaskan
+            ->update(['status_transaksi' => 'In Delivery']);
+
+        // 2. Perbarui ke 'Donated' jika > 2 hari tidak diambil
+        TransaksiPembelian::where('status_transaksi', 'Ready for Pickup')
+            ->whereDate('tanggal_pengambilan', '<', Carbon::now()->subDays(2)->toDateString())
+            ->update(['status_transaksi' => 'Donated']);
+
+        return redirect()->back()->with('success', 'Status transaksi berhasil diperbarui.');
+    }
+
+    public function showDetail($id)
+    {
+        $this->ensureGudang();
+
+        $transaksi = TransaksiPembelian::with([
+            'pembeli',
+            'detailKeranjangs.itemKeranjang.barang.gambar'
+        ])->findOrFail($id);
+
+        return view('gudang.transaksi_detail_pengiriman', compact('transaksi'));
+    }
+
+    public function jadwalkan($id)
+    {
+        $this->ensureGudang();
+
+        $transaksi = TransaksiPembelian::with([
+            'pembeli',
+            'detailKeranjangs.itemKeranjang.barang.gambar'
+        ])->findOrFail($id);
+
+        return view('gudang.jadwal_pengiriman', compact('transaksi'));
+    }
+
+    public function transaksiPengambilan()
+    {
+        $barangPenitip = Barang::with(['transaksiPenitipan.penitip', 'gambar'])
+            ->where('status_barang', 'Ready for Pickup')
+            ->where('batas_pengambilan', '>', now())
+            ->get();
+
+
+        return view('gudang.transaksi_pengiriman', compact('barang'));
+    }
+
+    public function markAsReturned($id)
+    {
+        $barang = Barang::findOrFail($id);
+        if ($barang->status_barang != 'Ready for Pickup') {
+            return redirect()->back()->with('error', 'Barang tidak siap untuk diambil.');
+        }
+
+        $barang->update([
+            'status_barang' => 'Returned',
+            'updated_at' => now(),
+        ]);
+
+        return redirect()->route('gudang.transaksi.index')->with('success', 'Barang telah berhasil diambil dan status diperbarui.');
+    }
+
+    public function detailTransaksi($id)
+    {
+        $transaksi = TransaksiPembelian::with('detailKeranjangs.itemKeranjang.barang')->findOrFail($id);
+
+        foreach ($transaksi->detailKeranjangs as $detail) {
+            $barang = $detail->itemKeranjang->barang;
+            
+            if ($barang->batas_pengambilan && $barang->batas_pengambilan < now()) {
+                $barang->update([
+                    'status_barang' => 'Donated',
+                    'updated_at' => now(),
+                ]);
+            }
+        }
+
+        return view('gudang.transaksi_detail', compact('transaksi'));
+    }
+
 }

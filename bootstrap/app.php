@@ -4,6 +4,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use App\Console\Commands\UpdateExpiredItems;
+use Illuminate\Console\Scheduling\Schedule;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -17,8 +18,12 @@ return Application::configure(basePath: dirname(__DIR__))
             'pegawai.role' => \App\Http\Middleware\PegawaiRoleMiddleware::class,
         ]);
     })
-    ->withSchedule(function ($schedule) {
+    ->withSchedule(function (Schedule $schedule) {
+        // Job lama: setiap 1 menit
         $schedule->command(UpdateExpiredItems::class)->everyMinute();
+
+        // Job baru: setiap 10 menit
+        $schedule->command('transaksi:update-status')->everyTenMinutes();
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

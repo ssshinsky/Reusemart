@@ -27,6 +27,8 @@ class Barang extends Model
         'perpanjangan',
         'batas_pengambilan',
         'tanggal_konfirmasi_pengambilan',
+        'updated_at',
+        'created_at',
     ];
 
     public function kategori()

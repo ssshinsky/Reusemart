@@ -21,6 +21,7 @@ use App\Http\Controllers\ItemKeranjangController;
 use App\Http\Controllers\ResetPasswordController;
 use App\Http\Controllers\TransaksiPenitipanController;
 use App\Http\Controllers\TransaksiPembelianController;
+use App\Http\Controllers\TransaksiMerchandiseController;
 use App\Http\Controllers\DiskusiProdukController;
 use App\Models\Barang;
 
@@ -208,6 +209,9 @@ Route::prefix('cs')->middleware(['auth:pegawai', 'pegawai.role:3'])->group(funct
     Route::put('/item-owners/{id}', [PenitipController::class, 'update'])->name('cs.penitip.update');
     Route::put('/item-owners/{id}/deactivate', [PenitipController::class, 'deactivate'])->name('cs.penitip.deactivate');
     Route::put('/item-owners/{id}/reactivate', [PenitipController::class, 'reactivate'])->name('cs.penitip.reactivate');
+    Route::get('/merchandise-claims', [TransaksiMerchandiseController::class, 'index'])->name('cs.merchandise-claim.index');
+    Route::get('/merchandise-claims/search', [TransaksiMerchandiseController::class, 'search'])->name('cs.merchandise-claim.search');
+    Route::put('/merchandise-claims/{id}', [TransaksiMerchandiseController::class, 'update'])->name('cs.merchandise-claim.update');
 });
 
 // Gudang Routes

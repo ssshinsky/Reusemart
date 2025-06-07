@@ -589,7 +589,7 @@ class TransaksiPenitipanController extends Controller
         $tanggal_selesai = $request->input('tanggal_selesai');
 
         $query = Penitip::query()
-            ->where('rata_rating', '<=', 3)
+            ->where('rata_rating', '>=', 4)
             ->orWhereNull('rata_rating');
 
         // Filter berdasarkan keyword

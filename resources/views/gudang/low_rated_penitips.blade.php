@@ -1,14 +1,14 @@
 @extends('gudang.gudang_layout')
 
-@section('title', 'Daftar Penitip dengan Rating Rendah')
+@section('title', 'Daftar Penitip dengan Rating >= 4')
 
 @section('content')
 <div class="container-fluid py-4">
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h2 class="fw-bold text-dark mb-2">Daftar Penitip dengan Rating Rendah</h2>
-            <p class="text-muted mb-0">Penitip dengan rata-rata rating ≤ 3</p>
+            <h2 class="fw-bold text-dark mb-2">Daftar Penitip dengan Rating >= 4</h2>
+            <p class="text-muted mb-0">Penitip dengan rata-rata rating >= 4 </p>
         </div>
     </div>
 

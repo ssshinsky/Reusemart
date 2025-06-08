@@ -29,6 +29,12 @@
         <a href="{{ route('owner.rewards') }}" class="btn btn-outline-primary">
             <i class="bi bi-gift me-2"></i> Poin Reward
         </a>
+        <a href="{{ route('owner.reports.sales_by_category') }}" class="btn btn-outline-primary">
+            <i class="bi bi-bar-chart-line me-2"></i> Lap. Penjualan per Kategori
+        </a>
+        <a href="{{ route('owner.reports.expired_items') }}" class="btn btn-outline-primary">
+            <i class="bi bi-calendar-x me-2"></i> Lap. Masa Penitipan Habis
+        </a>
     </div>
     
     <p></p>

@@ -230,6 +230,12 @@
             <a href="{{ route('owner.rewards') }}" class="{{ Route::is('owner.rewards') ? 'active' : '' }}">
                 <i class="bi bi-gift"></i> Poin Reward
             </a>
+            <a href="{{ route('owner.reports.sales_by_category') }}" class="{{ Route::is('owner.reports.sales_by_category') ? 'active' : '' }}">
+                <i class="bi bi-bar-chart-line me-2"></i>Lap. Penjualan per Kategori
+            </a>
+            <a href="{{ route('owner.reports.expired_items') }}" class="{{ Route::is('owner.reports.expired_items') ? 'active' : '' }}">
+                <i class="bi bi-calendar-x me-2"></i>Lap. Masa Penitipan Habis
+            </a>
             <form action="{{ route('logout') }}" method="POST" class="mt-4">
                 @csrf
                 <button type="submit" class="btn btn-danger w-100">

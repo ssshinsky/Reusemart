@@ -126,6 +126,7 @@ Route::prefix('owner')->middleware(['auth:pegawai', 'pegawai.role:1'])->group(fu
     Route::get('/donation/requests', [OwnerController::class, 'donationRequests'])->name('owner.donation.requests');
     Route::get('/donation/history', [OwnerController::class, 'donationHistory'])->name('owner.donation.history');
     Route::get('/allocate-items', [OwnerController::class, 'allocateItems'])->name('owner.allocate.items');
+    Route::get('/reports', [OwnerController::class, 'reports'])->name('owner.reports');
     Route::post('/allocate-items', [OwnerController::class, 'storeAllocation'])->name('owner.store.allocation');
     Route::get('/update-donation', [OwnerController::class, 'updateDonation'])->name('owner.update.donation');
     Route::post('/update-donation', [OwnerController::class, 'updateDonasiStore'])->name('owner.update.donasi.store');
@@ -135,6 +136,8 @@ Route::prefix('owner')->middleware(['auth:pegawai', 'pegawai.role:1'])->group(fu
     Route::delete('/request/{id}', [OwnerController::class, 'deleteRequest'])->name('owner.delete.request');
     Route::get('/monthly-sales-report', [OwnerController::class, 'monthlySalesReport'])->name('owner.monthly.sales.report');
     Route::get('/download-monthly-sales-report', [OwnerController::class, 'downloadMonthlySalesReport'])->name('owner.download.monthly.sales.report');
+    Route::get('/warehouse-stock-report', [OwnerController::class, 'warehouseStockReport'])->name('owner.warehouse.stock.report');
+    Route::get('/download/warehouse-stock-report', [OwnerController::class, 'downloadWarehouseStockReport'])->name('owner.download.warehouse.stock.report');
 });
 
 // Admin Routes

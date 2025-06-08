@@ -32,6 +32,13 @@
             margin: 5px 0;
             color: #2c3e50; /* Abu-abu tua */
         }
+        .note {
+            font-style: italic;
+            font-size: 12px;
+            color: #e74c3c; /* Merah lembut untuk peringatan */
+            text-align: right;
+            margin-right: 20px;
+        }
         table {
             width: 100%;
             border-collapse: collapse;
@@ -59,21 +66,22 @@
         tr:hover {
             background-color: #d5f5d5; /* Hijau lebih terang saat hover */
         }
-        .total-row td {
-            font-weight: bold;
-            background-color: #d5f5d5; /* Highlight total */
+        .logo-placeholder {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #27ae60;
+            font-size: 14px;
         }
     </style>
 </head>
 <body>
     <div class="header">
         <!-- <div class="logo-placeholder">[Logo ReUse Mart Placeholder]</div> Placeholder logo, bisa diganti dengan gambar kalau ada -->
-        <h2>Laporan Komisi Bulanan per Produk</h2>
+        <h2>Laporan Stok Gudang</h2>
         <h3>ReUse Mart, Jl. Green Eco Park No. 456 Yogyakarta</h3>
-        <!-- <p>LAPORAN KOMISI BULANAN</p> -->
-        <p>Bulan: {{ date('F', mktime(0, 0, 0, $month, 1)) }}</p>
-        <p>Tahun: {{ $year }}</p>
-        <p>Tanggal cetak: {{ $tanggalCetak }}</p>
+        <!-- <p>LAPORAN STOK GUDANG</p> -->
+        <p>Tanggal cetak: {{ $date }}</p>
+        <p class="note">Stok yang bisa dilihat adalah stok per hari ini (sama dengan tanggal cetak). Tidak bisa dilihat stok yang kemarin-kemarin.</p>
     </div>
 
     <table>
@@ -81,12 +89,13 @@
             <tr>
                 <th>Kode Produk</th>
                 <th>Nama Produk</th>
-                <th>Harga Jual</th>
+                <th>ID Penitip</th>
+                <th>Nama Penitip</th>
                 <th>Tanggal Masuk</th>
-                <th>Tanggal Laku</th>
-                <th>Komisi Hunter</th>
-                <th>Komisi ReUse Mart</th>
-                <th>Bonus Penitip</th>
+                <th>Perpanjangan</th>
+                <th>ID Hunter</th>
+                <th>Nama Hunter</th>
+                <th>Harga</th>
             </tr>
         </thead>
         <tbody>
@@ -94,23 +103,15 @@
                 <tr>
                     <td>{{ $item['kode_produk'] }}</td>
                     <td>{{ $item['nama_produk'] }}</td>
-                    <td>{{ $item['harga_jual'] }}</td>
+                    <td>{{ $item['id_penitip'] }}</td>
+                    <td>{{ $item['nama_penitip'] }}</td>
                     <td>{{ $item['tanggal_masuk'] }}</td>
-                    <td>{{ $item['tanggal_laku'] }}</td>
-                    <td>{{ $item['komisi_hunter'] }}</td>
-                    <td>{{ $item['komisi_reuse_mart'] }}</td>
-                    <td>{{ $item['bonus_penitip'] }}</td>
+                    <td>{{ $item['perpanjangan'] }}</td>
+                    <td>{{ $item['id_hunter'] }}</td>
+                    <td>{{ $item['nama_hunter'] }}</td>
+                    <td>{{ $item['harga'] }}</td>
                 </tr>
             @endforeach
-            <tr class="total-row">
-                <td colspan="2">Total</td>
-                <td>{{ number_format($totalHargaJual, 0, ',', '.') }}</td>
-                <td></td>
-                <td></td>
-                <td>{{ number_format($totalKomisiHunter, 0, ',', '.') }}</td>
-                <td>{{ number_format($totalKomisiReUseMart, 0, ',', '.') }}</td>
-                <td>{{ number_format($totalBonusPenitip, 0, ',', '.') }}</td>
-            </tr>
         </tbody>
     </table>
 </body>

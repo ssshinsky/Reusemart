@@ -25,6 +25,12 @@ class OwnerController extends Controller
             abort(403, 'Akses ditolak.');
         }
     }
+    
+    public function reports()
+    {
+        $this->ensureOwner();
+        return view('owner.reports');
+    }
 
     public function dashboard()
     {
@@ -406,8 +412,84 @@ class OwnerController extends Controller
         }); // Tambah total Harga Jual
 
         $pdf = PDF::loadView('owner.monthly_sales_report_pdf', compact('formattedData', 'month', 'year', 'totalKomisiHunter', 'totalKomisiReUseMart', 'totalBonusPenitip', 'tanggalCetak', 'totalHargaJual')); // Tambahkan 'totalHargaJual'
-        $pdf->setPaper('A4', 'portrait');
+        $pdf->setPaper('A4', 'landscape');
 
         return $pdf->download('laporan_komisi_bulanan_' . $year . '_' . str_pad($month, 2, '0', STR_PAD_LEFT) . '.pdf');
     }
+
+    public function warehouseStockReport(Request $request)
+{
+    $this->ensureOwner();
+
+    $date = $request->input('date', Carbon::now()->format('d/m/Y'));
+    $parsedDate = Carbon::createFromFormat('d/m/Y', $date)->startOfDay();
+
+    $items = Barang::where('status_barang', 'tersedia')
+        ->with(['transaksiPenitipan' => function ($query) {
+            $query->with(['penitip', 'hunter']);
+        }])
+        ->get();
+
+    $formattedData = $items->map(function ($item) use ($parsedDate) {
+        $transaksiPenitipan = $item->transaksiPenitipan()->first();
+        if (!$transaksiPenitipan) return null;
+
+        $tanggalMasuk = Carbon::parse($transaksiPenitipan->tanggal_penitipan)->format('d/m/Y');
+        $perpanjangan = $item->perpanjangan; // Ambil dari Barang
+        Log::info('Perpanjangan Debug', ['id_barang' => $item->id_barang, 'perpanjangan' => $perpanjangan]); // Debug
+
+        return [
+            'kode_produk' => $item->kode_barang,
+            'nama_produk' => $item->nama_barang,
+            'id_penitip' => $transaksiPenitipan->penitip->id_penitip ? 'T' . $transaksiPenitipan->penitip->id_penitip : '-',
+            'nama_penitip' => $transaksiPenitipan->penitip->nama_penitip ?? '-',
+            'tanggal_masuk' => $tanggalMasuk,
+            'perpanjangan' => $perpanjangan == 1 ? 'Ya' : ($perpanjangan == 0 ? 'Tidak' : '-'),
+            'id_hunter' => $transaksiPenitipan->hunter ? 'P' . $transaksiPenitipan->hunter->id_pegawai : '-',
+            'nama_hunter' => $transaksiPenitipan->hunter ? $transaksiPenitipan->hunter->nama_pegawai ?? '-' : '-',
+            'harga' => number_format($item->harga_barang ?? 0, 0, ',', '.'),
+        ];
+    })->filter()->values();
+
+    return view('owner.warehouse_stock_report', compact('formattedData', 'date'));
+}
+
+public function downloadWarehouseStockReport(Request $request)
+{
+    $this->ensureOwner();
+
+    $date = $request->input('date', Carbon::now()->format('d/m/Y'));
+    $parsedDate = Carbon::createFromFormat('d/m/Y', $date)->startOfDay();
+
+    $items = Barang::where('status_barang', 'tersedia')
+        ->with(['transaksiPenitipan' => function ($query) {
+            $query->with(['penitip', 'hunter']);
+        }])
+        ->get();
+
+    $formattedData = $items->map(function ($item) use ($parsedDate) {
+        $transaksiPenitipan = $item->transaksiPenitipan()->first();
+        if (!$transaksiPenitipan) return null;
+
+        $tanggalMasuk = Carbon::parse($transaksiPenitipan->tanggal_penitipan)->format('d/m/Y');
+        $perpanjangan = $item->perpanjangan;
+
+        return [
+            'kode_produk' => $item->kode_barang,
+            'nama_produk' => $item->nama_barang,
+            'id_penitip' => $transaksiPenitipan->penitip->id_penitip ? 'T' . $transaksiPenitipan->penitip->id_penitip : '-',
+            'nama_penitip' => $transaksiPenitipan->penitip->nama_penitip ?? '-',
+            'tanggal_masuk' => $tanggalMasuk,
+            'perpanjangan' => $perpanjangan == 1 ? 'Ya' : ($perpanjangan == 0 ? 'Tidak' : '-'),
+            'id_hunter' => $transaksiPenitipan->hunter ? 'P' . $transaksiPenitipan->hunter->id_pegawai : '-',
+            'nama_hunter' => $transaksiPenitipan->hunter ? $transaksiPenitipan->hunter->nama_pegawai ?? '-' : '-',
+            'harga' => number_format($item->harga_barang ?? 0, 0, ',', '.'),
+        ];
+    })->filter()->values();
+
+    $pdf = PDF::loadView('owner.warehouse_stock_report_pdf', compact('formattedData', 'date'));
+    $pdf->setPaper('A4', 'landscape'); // Ubah ke landscape
+
+    return $pdf->download('laporan_stok_gudang_' . str_replace('/', '-', $date) . '.pdf');
+}
 }

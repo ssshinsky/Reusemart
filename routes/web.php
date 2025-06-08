@@ -225,6 +225,9 @@ Route::prefix('owner')->middleware(['auth:pegawai'])->group(function () {
     Route::get('/donasi', [OwnerController::class, 'getDonasi'])->name('owner.get.donasi');
     Route::get('/requests-by-organisasi', [OwnerController::class, 'getRequestsByOrganisasi'])->name('owner.requests.by_organisasi');
     Route::delete('/request/{id}', [OwnerController::class, 'deleteRequest'])->name('owner.delete.request');
+    Route::get('/consignment-report', [OwnerController::class, 'consignmentReport'])->name('owner.report');
+    Route::get('/consignment-report/download/{id}', [OwnerController::class, 'downloadConsignmentReport'])
+    ->name('owner.download.consignment.pdf');
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 });
 

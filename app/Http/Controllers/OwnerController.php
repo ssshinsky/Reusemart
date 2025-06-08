@@ -5,12 +5,15 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\DB;
 use App\Models\RequestDonasi;
 use App\Models\Donasi;
 use App\Models\Barang;
 use App\Models\Organisasi;
 use App\Models\Penitip;
+use App\Models\TransaksiPembelian;
 
 class OwnerController extends Controller
 {
@@ -267,7 +270,7 @@ class OwnerController extends Controller
 
         $pdf = PDF::loadView('owner.donation_history_pdf', $data);
 
-        return $pdf->download('laporan_donasi_barang.pdf');
+        return $pdf->stream('laporan_donasi_barang.pdf');
     }
 
     public function downloadPdf()
@@ -280,6 +283,49 @@ class OwnerController extends Controller
 
         $pdf = PDF::loadView('owner.donation_requests_pdf', compact('requests'));
 
-        return $pdf->download('laporan_request_donasi.pdf');
+        return $pdf->stream('laporan_request_donasi.pdf');
+    }
+
+    public function consignmentReport()
+    {
+        $penitips = Penitip::all();
+        return view('owner.consignment_report', compact('penitips'));
+    }
+
+    public function downloadConsignmentReport($id)
+    {
+        $penitip = Penitip::findOrFail($id);
+        $bulanLalu = Carbon::now()->subMonth()->month;
+        $tahunLalu = Carbon::now()->subMonth()->year;
+
+        // Ambil data penjualan bulan lalu dari barang penitip ini
+        $penjualan = DB::table('transaksi_pembelian as tp')
+            ->join('keranjang as k', 'tp.id_keranjang', '=', 'k.id_keranjang')
+            ->join('detail_keranjang as dk', 'dk.id_keranjang', '=', 'k.id_keranjang')
+            ->join('item_keranjang as ik', 'ik.id_item_keranjang', '=', 'dk.id_item_keranjang')
+            ->join('barang as b', 'b.id_barang', '=', 'ik.id_barang')
+            ->join('transaksi_penitipan as tpen', 'b.id_transaksi_penitipan', '=', 'tpen.id_transaksi_penitipan')
+            ->where('tpen.id_penitip', $id)
+            ->whereMonth('tp.created_at', $bulanLalu)
+            ->whereYear('tp.created_at', $tahunLalu)
+            ->select(
+                'b.kode_barang',
+                'b.nama_barang',
+                'b.harga_barang',
+                'tpen.tanggal_penitipan as tanggal_masuk',
+                'tp.created_at as tanggal_terjual'
+            )
+            ->get();
+
+
+        $pdf = Pdf::loadView('owner.consignment_report_pdf', [
+            'penitip' => $penitip,
+            'penjualan' => $penjualan,
+            'bulanLalu' => $bulanLalu,
+            'tahun' => $tahunLalu
+        ]);
+
+        $namaBulan = Carbon::createFromDate(null, $bulanLalu, 1)->format('F');
+        return $pdf->stream("Consignment_Report_{$penitip->nama_penitip}_{$namaBulan}_{$tahunLalu}.pdf");
     }
 }

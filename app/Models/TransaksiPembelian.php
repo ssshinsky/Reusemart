@@ -39,7 +39,7 @@ class TransaksiPembelian extends Model
     // Relasi ke model Keranjang
     public function keranjang()
     {
-        return $this->belongsTo(Keranjang::class, 'id_keranjang');
+        return $this->belongsTo(Keranjang::class, 'id_keranjang', 'id_keranjang');
     }
 
     // Relasi ke model Alamat

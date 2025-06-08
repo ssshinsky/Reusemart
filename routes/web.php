@@ -133,6 +133,8 @@ Route::prefix('owner')->middleware(['auth:pegawai', 'pegawai.role:1'])->group(fu
     Route::get('/donasi', [OwnerController::class, 'getDonasi'])->name('owner.get.donasi');
     Route::get('/requests-by-organisasi', [OwnerController::class, 'getRequestsByOrganisasi'])->name('owner.requests.by_organisasi');
     Route::delete('/request/{id}', [OwnerController::class, 'deleteRequest'])->name('owner.delete.request');
+    Route::get('/monthly-sales-report', [OwnerController::class, 'monthlySalesReport'])->name('owner.monthly.sales.report');
+    Route::get('/download-monthly-sales-report', [OwnerController::class, 'downloadMonthlySalesReport'])->name('owner.download.monthly.sales.report');
 });
 
 // Admin Routes

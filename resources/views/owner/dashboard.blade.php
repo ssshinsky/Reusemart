@@ -29,6 +29,9 @@
         <a href="{{ route('owner.rewards') }}" class="btn btn-outline-primary">
             <i class="bi bi-gift me-2"></i> Poin Reward
         </a>
+        <a href="{{ route('owner.monthly.sales.report') }}" class="btn btn-outline-primary">
+            <i class="bi bi-file-earmark-text me-2"></i> Laporan Penjualan
+        </a>
     </div>
     
     <p></p>

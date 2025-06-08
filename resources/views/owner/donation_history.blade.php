@@ -31,6 +31,9 @@
                 </div>
             </form>
         </div>
+        <a href="{{ route('owner.download.donation.pdf') }}" class="btn btn-outline-success" target="_blank">
+            <i class="bi bi-download me-2"></i> Unduh PDF
+        </a>
     </div>
 
     <!-- Table -->

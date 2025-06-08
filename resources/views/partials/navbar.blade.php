@@ -40,7 +40,7 @@
                     <ul class="dropdown-menu dropdown-menu-end">
                         @if ($role === 'pembeli')
                             <li><a class="dropdown-item" href="{{ route('pembeli.profile') }}">My Account</a></li>
-                            {{-- <li><a class="dropdown-item" href="{{ route('pembeli.purchase') }}">My Order</a></li> --}}
+                            {{-- <li><a class="dropdown-item" href="{{ route('pembeli.riwayat') }}">My Order</a></li> --}}
                         @elseif ($role === 'penitip')
                             <li><a class="dropdown-item" href="{{ route('penitip.profile') }}">My Account</a></li>
                             <li><a class="dropdown-item" href="{{ route('penitip.myproduct') }}">My Product</a></li>

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Barryvdh\DomPDF\Facade\Pdf;
 use App\Models\RequestDonasi;
 use App\Models\Donasi;
 use App\Models\Barang;
@@ -241,5 +242,44 @@ class OwnerController extends Controller
             'nama_penerima' => $donasi->nama_penerima,
             'barang' => ['status_barang' => $donasi->barang->status_barang],
         ]);
+    }
+
+    public function downloadDonationPdf(Request $request)
+    {
+        $this->ensureOwner();
+
+        $organisasi = Organisasi::all();
+        $query = Donasi::with(['requestDonasi.organisasi', 'barang', 'transaksiPenitipan.penitip']);
+
+        if ($request->filled('id_organisasi')) {
+            $query->whereHas('requestDonasi', function ($q) use ($request) {
+                $q->where('id_organisasi', $request->id_organisasi);
+            });
+        }
+
+        $donations = $query->get();
+
+        $data = [
+            'donations' => $donations,
+            'organisasi' => $organisasi,
+            'tanggal_cetak' => now()->format('d F Y'),
+        ];
+
+        $pdf = PDF::loadView('owner.donation_history_pdf', $data);
+
+        return $pdf->download('laporan_donasi_barang.pdf');
+    }
+
+    public function downloadPdf()
+    {
+        $this->ensureOwner();
+
+        $requests = RequestDonasi::where('status_request', 'belum di proses')
+            ->with(['organisasi', 'pegawai'])
+            ->get();
+
+        $pdf = PDF::loadView('owner.donation_requests_pdf', compact('requests'));
+
+        return $pdf->download('laporan_request_donasi.pdf');
     }
 }

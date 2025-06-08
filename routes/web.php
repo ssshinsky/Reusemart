@@ -86,8 +86,8 @@ Route::prefix('pembeli')->middleware('auth:pembeli')->group(function () {
     Route::get('/profile', [PembeliController::class, 'profile'])->name('pembeli.profile');
     Route::get('/{id}/edit', [PembeliController::class, 'editProfile'])->name('pembeli.edit');
     Route::put('/{id}/update', [PembeliController::class, 'updateProfile'])->name('pembeli.update');
-    Route::get('/history', [PembeliController::class, 'history'])->name('pembeli.history');
     Route::get('/riwayat', [TransaksiPembelianController::class, 'riwayat'])->name('pembeli.riwayat');
+    Route::get('/transaksi150', [TransaksiPembelianController::class, 'transaksi150k'])->name('pembeli.transaksi')->middleware('auth');
     Route::get('/pembelian', [TransaksiPembelianController::class, 'index'])->name('pembeli.pembelian');
     Route::get('/purchase', [PembeliController::class, 'purchase'])->name('pembeli.purchase');
     Route::get('/reward', [PembeliController::class, 'reward'])->name('pembeli.reward');
@@ -214,7 +214,9 @@ Route::prefix('cs')->middleware(['auth:pegawai', 'pegawai.role:3'])->group(funct
 Route::prefix('owner')->middleware(['auth:pegawai'])->group(function () {
     Route::get('/dashboard', [OwnerController::class, 'dashboard'])->name('owner.dashboard');
     Route::get('/donation/requests', [OwnerController::class, 'donationRequests'])->name('owner.donation.requests');
+    Route::get('/donation/requests/download/pdf', [OwnerController::class, 'downloadPdf'])->name('owner.download.pdf');
     Route::get('/donation/history', [OwnerController::class, 'donationHistory'])->name('owner.donation.history');
+    Route::get('/donation/download/pdf', [OwnerController::class, 'downloadDonationPdf'])->name('owner.download.donation.pdf');
     Route::get('/allocate-items', [OwnerController::class, 'allocateItems'])->name('owner.allocate.items');
     Route::post('/allocate-items', [OwnerController::class, 'storeAllocation'])->name('owner.store.allocation');
     Route::get('/update-donation', [OwnerController::class, 'updateDonation'])->name('owner.update.donation');

@@ -49,4 +49,30 @@ class Donasi extends Model
     {
         return $this->belongsTo(Barang::class, 'id_barang', 'id_barang');
     }
+
+    // Relasi dengan model TransaksiPenitipan melalui Barang
+    public function transaksiPenitipan()
+    {
+        return $this->hasOneThrough(
+            TransaksiPenitipan::class,
+            Barang::class,
+            'id_barang', // Foreign key di tabel barang
+            'id_transaksi_penitipan', // Foreign key di tabel transaksi_penitipan
+            'id_barang', // Local key di tabel donasi
+            'id_transaksi_penitipan' // Local key di tabel barang
+        )->withDefault(); // Menangani kasus NULL
+    }
+
+    // Relasi dengan model Penitip melalui TransaksiPenitipan
+    public function penitip()
+    {
+        return $this->hasOneThrough(
+            Penitip::class,
+            TransaksiPenitipan::class,
+            'id_penitip', // Foreign key di tabel transaksi_penitipan
+            'id_penitip', // Foreign key di tabel penitip
+            'id_barang', // Local key di tabel donasi (melalui barang)
+            'id_transaksi_penitipan' // Local key di tabel transaksi_penitipan
+        )->withDefault();
+    }
 }

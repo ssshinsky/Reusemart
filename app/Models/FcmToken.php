@@ -6,7 +6,10 @@ use Illuminate\Database\Eloquent\Model;
 
 class FcmToken extends Model
 {
-    protected $fillable = [
-        'id_pembeli', 'id_penitip', 'id_hunter', 'id_kurir', 'fcm_token', 'device_type'
-    ];
+    protected $fillable = ['tokenable_id', 'tokenable_type', 'token'];
+
+    public function tokenable()
+    {
+        return $this->morphTo();
+    }
 }

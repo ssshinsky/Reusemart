@@ -295,10 +295,9 @@ class OwnerController extends Controller
     public function downloadConsignmentReport($id)
     {
         $penitip = Penitip::findOrFail($id);
-        $bulanLalu = Carbon::now()->subMonth()->month;
-        $tahunLalu = Carbon::now()->subMonth()->year;
+        $bulanSekarang = Carbon::now()->month;
+        $tahunSekarang = Carbon::now()->year;
 
-        // Ambil data penjualan bulan lalu dari barang penitip ini
         $penjualan = DB::table('transaksi_pembelian as tp')
             ->join('keranjang as k', 'tp.id_keranjang', '=', 'k.id_keranjang')
             ->join('detail_keranjang as dk', 'dk.id_keranjang', '=', 'k.id_keranjang')
@@ -306,26 +305,41 @@ class OwnerController extends Controller
             ->join('barang as b', 'b.id_barang', '=', 'ik.id_barang')
             ->join('transaksi_penitipan as tpen', 'b.id_transaksi_penitipan', '=', 'tpen.id_transaksi_penitipan')
             ->where('tpen.id_penitip', $id)
-            ->whereMonth('tp.created_at', $bulanLalu)
-            ->whereYear('tp.created_at', $tahunLalu)
+            ->whereMonth('tp.created_at', $bulanSekarang)
+            ->whereYear('tp.created_at', $tahunSekarang)
+            ->where('b.status_barang', 'sold')
+            ->where('tp.status_transaksi', 'selesai')
             ->select(
                 'b.kode_barang',
                 'b.nama_barang',
                 'b.harga_barang',
-                'tpen.tanggal_penitipan as tanggal_masuk',
-                'tp.created_at as tanggal_terjual'
+                DB::raw("DATE(tpen.tanggal_penitipan) as tanggal_masuk"),
+                DB::raw("DATE(tp.created_at) as tanggal_terjual")
             )
-            ->get();
+            ->get()
+            ->map(function ($item) {
+                $item->tanggal_masuk = Carbon::parse($item->tanggal_masuk);
+                $item->tanggal_terjual = Carbon::parse($item->tanggal_terjual);
+                $komisiReusemart = $item->harga_barang * 0.2;
+                $bonus = $item->tanggal_terjual->diffInDays($item->tanggal_masuk) < 7 ? ($komisiReusemart * 0.1) : 0;
+                $item->harga_bersih = $item->harga_barang - $komisiReusemart;
+                $item->bonus = $bonus;
+                $item->pendapatan = $item->harga_bersih + $bonus;
+                return $item;
+            });
 
+        if ($penjualan->isEmpty()) {
+            return redirect()->back()->with('error', 'Tidak ada transaksi penjualan selesai untuk penitip ini pada bulan ini.');
+        }
 
         $pdf = Pdf::loadView('owner.consignment_report_pdf', [
             'penitip' => $penitip,
             'penjualan' => $penjualan,
-            'bulanLalu' => $bulanLalu,
-            'tahun' => $tahunLalu
+            'bulanSekarang' => $bulanSekarang,
+            'tahun' => $tahunSekarang
         ]);
 
-        $namaBulan = Carbon::createFromDate(null, $bulanLalu, 1)->format('F');
-        return $pdf->stream("Consignment_Report_{$penitip->nama_penitip}_{$namaBulan}_{$tahunLalu}.pdf");
+        $namaBulan = Carbon::createFromDate(null, $bulanSekarang, 1)->format('F');
+        return $pdf->stream("Consignment_Report_{$penitip->nama_penitip}_{$namaBulan}_{$tahunSekarang}.pdf");
     }
 }

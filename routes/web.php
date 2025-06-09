@@ -138,6 +138,8 @@ Route::prefix('owner')->middleware(['auth:pegawai', 'pegawai.role:1'])->group(fu
     Route::get('/download-monthly-sales-report', [OwnerController::class, 'downloadMonthlySalesReport'])->name('owner.download.monthly.sales.report');
     Route::get('/warehouse-stock-report', [OwnerController::class, 'warehouseStockReport'])->name('owner.warehouse.stock.report');
     Route::get('/download/warehouse-stock-report', [OwnerController::class, 'downloadWarehouseStockReport'])->name('owner.download.warehouse.stock.report');
+    Route::get('/monthly-sales-overview', [OwnerController::class, 'monthlySalesOverview'])->name('owner.monthly.sales.overview');
+    Route::get('/download/monthly-sales-overview', [OwnerController::class, 'downloadMonthlySalesOverview'])->name('owner.download.monthly.sales.overview');
 });
 
 // Admin Routes

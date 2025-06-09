@@ -20,6 +20,9 @@
         <a href="{{ route('owner.warehouse.stock.report') }}" class="btn btn-outline-primary">
             <i class="bi bi-warehouse me-2"></i> Laporan Stok Gudang
         </a>
+        <a href="{{ route('owner.monthly.sales.overview') }}" class="btn btn-outline-primary">
+            <i class="bi bi-bar-chart me-2"></i> Laporan Penjualan Bulanan Keseluruhan
+        </a>
     </div>
 
     <!-- Statistics Cards (kosongkan kalau nggak perlu data spesifik) -->

@@ -16,6 +16,8 @@ use App\Models\ItemKeranjang;
 use App\Models\DetailKeranjang;
 use Carbon\Carbon;
 use PDF;
+// use App\Charts\ChartJSNodeCanvas;
+use ChartJs\Chart;
 
 class OwnerController extends Controller
 {
@@ -25,7 +27,7 @@ class OwnerController extends Controller
             abort(403, 'Akses ditolak.');
         }
     }
-    
+
     public function reports()
     {
         $this->ensureOwner();
@@ -418,78 +420,184 @@ class OwnerController extends Controller
     }
 
     public function warehouseStockReport(Request $request)
+    {
+        $this->ensureOwner();
+
+        $date = $request->input('date', Carbon::now()->format('d/m/Y'));
+        $parsedDate = Carbon::createFromFormat('d/m/Y', $date)->startOfDay();
+
+        $items = Barang::where('status_barang', 'tersedia')
+            ->with(['transaksiPenitipan' => function ($query) {
+                $query->with(['penitip', 'hunter']);
+            }])
+            ->get();
+
+        $formattedData = $items->map(function ($item) use ($parsedDate) {
+            $transaksiPenitipan = $item->transaksiPenitipan()->first();
+            if (!$transaksiPenitipan) return null;
+
+            $tanggalMasuk = Carbon::parse($transaksiPenitipan->tanggal_penitipan)->format('d/m/Y');
+            $perpanjangan = $item->perpanjangan; // Ambil dari Barang
+            Log::info('Perpanjangan Debug', ['id_barang' => $item->id_barang, 'perpanjangan' => $perpanjangan]); // Debug
+
+            return [
+                'kode_produk' => $item->kode_barang,
+                'nama_produk' => $item->nama_barang,
+                'id_penitip' => $transaksiPenitipan->penitip->id_penitip ? 'T' . $transaksiPenitipan->penitip->id_penitip : '-',
+                'nama_penitip' => $transaksiPenitipan->penitip->nama_penitip ?? '-',
+                'tanggal_masuk' => $tanggalMasuk,
+                'perpanjangan' => $perpanjangan == 1 ? 'Ya' : ($perpanjangan == 0 ? 'Tidak' : '-'),
+                'id_hunter' => $transaksiPenitipan->hunter ? 'P' . $transaksiPenitipan->hunter->id_pegawai : '-',
+                'nama_hunter' => $transaksiPenitipan->hunter ? $transaksiPenitipan->hunter->nama_pegawai ?? '-' : '-',
+                'harga' => number_format($item->harga_barang ?? 0, 0, ',', '.'),
+            ];
+        })->filter()->values();
+
+        return view('owner.warehouse_stock_report', compact('formattedData', 'date'));
+    }
+
+    public function downloadWarehouseStockReport(Request $request)
+    {
+        $this->ensureOwner();
+
+        $date = $request->input('date', Carbon::now()->format('d/m/Y'));
+        $parsedDate = Carbon::createFromFormat('d/m/Y', $date)->startOfDay();
+
+        $items = Barang::where('status_barang', 'tersedia')
+            ->with(['transaksiPenitipan' => function ($query) {
+                $query->with(['penitip', 'hunter']);
+            }])
+            ->get();
+
+        $formattedData = $items->map(function ($item) use ($parsedDate) {
+            $transaksiPenitipan = $item->transaksiPenitipan()->first();
+            if (!$transaksiPenitipan) return null;
+
+            $tanggalMasuk = Carbon::parse($transaksiPenitipan->tanggal_penitipan)->format('d/m/Y');
+            $perpanjangan = $item->perpanjangan;
+
+            return [
+                'kode_produk' => $item->kode_barang,
+                'nama_produk' => $item->nama_barang,
+                'id_penitip' => $transaksiPenitipan->penitip->id_penitip ? 'T' . $transaksiPenitipan->penitip->id_penitip : '-',
+                'nama_penitip' => $transaksiPenitipan->penitip->nama_penitip ?? '-',
+                'tanggal_masuk' => $tanggalMasuk,
+                'perpanjangan' => $perpanjangan == 1 ? 'Ya' : ($perpanjangan == 0 ? 'Tidak' : '-'),
+                'id_hunter' => $transaksiPenitipan->hunter ? 'P' . $transaksiPenitipan->hunter->id_pegawai : '-',
+                'nama_hunter' => $transaksiPenitipan->hunter ? $transaksiPenitipan->hunter->nama_pegawai ?? '-' : '-',
+                'harga' => number_format($item->harga_barang ?? 0, 0, ',', '.'),
+            ];
+        })->filter()->values();
+
+        $pdf = PDF::loadView('owner.warehouse_stock_report_pdf', compact('formattedData', 'date'));
+        $pdf->setPaper('A4', 'landscape'); // Ubah ke landscape
+
+        return $pdf->download('laporan_stok_gudang_' . str_replace('/', '-', $date) . '.pdf');
+    }
+
+
+    public function monthlySalesOverview(Request $request)
 {
     $this->ensureOwner();
 
-    $date = $request->input('date', Carbon::now()->format('d/m/Y'));
-    $parsedDate = Carbon::createFromFormat('d/m/Y', $date)->startOfDay();
+    $date = $request->input('date', Carbon::now()->format('Y'));
+    $year = Carbon::createFromFormat('Y', $date)->year;
 
-    $items = Barang::where('status_barang', 'tersedia')
-        ->with(['transaksiPenitipan' => function ($query) {
-            $query->with(['penitip', 'hunter']);
-        }])
-        ->get();
+    // Ambil data penjualan bulanan dari transaksi_pembelian dengan join ke keranjang
+    $salesData = TransaksiPembelian::selectRaw('MONTH(transaksi_pembelian.tanggal_pembelian) as month, SUM(keranjang.banyak_barang) as barang_terjual, SUM(transaksi_pembelian.total_harga) as total_penjualan')
+        ->join('keranjang', 'transaksi_pembelian.id_keranjang', '=', 'keranjang.id_keranjang')
+        ->whereYear('transaksi_pembelian.tanggal_pembelian', $year)
+        ->where('transaksi_pembelian.status_transaksi', 'selesai')
+        ->groupBy('month')
+        ->orderBy('month')
+        ->get()
+        ->map(function ($item) {
+            return [
+                'bulan' => Carbon::create()->month($item->month)->format('F'),
+                'barang_terjual' => $item->barang_terjual ?? 0,
+                'penjualan_kotor' => number_format($item->total_penjualan ?? 0, 0, ',', '.'),
+                'penjualan_kotor_raw' => $item->total_penjualan ?? 0,
+            ];
+        });
 
-    $formattedData = $items->map(function ($item) use ($parsedDate) {
-        $transaksiPenitipan = $item->transaksiPenitipan()->first();
-        if (!$transaksiPenitipan) return null;
-
-        $tanggalMasuk = Carbon::parse($transaksiPenitipan->tanggal_penitipan)->format('d/m/Y');
-        $perpanjangan = $item->perpanjangan; // Ambil dari Barang
-        Log::info('Perpanjangan Debug', ['id_barang' => $item->id_barang, 'perpanjangan' => $perpanjangan]); // Debug
-
+    // Tambahkan semua bulan (Jan-Dec) dengan default 0 kalau nggak ada data
+    $allMonths = collect(range(1, 12))->map(function ($month) use ($salesData) {
+        $monthName = Carbon::create()->month($month)->format('F');
+        $data = $salesData->firstWhere('bulan', $monthName);
         return [
-            'kode_produk' => $item->kode_barang,
-            'nama_produk' => $item->nama_barang,
-            'id_penitip' => $transaksiPenitipan->penitip->id_penitip ? 'T' . $transaksiPenitipan->penitip->id_penitip : '-',
-            'nama_penitip' => $transaksiPenitipan->penitip->nama_penitip ?? '-',
-            'tanggal_masuk' => $tanggalMasuk,
-            'perpanjangan' => $perpanjangan == 1 ? 'Ya' : ($perpanjangan == 0 ? 'Tidak' : '-'),
-            'id_hunter' => $transaksiPenitipan->hunter ? 'P' . $transaksiPenitipan->hunter->id_pegawai : '-',
-            'nama_hunter' => $transaksiPenitipan->hunter ? $transaksiPenitipan->hunter->nama_pegawai ?? '-' : '-',
-            'harga' => number_format($item->harga_barang ?? 0, 0, ',', '.'),
+            'bulan' => $monthName,
+            'barang_terjual' => $data['barang_terjual'] ?? 0,
+            'penjualan_kotor' => $data['penjualan_kotor'] ?? '0',
+            'penjualan_kotor_raw' => $data['penjualan_kotor_raw'] ?? 0,
         ];
-    })->filter()->values();
+    });
 
-    return view('owner.warehouse_stock_report', compact('formattedData', 'date'));
+    $totalBarang = $allMonths->sum('barang_terjual');
+    $totalPenjualan = $allMonths->sum('penjualan_kotor_raw');
+
+    return view('owner.monthly_sales_overview', compact('allMonths', 'date', 'totalBarang', 'totalPenjualan'));
 }
 
-public function downloadWarehouseStockReport(Request $request)
-{
-    $this->ensureOwner();
 
-    $date = $request->input('date', Carbon::now()->format('d/m/Y'));
-    $parsedDate = Carbon::createFromFormat('d/m/Y', $date)->startOfDay();
+public function downloadMonthlySalesOverview(Request $request)
+    {
+        $this->ensureOwner();
 
-    $items = Barang::where('status_barang', 'tersedia')
-        ->with(['transaksiPenitipan' => function ($query) {
-            $query->with(['penitip', 'hunter']);
-        }])
-        ->get();
+        $date = $request->input('date', Carbon::now()->format('Y'));
+        $year = Carbon::createFromFormat('Y', $date)->year;
 
-    $formattedData = $items->map(function ($item) use ($parsedDate) {
-        $transaksiPenitipan = $item->transaksiPenitipan()->first();
-        if (!$transaksiPenitipan) return null;
+        $salesData = TransaksiPembelian::selectRaw('MONTH(transaksi_pembelian.tanggal_pembelian) as month, SUM(keranjang.banyak_barang) as barang_terjual, SUM(transaksi_pembelian.total_harga) as total_penjualan')
+            ->join('keranjang', 'transaksi_pembelian.id_keranjang', '=', 'keranjang.id_keranjang')
+            ->whereYear('transaksi_pembelian.tanggal_pembelian', $year)
+            ->where('transaksi_pembelian.status_transaksi', 'selesai')
+            ->groupBy('month')
+            ->orderBy('month')
+            ->get()
+            ->map(function ($item) {
+                return [
+                    'bulan' => Carbon::create()->month($item->month)->format('F'),
+                    'barang_terjual' => $item->barang_terjual ?? 0,
+                    'penjualan_kotor' => number_format($item->total_penjualan ?? 0, 0, ',', '.'),
+                    'penjualan_kotor_raw' => $item->total_penjualan ?? 0,
+                ];
+            });
 
-        $tanggalMasuk = Carbon::parse($transaksiPenitipan->tanggal_penitipan)->format('d/m/Y');
-        $perpanjangan = $item->perpanjangan;
+        $allMonths = collect(range(1, 12))->map(function ($month) use ($salesData) {
+            $monthName = Carbon::create()->month($month)->format('F');
+            $data = $salesData->firstWhere('bulan', $monthName);
+            return [
+                'bulan' => $monthName,
+                'barang_terjual' => $data['barang_terjual'] ?? 0,
+                'penjualan_kotor' => $data['penjualan_kotor'] ?? '0',
+                'penjualan_kotor_raw' => $data['penjualan_kotor_raw'] ?? 0,
+            ];
+        });
 
-        return [
-            'kode_produk' => $item->kode_barang,
-            'nama_produk' => $item->nama_barang,
-            'id_penitip' => $transaksiPenitipan->penitip->id_penitip ? 'T' . $transaksiPenitipan->penitip->id_penitip : '-',
-            'nama_penitip' => $transaksiPenitipan->penitip->nama_penitip ?? '-',
-            'tanggal_masuk' => $tanggalMasuk,
-            'perpanjangan' => $perpanjangan == 1 ? 'Ya' : ($perpanjangan == 0 ? 'Tidak' : '-'),
-            'id_hunter' => $transaksiPenitipan->hunter ? 'P' . $transaksiPenitipan->hunter->id_pegawai : '-',
-            'nama_hunter' => $transaksiPenitipan->hunter ? $transaksiPenitipan->hunter->nama_pegawai ?? '-' : '-',
-            'harga' => number_format($item->harga_barang ?? 0, 0, ',', '.'),
-        ];
-    })->filter()->values();
+        $totalBarang = $allMonths->sum('barang_terjual');
+        $totalPenjualan = $allMonths->sum('penjualan_kotor_raw');
 
-    $pdf = PDF::loadView('owner.warehouse_stock_report_pdf', compact('formattedData', 'date'));
-    $pdf->setPaper('A4', 'landscape'); // Ubah ke landscape
+        // Generate chart image using Node.js script
+        $labels = $allMonths->pluck('bulan')->toArray();
+        $data = $allMonths->pluck('penjualan_kotor_raw')->map(function ($item) {
+            return str_replace('.', '', $item ?? '0');
+        })->toArray();
 
-    return $pdf->download('laporan_stok_gudang_' . str_replace('/', '-', $date) . '.pdf');
-}
+        $nodeScript = base_path('resources/js/ChartGenerator.js');
+    $command = "node -e \"require('./$nodeScript').ChartGenerator.generateChart(" . json_encode($labels) . ", " . json_encode($data) . ").then(image => console.log(image))\"";
+    $chartImageBase64 = shell_exec($command);
+    Log::info('Chart command executed', ['command' => $command, 'output' => $chartImageBase64]);
+
+    if ($chartImageBase64) {
+        $chartImage = trim($chartImageBase64);
+        Log::info('Chart image generated', ['chartImage' => substr($chartImage, 0, 50)]); // Log sebagian base64
+    } else {
+        $chartImage = null;
+        Log::warning('Failed to generate chart image', ['command' => $command]);
+    }
+
+    $pdf = PDF::loadView('owner.monthly_sales_overview_pdf', compact('allMonths', 'date', 'totalBarang', 'totalPenjualan', 'chartImage'));
+    $pdf->setPaper('A4', 'landscape');
+    return $pdf->download('laporan_penjualan_bulanan_' . $date . '.pdf');
+    }
+    
 }

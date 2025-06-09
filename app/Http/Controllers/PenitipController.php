@@ -349,4 +349,52 @@ class PenitipController extends Controller
         return response($html);
     }
 
+    public function getProfile()
+{
+    $user = Auth::guard('penitip')->user();
+    if (!$user) {
+        return response()->json(['message' => 'Unauthorized'], 401);
+    }
+    return response()->json([
+        'id' => $user->id_penitip,
+        'nama' => $user->nama_penitip,
+        'email' => $user->email_penitip,
+        'saldo' => $user->saldo_penitip,
+        'poin' => $user->poin_penitip,
+        'profil_pict' => $user->profil_pict ? asset('storage/' . $user->profil_pict) : null,
+        'rata_rating' => $user->rata_rating,
+        'banyak_rating' => $user->banyak_rating,
+    ]);
+}
+
+public function getConsignmentHistory()
+{
+    $user = Auth::guard('penitip')->user();
+    if (!$user) {
+        return response()->json(['message' => 'Unauthorized'], 401);
+    }
+    $transactions = TransaksiPenitipan::with(['barang.gambar', 'penitip'])
+        ->where('id_penitip', $user->id_penitip)
+        ->get()
+        ->map(function ($transaction) {
+            return [
+                'id_transaksi' => $transaction->id_transaksi_penitipan,
+                'tanggal_penitipan' => $transaction->tanggal_penitipan,
+                'status' => $transaction->barang->pluck('status_barang')->first() ?? 'N/A',
+                'barang' => $transaction->barang->map(function ($barang) {
+                    return [
+                        'id_barang' => $barang->id_barang,
+                        'nama_barang' => $barang->nama_barang,
+                        'harga_barang' => $barang->harga_barang,
+                        'status_barang' => $barang->status_barang,
+                        'gambar' => $barang->gambar->map(function ($gambar) {
+                            return asset('storage/gambar/' . $gambar->gambar_barang);
+                        })->first(),
+                    ];
+                })->values(),
+            ];
+        });
+    return response()->json($transactions);
+}
+
 }

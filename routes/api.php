@@ -41,6 +41,9 @@ Route::middleware('auth:api')->group(function () {
     Route::post('/role/create', [RoleController::class, 'store']);
     Route::post('/role/update/{id}', [RoleController::class, 'update']);
     Route::delete('/role/delete/{id}', [RoleController::class, 'destroy']);
+
+    Route::get('/penitip/profile', [PenitipController::class, 'getProfile']);
+    Route::get('/penitip/history', [PenitipController::class, 'getConsignmentHistory']);
     
 });
 

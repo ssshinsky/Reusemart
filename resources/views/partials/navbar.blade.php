@@ -23,8 +23,8 @@
                 <div class="d-flex align-items-center me-3">
                     <a href="{{ route('welcome') }}" class="me-3 text-decoration-none text-dark">Home</a>
                     <a href="{{ route('about') }}" class="me-3 text-decoration-none text-dark">About</a>
-                    <a href="{{ route('pembeli.cart') }}" class="text-success position-relative me-3">
-                        <i class="bi bi-cart-fill fs-4"></i>
+                    <a href="{{ route('pembeli.cart') }}" class="text-success position-relative">
+                        <i class="fa-solid fa-cart-shopping fs-4"></i>
                     </a>
                 </div>
 
@@ -40,7 +40,7 @@
                     <ul class="dropdown-menu dropdown-menu-end">
                         @if ($role === 'pembeli')
                             <li><a class="dropdown-item" href="{{ route('pembeli.profile') }}">My Account</a></li>
-                            {{-- <li><a class="dropdown-item" href="{{ route('pembeli.purchase') }}">My Order</a></li> --}}
+                            {{-- <li><a class="dropdown-item" href="{{ route('pembeli.riwayat') }}">My Order</a></li> --}}
                         @elseif ($role === 'penitip')
                             <li><a class="dropdown-item" href="{{ route('penitip.profile') }}">My Account</a></li>
                             <li><a class="dropdown-item" href="{{ route('penitip.myproduct') }}">My Product</a></li>
@@ -50,10 +50,11 @@
                                     Saya</a></li>
                         @endif
                         <li>
-                            <form id="logout-form" action="{{ route('logout') }}" method="POST">
+                            <form id="logout-form" action="{{ route('logout.submit') }}" method="POST">
                                 @csrf
                                 <button type="submit" class="dropdown-item">Log Out</button>
                             </form>
+
                         </li>
                     </ul>
                 </div>

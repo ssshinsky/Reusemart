@@ -65,4 +65,8 @@ class Penitip extends Authenticatable
         return $this->hasMany(FcmToken::class, 'id_penitip');
     }
 
+    public function fcmTokens()
+    {
+        return $this->morphMany(FcmToken::class, 'tokenable');
+    }
 }

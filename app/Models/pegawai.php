@@ -122,6 +122,6 @@ class Pegawai extends Authenticatable
 
     public function fcmTokens()
     {
-        return $this->hasMany(FcmToken::class, 'id_hunter')->orWhere('id_kurir', $this->id_pegawai);
+        return $this->morphMany(FcmToken::class, 'tokenable');
     }
 }

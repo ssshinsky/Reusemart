@@ -10,10 +10,10 @@ class CreateKelolaTransaksisTable extends Migration
     {
         Schema::create('kelola_transaksi', function (Blueprint $table) {
             $table->id('id_kelola');
-            $table->unsignedBigInteger('id_pembelian');
+            $table->integer('id_pembelian');
             $table->foreign('id_pembelian')->references('id_pembelian')->on('transaksi_pembelian')->onDelete('cascade');
 
-            $table->unsignedBigInteger('id_pegawai');
+            $table->integer('id_pegawai');
             $table->foreign('id_pegawai')->references('id_pegawai')->on('pegawai')->onDelete('cascade');
             $table->timestamps();
         });

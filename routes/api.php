@@ -45,6 +45,9 @@ Route::middleware('auth:api')->group(function () {
     Route::delete('/role/delete/{id}', [RoleController::class, 'destroy']);
 
     
+
+    Route::get('/penitip/profile', [PenitipController::class, 'getProfile']);
+    Route::get('/penitip/history', [PenitipController::class, 'getConsignmentHistory']);
     
 });
 

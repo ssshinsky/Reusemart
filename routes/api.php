@@ -23,6 +23,7 @@ Route::get('/barang/{id}', [BarangController::class, 'show'])->name('barang.show
 Route::get('/barang', [BarangController::class, 'apiIndex']);
 Route::get('/barang/{id}', [BarangController::class, 'apiShow']);
 Route::get('/kategori', [BarangController::class, 'getKategoriApi']);
+Route::get('/top-seller', [PenitipController::class, 'getTopSeller']);
 
 Route::middleware('auth:api')->group(function () {
     // Logout Pegawai

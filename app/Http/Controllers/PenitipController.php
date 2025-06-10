@@ -397,4 +397,90 @@ public function getConsignmentHistory()
     return response()->json($transactions);
 }
 
+public function getTopSeller()
+    {
+        try {
+            $lastMonth = Carbon::now()->subMonth();
+            $tahun = $lastMonth->year;
+            $bulan = $lastMonth->month;
+            $startOfMonth = $lastMonth->startOfMonth();
+            $endOfMonth = $lastMonth->endOfMonth();
+
+            DB::transaction(function () use ($startOfMonth, $endOfMonth) {
+                // 1. Hitung Top Seller
+                $topSellerData = Barang::select('penitip.id_penitip', 'penitip.nama_penitip', 'penitip.profil_pict')
+                    ->join('transaksi_penitipan', 'barang.id_transaksi_penitipan', '=', 'transaksi_penitipan.id_transaksi_penitipan')
+                    ->join('penitip', 'transaksi_penitipan.id_penitip', '=', 'penitip.id_penitip')
+                    ->where('barang.status_barang', 'selesai')
+                    ->whereBetween('barang.updated_at', [$startOfMonth, $endOfMonth])
+                    ->groupBy('penitip.id_penitip', 'penitip.nama_penitip', 'penitip.profil_pict')
+                    ->selectRaw('COUNT(*) as jumlah_barang')
+                    ->selectRaw('SUM(barang.harga_barang) as total_penjualan')
+                    ->orderByDesc('jumlah_barang')
+                    ->orderByDesc('total_penjualan')
+                    ->first();
+
+                if ($topSellerData) {
+                    // Reset badge semua penitip
+                    Penitip::query()->update(['badge' => false]);
+
+                    // Set badge Top Seller
+                    Penitip::where('id_penitip', $topSellerData->id_penitip)->update(['badge' => true]);
+
+                    // 2. Beri bonus poin (1% dari total penjualan)
+                    $bonusPoin = $topSellerData->total_penjualan * 0.01;
+                    Penitip::where('id_penitip', $topSellerData->id_penitip)->increment('poin_penitip', $bonusPoin);
+
+                    Log::info('Top Seller calculated', [
+                        'id_penitip' => $topSellerData->id_penitip,
+                        'jumlah_barang' => $topSellerData->jumlah_barang,
+                        'total_penjualan' => $topSellerData->total_penjualan,
+                        'bonus_poin' => $bonusPoin,
+                    ]);
+                } else {
+                    Log::info('No Top Seller for last month');
+                }
+
+                // 3. Update status barang tidak diambil > 7 hari
+                $expiredItems = Barang::where('status_barang', 'menunggu pengambilan')
+                    ->where('tanggal_berakhir', '<', Carbon::now()->subDays(7))
+                    ->get();
+
+                foreach ($expiredItems as $item) {
+                    $item->update(['status_barang' => 'barang untuk donasi']);
+                    Log::info('Item updated to donation', ['id_barang' => $item->id_barang]);
+                }
+            });
+
+            // 4. Ambil data Top Seller untuk response
+            $topSeller = Barang::select('penitip.id_penitip', 'penitip.nama_penitip', 'penitip.profil_pict')
+                ->join('transaksi_penitipan', 'barang.id_transaksi_penitipan', '=', 'transaksi_penitipan.id_transaksi_penitipan')
+                ->join('penitip', 'transaksi_penitipan.id_penitip', '=', 'penitip.id_penitip')
+                ->where('barang.status_barang', 'selesai')
+                ->whereBetween('barang.updated_at', [$startOfMonth, $endOfMonth])
+                ->groupBy('penitip.id_penitip', 'penitip.nama_penitip', 'penitip.profil_pict')
+                ->selectRaw('COUNT(*) as jumlah_barang')
+                ->selectRaw('SUM(barang.harga_barang) as total_penjualan')
+                ->orderByDesc('jumlah_barang')
+                ->orderByDesc('total_penjualan')
+                ->first();
+
+            if (!$topSeller) {
+                return response()->json(['message' => 'No Top Seller for this month'], 404);
+            }
+
+            return response()->json([
+                'id_penitip' => $topSeller->id_penitip,
+                'nama_penitip' => $topSeller->nama_penitip,
+                'profil_pict' => $topSeller->profil_pict ? asset('storage/' . $topSeller->profil_pict) : null,
+                'jumlah_barang' => $topSeller->jumlah_barang,
+                'total_penjualan' => $topSeller->total_penjualan,
+                'bulan' => $lastMonth->format('F Y'),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error calculating Top Seller', ['error' => $e->getMessage()]);
+            return response()->json(['message' => 'Error processing request'], 500);
+        }
+    }
+
 }

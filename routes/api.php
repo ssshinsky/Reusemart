@@ -21,10 +21,10 @@ Route::post('/pegawai/login', [PegawaiController::class, 'login']);
 Route::get('/barang/{id}', [BarangController::class, 'show'])->name('barang.show');
 // Route::post('/diskusi/store', [DiskusiProdukController::class, 'store'])->name('diskusi.store')->middleware('auth:pembeli');
 
+Route::get('/top-seller', [PenitipController::class, 'getTopSeller']);
 Route::get('/barang', [BarangController::class, 'apiIndex']);
 Route::get('/barang/{id}', [BarangController::class, 'apiShow']);
 Route::get('/kategori', [BarangController::class, 'getKategoriApi']);
-Route::get('/top-seller', [PenitipController::class, 'getTopSeller']);
 
 Route::middleware('auth:api')->group(function () {
     // Logout Pegawai
@@ -45,18 +45,26 @@ Route::middleware('auth:api')->group(function () {
     Route::post('/role/create', [RoleController::class, 'store']);
     Route::post('/role/update/{id}', [RoleController::class, 'update']);
     Route::delete('/role/delete/{id}', [RoleController::class, 'destroy']);
-
-    
-
-    Route::get('/penitip/profile', [PenitipController::class, 'getProfile']);
-    Route::get('/penitip/history', [PenitipController::class, 'getConsignmentHistory']);
     
 });
 
-Route::prefix('kurir')->middleware(['auth:pegawai', 'pegawai.role:5'])->group(function () {
-    Route::get('/deliveries', [KurirController::class, 'getDeliveries']);
-    Route::post('/deliveries/update', [KurirController::class, 'updateDeliveryStatus']);
+Route::prefix('kurir')->middleware(['auth:sanctum', 'api_pegawai.role:5'])->group(function () {
+    Route::get('/profile', [AuthController::class, 'profileKurir']);
+    Route::get('/kelola-transaksi/kurir/{idPegawai}', [KurirController::class, 'getDeliveries']); 
+    Route::put('/transaksi-pembelian/{idPembelian}/status', [KurirController::class, 'updateDeliveryStatus']);
+    Route::get('/alamat/{idAlamat}', [AlamatController::class, 'show']);
 });
+
+// Route tanpa autentikasi
+Route::get('/penitip/{id}', [PenitipController::class, 'getPenitipById']);
+Route::get('/penitip/{id}/history', [PenitipController::class, 'getConsignmentHistoryById']);
+Route::get('/penitip/profile', [PenitipController::class, 'getProfile']);
+Route::get('/penitip/history', [PenitipController::class, 'getConsignmentHistory']);
+
+// Route::prefix('penitip')->middleware(['auth:sanctum', 'api_penitip'])->group(function () {
+//     Route::get('/profile', [PenitipController::class, 'getProfile']);
+//     Route::get('/history', [PenitipController::class, 'getConsignmentHistory']);
+// });
 
 Route::middleware('auth:api')->group(function () {
     Route::post('/send-notification', [NotificationController::class, 'sendNotification']);

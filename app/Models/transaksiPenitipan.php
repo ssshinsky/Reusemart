@@ -19,6 +19,11 @@ class TransaksiPenitipan extends Model
         'tanggal_penitipan',
     ];
 
+    protected $casts = [
+        'tanggal_penitipan' => 'datetime',
+        // atau 'datetime' jika kolomnya DATETIME/TIMESTAMP
+    ];
+
     public function qc()
     {
         return $this->belongsTo(Pegawai::class, 'id_qc');

@@ -539,7 +539,7 @@ class OwnerController extends Controller
 }
 
 
-public function downloadMonthlySalesOverview(Request $request)
+public function downloadMonthlySalesOverview(\Illuminate\Http\Request $request)
     {
         $this->ensureOwner();
 
@@ -576,28 +576,63 @@ public function downloadMonthlySalesOverview(Request $request)
         $totalBarang = $allMonths->sum('barang_terjual');
         $totalPenjualan = $allMonths->sum('penjualan_kotor_raw');
 
-        // Generate chart image using Node.js script
-        $labels = $allMonths->pluck('bulan')->toArray();
-        $data = $allMonths->pluck('penjualan_kotor_raw')->map(function ($item) {
-            return str_replace('.', '', $item ?? '0');
-        })->toArray();
+        // Generate chart image using GD
+        $chartImage = $this->generateBarChart($allMonths);
 
-        $nodeScript = base_path('resources/js/ChartGenerator.js');
-    $command = "node -e \"require('./$nodeScript').ChartGenerator.generateChart(" . json_encode($labels) . ", " . json_encode($data) . ").then(image => console.log(image))\"";
-    $chartImageBase64 = shell_exec($command);
-    Log::info('Chart command executed', ['command' => $command, 'output' => $chartImageBase64]);
-
-    if ($chartImageBase64) {
-        $chartImage = trim($chartImageBase64);
-        Log::info('Chart image generated', ['chartImage' => substr($chartImage, 0, 50)]); // Log sebagian base64
-    } else {
-        $chartImage = null;
-        Log::warning('Failed to generate chart image', ['command' => $command]);
+        $pdf = PDF::loadView('owner.monthly_sales_overview_pdf', compact('allMonths', 'date', 'totalBarang', 'totalPenjualan', 'chartImage'));
+        $pdf->setPaper('A4', 'landscape');
+        return $pdf->download('laporan_penjualan_bulanan_' . $date . '.pdf');
     }
 
-    $pdf = PDF::loadView('owner.monthly_sales_overview_pdf', compact('allMonths', 'date', 'totalBarang', 'totalPenjualan', 'chartImage'));
-    $pdf->setPaper('A4', 'landscape');
-    return $pdf->download('laporan_penjualan_bulanan_' . $date . '.pdf');
+    protected function generateBarChart($allMonths)
+    {
+        // Set ukuran gambar
+        $width = 800;
+        $height = 400;
+        $image = imagecreatetruecolor($width, $height);
+
+        // Warna
+        $white = imagecolorallocate($image, 255, 255, 255);
+        $black = imagecolorallocate($image, 0, 0, 0);
+        $blue = imagecolorallocate($image, 0, 0, 255);
+        $gray = imagecolorallocate($image, 200, 200, 200);
+
+        // Isi background
+        imagefilledrectangle($image, 0, 0, $width, $height, $white);
+
+        // Data dan label
+        $labels = $allMonths->pluck('bulan')->toArray();
+        $data = $allMonths->pluck('penjualan_kotor_raw')->toArray();
+        $maxValue = max($data) ?: 1; // Hindari pembagian nol
+        $barWidth = ($width - 100) / count($labels) - 10;
+        $barHeightScale = ($height - 100) / $maxValue;
+
+        // Gambar sumbu
+        imageline($image, 50, $height - 50, $width - 50, $height - 50, $black); // Sumbu X
+        imageline($image, 50, 50, 50, $height - 50, $black); // Sumbu Y
+
+        // Gambar batang
+        for ($i = 0; $i < count($labels); $i++) {
+            $barHeight = $data[$i] * $barHeightScale;
+            $x = 60 + ($i * ($barWidth + 10));
+            $y = $height - 60 - $barHeight;
+            imagefilledrectangle($image, $x, $y, $x + $barWidth, $height - 60, $blue);
+
+            // Label bulan
+            imagestring($image, 2, $x, $height - 40, $labels[$i], $black);
+
+            // Nilai di atas batang
+            $value = number_format($data[$i], 0, ',', '.');
+            imagestring($image, 2, $x, $y - 15, $value, $black);
+        }
+
+        // Simpan gambar ke string (base64)
+        ob_start();
+        imagepng($image);
+        $imageData = ob_get_clean();
+        imagedestroy($image);
+
+        return 'data:image/png;base64,' . base64_encode($imageData);
     }
     
 }

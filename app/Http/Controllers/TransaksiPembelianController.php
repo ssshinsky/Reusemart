@@ -16,12 +16,13 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Auth;
 
 class TransaksiPembelianController extends Controller
 {
-    private $baseUrl = 'http://10.53.9.31:8000/api';
-
-    // Menampilkan daftar semua transaksi pembelian
+//     private $baseUrl = 'http://10.53.9.31:8000/api';
+  
+    // 🔓 API: Menampilkan semua transaksi pembelian
     public function index()
     {
         $transaksiPembelian = TransaksiPembelian::with([
@@ -30,8 +31,18 @@ class TransaksiPembelianController extends Controller
         ])->get();
         return response()->json($transaksiPembelian);
     }
+  
+    // 🔓 API: Menampilkan satu transaksi pembelian
+    public function show($id)
+    {
+        $transaksiPembelian = TransaksiPembelian::find($id);
+        if (!$transaksiPembelian) {
+            return response()->json(['message' => 'Transaksi pembelian not found'], 404);
+        }
+        return response()->json($transaksiPembelian);
+    }
 
-    // Menambahkan transaksi pembelian baru
+    // 🔓 API: Tambah transaksi baru
     public function store(Request $request)
     {
         $request->validate([
@@ -75,7 +86,7 @@ class TransaksiPembelianController extends Controller
         return response()->json($transaksiPembelian, 201);
     }
 
-    // Mengupdate transaksi pembelian berdasarkan ID
+    // 🔓 API: Update transaksi
     public function update(Request $request, $id)
     {
         $transaksiPembelian = TransaksiPembelian::find($id);
@@ -102,29 +113,12 @@ class TransaksiPembelianController extends Controller
             'poin_penitip' => 'nullable|integer|min:0',
         ]);
 
-        $transaksiPembelian->update([
-            'id_keranjang' => $request->id_keranjang ?? $transaksiPembelian->id_keranjang,
-            'id_alamat' => $request->id_alamat ?? $transaksiPembelian->id_alamat,
-            'no_resi' => $request->no_resi ?? $transaksiPembelian->no_resi,
-            'tanggal_pembelian' => $request->tanggal_pembelian ?? $transaksiPembelian->tanggal_pembelian,
-            'waktu_pembayaran' => $request->waktu_pembayaran ?? $transaksiPembelian->waktu_pembayaran,
-            'bukti_tf' => $request->bukti_tf ?? $transaksiPembelian->bukti_tf,
-            'total_harga_barang' => $request->total_harga_barang ?? $transaksiPembelian->total_harga_barang,
-            'metode_pengiriman' => $request->metode_pengiriman ?? $transaksiPembelian->metode_pengiriman,
-            'ongkir' => $request->ongkir ?? $transaksiPembelian->ongkir,
-            'tanggal_ambil' => $request->tanggal_ambil ?? $transaksiPembelian->tanggal_ambil,
-            'tanggal_pengiriman' => $request->tanggal_pengiriman ?? $transaksiPembelian->tanggal_pengiriman,
-            'total_harga' => $request->total_harga ?? $transaksiPembelian->total_harga,
-            'status_transaksi' => $request->status_transaksi ?? $transaksiPembelian->status_transaksi,
-            'poin_terpakai' => $request->poin_terpakai ?? $transaksiPembelian->poin_terpakai,
-            'poin_pembeli' => $request->poin_pembeli ?? $transaksiPembelian->poin_pembeli,
-            'poin_penitip' => $request->poin_penitip ?? $transaksiPembelian->poin_penitip,
-        ]);
+        $transaksiPembelian->update($request->all());
 
         return response()->json($transaksiPembelian);
     }
 
-    // Menghapus transaksi pembelian berdasarkan ID
+    // 🔓 API: Hapus transaksi
     public function destroy($id)
     {
         $transaksiPembelian = TransaksiPembelian::find($id);
@@ -624,5 +618,26 @@ class TransaksiPembelianController extends Controller
         }
 
         return response()->json(['message' => 'Pickup schedule created']);
+    }
+}
+    // ✅ Web: Riwayat transaksi untuk pembeli login
+    public function riwayat()
+    {
+        $riwayat = TransaksiPembelian::with('detailPembelians.barang')
+            ->where('id_pembeli', Auth::guard('pembeli')->id())
+            ->latest()
+            ->get();
+
+        return view('pembeli.riwayat', compact('riwayat'));
+    }
+
+    // ✅ Web: Detail transaksi
+    public function detail($id)
+    {
+        $transaksi = TransaksiPembelian::with('detailPembelians.barang', 'alamat')
+            ->where('id_pembeli', Auth::guard('pembeli')->id())
+            ->findOrFail($id);
+
+        return view('pembeli.riwayat_detail', compact('transaksi'));
     }
 }

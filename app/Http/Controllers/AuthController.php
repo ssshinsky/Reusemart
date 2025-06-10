@@ -75,7 +75,7 @@ class AuthController extends Controller
                 'role' => 'penitip',
             ]);
             $request->session()->regenerate();
-            return redirect('/');
+            return redirect('/penitip/myProduct');
         }
 
         // 3. Cek Pembeli

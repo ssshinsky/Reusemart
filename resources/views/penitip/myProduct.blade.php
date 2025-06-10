@@ -14,46 +14,109 @@
                     <h4 class="fw-bold text-success">My Products</h4>
                     <p class="text-muted">List of products you've consigned.</p>
                 </div>
+                
+                <div style="margin-bottom: 1rem;">
+                    <input type="text" id="searchInput" class="form-control" placeholder="🔍 Search Your Products">
+                </div>
 
-                <div class="row">
-                    @forelse ($products as $product)
-                        <div class="col-lg-4 col-md-6 mb-4">
-                            <div class="card h-100 shadow-sm border-0 hover-shadow">
-                                <img src="{{ asset('storage/' . ($product->gambar->first()->nama_file ?? 'default.jpg')) }}"
-                                    class="card-img-top rounded-top" style="height: 220px; object-fit: cover;"
-                                    alt="{{ $product->nama_barang }}">
-                                <div class="card-body">
-                                    <h5 class="card-title text-truncate">{{ $product->nama_barang }}</h5>
-                                    <p class="mb-0">
-                                        Status:
-                                        @php
-                                            $status = [
-                                                'AVAILABLE' => ['label' => 'Available', 'class' => 'success'],
-                                                'SOLD OUT' => ['label' => 'Sold Out', 'class' => 'danger'],
-                                                'DONATED' => ['label' => 'Donated', 'class' => 'warning text-dark'],
-                                                'COLLECTED' => ['label' => 'Collected', 'class' => 'primary'],
-                                            ];
-                                            $badge = $status[$product->status_barang] ?? [
-                                                'label' => 'Unknown',
-                                                'class' => 'secondary',
-                                            ];
-                                        @endphp
-                                        <span class="badge bg-{{ $badge['class'] }}">{{ $badge['label'] }}</span>
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    @empty
-                        <div class="col-12">
-                            <div class="alert alert-info text-center">
-                                Belum ada produk tersedia.
-                            </div>
-                        </div>
-                    @endforelse
+                <div class="row" id="productGrid">
+                    @include('penitip.partials.product_grid', ['products' => $products])
                 </div>
             </div>
         </div>
     </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        const searchInput = document.getElementById('searchInput');
+        let timeout = null;
+
+        searchInput.addEventListener('input', function () {
+            clearTimeout(timeout);
+            const query = this.value;
+
+            timeout = setTimeout(() => {
+                fetch(`{{ route('penitip.products.search') }}?q=${encodeURIComponent(query)}`, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                })
+                .then(res => res.text())
+                .then(html => {
+                    const grid = document.getElementById('productGrid');
+                    grid.innerHTML = html;
+                })
+                .catch(err => console.error('Live search error:', err));
+            }, 300);
+        });
+
+        function confirmPickup(id) {
+            fetch(`/penitip/api/barang/${id}/check-pickup-info`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.error) {
+                        Swal.fire('Error', data.message, 'error');
+                        return;
+                    }
+
+                    // 💬 Tentukan konten alert berdasarkan status_barang
+                    let alertContent = '';
+
+                    if (data.status_barang === 'Available') {
+                        alertContent = `
+                            <p>If you confirm this action, the item will no longer be available for sale and must be picked up within the next 7 days.</p>
+                            <p><strong>Pickup Deadline:</strong> ${data.pickup_deadline}</p>
+                            <p>If not picked up by the deadline, the item will be donated.</p>
+                        `;
+                    } else if (data.status_barang === 'Awaiting Owner Pickup') {
+                        alertContent = `
+                            <p>By confirming this, the item must be picked up within the remaining time.</p>
+                            <p>It will no longer be listed for sale and must be collected before:</p>
+                            <p><strong>📅 Pickup Deadline:</strong> ${data.pickup_deadline}</p>
+                            <p>If not picked up by the deadline, the item will be donated.</p>
+                        `;
+                    }
+
+                    Swal.fire({
+                        title: 'Confirm Pickup',
+                        html: alertContent,
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonText: 'Confirm Pickup',
+                        confirmButtonColor: '#28a745',
+                        cancelButtonText: 'Cancel',
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            fetch(`/penitip/barang/${id}/confirm-pickup`, {
+                                method: 'PATCH',
+                                headers: {
+                                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                    'Content-Type': 'application/json'
+                                }
+                            })
+                            .then(res => res.json())
+                            .then(response => {
+                                if (response.message) {
+                                    Swal.fire('Success', response.message, 'success')
+                                        .then(() => location.reload());
+                                }
+                            }).catch(() => {
+                                Swal.fire('Error', 'Something went wrong', 'error');
+                            });
+                        }
+                    });
+                });
+        }
+
+            // document.addEventListener('DOMContentLoaded', function () {
+            //     setInterval(() => {
+            //         fetch('/penitip/myProduct/search?q=' + document.getElementById('searchInput')?.value || '')
+            //             .then(response => response.text())
+            //             .then(html => {
+            //                 document.getElementById('productGrid').innerHTML = html;
+            //             })
+            //             .catch(error => console.error('Polling error:', error));
+            //     }, 1000); // 60 detik
+            // });
+    </script>
 @endsection
 
 @push('styles')

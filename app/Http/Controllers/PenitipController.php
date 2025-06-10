@@ -7,6 +7,10 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
+use App\Models\TransaksiPenitipan;
+use App\Models\Barang;
+use Carbon\Carbon;
 
 class PenitipController extends Controller
 {
@@ -59,12 +63,12 @@ class PenitipController extends Controller
     // Tampilkan profil penitip yang sedang login
     public function profile()
     {
-        if (session('role') !== 'penitip') {
+        $penitip = auth()->guard('penitip')->user();
+
+        if (!$penitip) {
             return redirect('/login')->with('error', 'Unauthorized');
         }
 
-        $id = session('user.id');
-        $penitip = Penitip::find($id);
 
         if (!$penitip) {
             abort(404, 'Data penitip tidak ditemukan.');
@@ -118,30 +122,37 @@ class PenitipController extends Controller
     // Tampilkan produk milik penitip sendiri
     public function myproduct()
     {
-        $id_user = session('user.id');
-
-        $penitip = \App\Models\Penitip::where('id_penitip', $id_user)->first();
+        $penitip = auth()->guard('penitip')->user();
 
         if (!$penitip) {
             abort(404, 'Penitip tidak ditemukan');
         }
 
-        $transaksiIds = \App\Models\TransaksiPenitipan::where('id_penitip', $penitip->id_penitip)->pluck('id_transaksi_penitipan');
-        $produkSaya = \App\Models\Barang::whereIn('id_transaksi_penitipan', $transaksiIds)->get();
-        $products = $produkSaya;
+        $transaksiIds = TransaksiPenitipan::where('id_penitip', $penitip->id_penitip)->pluck('id_transaksi_penitipan');
+        $products = Barang::with('transaksiPenitipan')->whereIn('id_transaksi_penitipan', $transaksiIds)->get();
+
+        // Otomatis ubah status jika masa penitipan sudah habis
+        foreach ($products as $product) {
+            $transaksi = $product->transaksiPenitipan;
+            if ($product->status_barang === 'Available' && $transaksi && now()->gt($transaksi->tanggal_berakhir)) {
+                $product->update([
+                    'status_barang' => 'Awaiting Owner Pickup'
+                ]);
+            }
+        }
+
         return view('penitip.myproduct', compact('products'));
     }
+
 
     // Tampilkan saldo dan reward penitip
     public function rewards()
     {
-        $sessionUser = session('user');
+        $penitip = auth()->guard('penitip')->user();
 
-        if (!$sessionUser || !isset($sessionUser['id'])) {
-            abort(403, 'User tidak ditemukan dalam sesi.');
+        if (!$penitip) {
+            abort(403, 'User tidak ditemukan atau belum login.');
         }
-
-        $penitip = \App\Models\Penitip::where('id_penitip', $sessionUser['id'])->first();
 
         if (!$penitip) {
             abort(404, 'Data penitip tidak ditemukan.');
@@ -287,6 +298,43 @@ class PenitipController extends Controller
         return redirect()->route('cs.penitip.index')->with('success', 'Password berhasil direset.');
     }
 
+    public function searchProducts(Request $request)
+    {
+        $penitip = auth()->guard('penitip')->user();
+        if (!$penitip) abort(403, 'Unauthorized');
+
+        $query = strtolower($request->input('q'));
+
+        // Konversi pencarian ke nilai perpanjangan
+        $perpanjanganSearch = null;
+        if (in_array($query, ['extended', 'perpanjang'])) {
+            $perpanjanganSearch = 1;
+        } elseif (in_array($query, ['not extended', 'belum diperpanjang'])) {
+            $perpanjanganSearch = 0;
+        }
+
+        $transaksiIds = TransaksiPenitipan::where('id_penitip', $penitip->id_penitip)
+            ->pluck('id_transaksi_penitipan');
+
+        $products = Barang::with(['gambar', 'kategori'])
+            ->whereIn('id_transaksi_penitipan', $transaksiIds)
+            ->where(function ($q) use ($query, $perpanjanganSearch) {
+                $q->where('kode_barang', 'like', "%$query%")
+                ->orWhere('nama_barang', 'like', "%$query%")
+                ->orWhere('harga_barang', 'like', "%$query%")
+                ->orWhere('berat_barang', 'like', "%$query%")
+                ->orWhere('deskripsi_barang', 'like', "%$query%")
+                ->orWhere('status_garansi', 'like', "%$query%");
+                
+                if (!is_null($perpanjanganSearch)) {
+                    $q->orWhere('perpanjangan', $perpanjanganSearch);
+                }
+            })
+            ->get();
+
+        return view('penitip.partials.product_grid', compact('products'));
+    }
+
     public function search(Request $request)
     {
         $pegawai = Auth::guard('pegawai')->user();
@@ -347,6 +395,98 @@ class PenitipController extends Controller
         }
 
         return response($html);
+    }
+
+    public function perpanjang($id)
+    {
+        $barang = Barang::findOrFail($id);
+
+        if (strtolower($barang->status_barang) !== 'available' || $barang->perpanjangan == 1) {
+            return back()->with('error', 'Barang tidak dapat diperpanjang.');
+        }
+
+        $transaksi = $barang->transaksiPenitipan;
+
+        if (!$transaksi || !$transaksi->tanggal_berakhir) {
+            return back()->with('error', 'Transaksi atau tanggal berakhir tidak valid.');
+        }
+
+        $tanggalBaru = Carbon::parse($transaksi->tanggal_berakhir)->addDays(30);
+        $transaksi->update(['tanggal_berakhir' => $tanggalBaru]);
+
+        $barang->update(['perpanjangan' => 1]);
+
+        return back()->with('success', 'Penitipan berhasil diperpanjang 30 hari.');
+    }
+
+    public function confirmPickup($id)
+    {
+        $barang = Barang::findOrFail($id);
+
+        if (!in_array($barang->status_barang, ['Available', 'Awaiting Owner Pickup'])) {
+            return response()->json([
+                'message' => 'This item is not eligible for pickup.'
+            ], 422);
+        }
+
+        $now = Carbon::now();
+        $tanggalBerakhir = optional($barang->transaksiPenitipan)->tanggal_berakhir;
+
+        if (!$tanggalBerakhir) {
+            return response()->json([
+                'message' => 'Cannot determine end of storage period.'
+            ], 422);
+        }
+
+        if ($barang->status_barang === 'Available' && $now->lt($tanggalBerakhir)) {
+            // Picked up *before* end of storage
+            $batasAmbil = $now->copy()->addDays(7);
+        } else {
+            // Picked up *after* end of storage
+            $batasAmbil = Carbon::parse($tanggalBerakhir)->addDays(7);
+
+            if ($now->gt($batasAmbil)) {
+                return response()->json([
+                    'message' => 'Pickup period has already expired. This item will be donated.'
+                ], 422);
+            }
+        }
+
+        $barang->update([
+            'status_barang' => 'Ready for Pickup',
+            'tanggal_konfirmasi_pengambilan' => $now,
+            'batas_pengambilan' => $batasAmbil,
+        ]);
+
+        return response()->json([
+            'message' => 'Pickup confirmed.',
+            'pickup_deadline' => $batasAmbil->toDateTimeString()
+        ]);
+    }
+    public function getPickupDeadline($id)
+    {
+        $barang = Barang::with('transaksiPenitipan')->findOrFail($id);
+        $penitip = auth()->guard('penitip')->user();
+
+        // Validasi apakah ini barang penitip yang login
+        if ($barang->transaksiPenitipan->id_penitip !== $penitip->id_penitip) {
+            return response()->json(['error' => true, 'message' => 'Unauthorized'], 403);
+        }
+
+        $now = Carbon::now();
+        $tanggalBerakhir = Carbon::parse($barang->transaksiPenitipan->tanggal_berakhir);
+        $batasAmbil = $barang->status_barang === 'Available' && $now->lt($tanggalBerakhir)
+            ? $now->copy()->addDays(7)
+            : $tanggalBerakhir->copy()->addDays(7);
+
+        if ($now->gt($batasAmbil)) {
+            return response()->json(['error' => true, 'message' => 'Pickup deadline already passed.']);
+        }
+
+        return response()->json([
+            'pickup_deadline' => $batasAmbil->format('d F Y H:i:s'),
+            'status_barang' => $barang->status_barang,
+        ]);
     }
 
 }

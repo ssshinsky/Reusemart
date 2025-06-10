@@ -57,6 +57,16 @@
                                             <td colspan="4" class="text-end fw-bold">Ongkir</td>
                                             <td class="fw-bold">IDR {{ number_format(100000, 0, ',', '.') }}</td>
                                         </tr>
+                                    @elseif ($metodePengiriman === 'kurir' && $totalHarga >= 1500000)
+                                        <tr>
+                                            <td colspan="4" class="text-end fw-bold">Ongkir</td>
+                                            <td class="fw-bold">Free</td>
+                                        </tr>
+                                    @elseif ($metodePengiriman === 'ambil')
+                                        <tr>
+                                            <td colspan="4" class="text-end fw-bold">Ongkir</td>
+                                            <td class="fw-bold">IDR {{ number_format(0, 0, ',', '.') }}</td>
+                                        </tr>
                                     @endif
                                     <tr>
                                         <td colspan="4" class="text-end fw-bold">Total Setelah Poin</td>
@@ -94,8 +104,7 @@
             <div class="col-md-6">
                 <div class="card shadow-sm border-0 p-4">
                     <h4 class="mb-4 fw-bold">Form Pembayaran</h4>
-                    <form method="POST" action="{{ route('pembeli.bayar') }}" enctype="multipart/form-data"
-                        id="checkoutForm">
+                    <form action="{{ route('pembeli.bayar') }}" method="POST" enctype="multipart/form-data">
                         @csrf
                         <div class="form-check mb-3">
                             <input type="checkbox" class="form-check-input" id="usePointsCheckbox">

@@ -68,4 +68,20 @@ class KeranjangController extends Controller
         $keranjang->delete();
         return response()->json(['message' => 'Keranjang deleted successfully']);
     }
+
+    public function getBarangByKeranjang($id)
+    {
+        $keranjang = Keranjang::findOrFail($id);
+        $detailKeranjang = DetailKeranjang::where('id_keranjang', $id)->first();
+        if (!$detailKeranjang) {
+            return response()->json(['message' => 'No items found in keranjang'], 404);
+        }
+
+        $itemKeranjang = ItemKeranjang::with('barang')->find($detailKeranjang->id_item_keranjang);
+        if (!$itemKeranjang || !$itemKeranjang->barang) {
+            return response()->json(['message' => 'Barang not found'], 404);
+        }
+
+        return response()->json($itemKeranjang->barang);
+    }
 }

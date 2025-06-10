@@ -25,6 +25,9 @@
         <button class="btn btn-outline-primary" id="actionToggle">
             <i class="bi bi-pencil-square me-2"></i> Aksi
         </button>
+        <a href="{{ route('owner.download.pdf') }}" class="btn btn-outline-success" target="_blank">
+            <i class="bi bi-download me-2"></i> Unduh PDF
+        </a>
     </div>
 
     <!-- Table -->

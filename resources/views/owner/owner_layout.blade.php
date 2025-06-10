@@ -230,6 +230,8 @@
             <a href="{{ route('owner.rewards') }}" class="{{ Route::is('owner.rewards') ? 'active' : '' }}">
                 <i class="bi bi-gift"></i> Poin Reward
             </a>
+            <a href="{{ route('owner.report') }}" class="{{ Route::is('owner.report') ? 'active' : '' }}">
+                <i class="bi-graph-up"></i> Consignment Report
             <a href="{{ route('owner.reports.sales_by_category') }}" class="{{ Route::is('owner.reports.sales_by_category') ? 'active' : '' }}">
                 <i class="bi bi-bar-chart-line me-2"></i>Lap. Penjualan per Kategori
             </a>

@@ -5,6 +5,17 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PegawaiController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\BarangController;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\FcmTokenController;
+use App\Http\Controllers\NotificationController;
+
+// dd('API Route File Loaded');
+
+Route::post('/login', [AuthController::class, 'loginapi']);
+Route::middleware('auth:sanctum')->post('/logout', [AuthController::class, 'logoutapi']);
+
+Route::middleware('auth:sanctum')->post('/save-fcm-token', [FcmTokenController::class, 'saveToken']);
+Route::middleware('auth:sanctum')->post('/send-notification', [NotificationController::class, 'sendNotification']);
 
 Route::post('/pegawai/register', [PegawaiController::class, 'register']);
 Route::post('/pegawai/login', [PegawaiController::class, 'login']);
@@ -35,4 +46,20 @@ Route::middleware('auth:api')->group(function () {
     Route::post('/role/update/{id}', [RoleController::class, 'update']);
     Route::delete('/role/delete/{id}', [RoleController::class, 'destroy']);
     
+});
+
+Route::prefix('kurir')->middleware(['auth:pegawai', 'pegawai.role:5'])->group(function () {
+    Route::get('/deliveries', [KurirController::class, 'getDeliveries']);
+    Route::post('/deliveries/update', [KurirController::class, 'updateDeliveryStatus']);
+});
+
+Route::middleware('auth:api')->group(function () {
+    Route::post('/send-notification', [NotificationController::class, 'sendNotification']);
+    Route::post('/transaksi-pembelian', [TransaksiPembelianController::class, 'store']);
+    Route::post('/transaksi-pembelian/{id}/verify', [TransaksiPembelianController::class, 'verify']);
+    Route::post('/delivery-schedule', [TransaksiPembelianController::class, 'createDeliverySchedule']);
+    Route::post('/pickup-schedule', [TransaksiPembelianController::class, 'createPickupSchedule']);
+    Route::post('/update-delivery-status/{id}', [TransaksiPembelianController::class, 'updateDeliveryStatus']);
+    Route::get('/keranjang/{id}/barang', [KeranjangController::class, 'getBarangByKeranjang']);
+
 });

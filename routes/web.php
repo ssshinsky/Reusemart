@@ -24,6 +24,14 @@ use App\Http\Controllers\TransaksiPembelianController;
 use App\Http\Controllers\DiskusiProdukController;
 use App\Models\Barang;
 
+Route::post('/login-api-debug', [App\Http\Controllers\AuthController::class, 'loginapi'])
+    ->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]); // Kita tetap kecualikan CSRF untuk berjaga-jaga
+
+// Route::post('/api/login', [App\Http\Controllers\AuthController::class, 'loginapi'])->name('api.login.temp');
+// Route::post('/api/login', [App\Http\Controllers\AuthController::class, 'loginapi'])
+//     ->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]) // Ini penting
+//     ->name('api.login.temp');
+
 Route::get('/', function () {
     $barangTerbatas = Barang::with('gambar')->take(12)->get();
     return view('welcome', [
@@ -42,7 +50,7 @@ Route::get('/login', function () {
 })->name('login');
 
 Route::post('/login', [AuthController::class, 'login'])->name('login.submit');
-Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+Route::post('/logout', [AuthController::class, 'logout'])->name('logout.submit');
 Route::post('/admin/logout', function () {
     session()->flush();
     return redirect('/login');
@@ -57,7 +65,7 @@ Route::post('/diskusi/store', [DiskusiProdukController::class, 'store'])->name('
 
 // Cart Routes
 Route::post('/keranjang/tambah/{id}', [ItemKeranjangController::class, 'tambah'])->name('cart.add');
-Route::post('/keranjang/hapus/{id}', [ItemKeranjangController::class, 'hapus'])->name('cart.remove');
+Route::delete('/keranjang/hapus/{id}', [ItemKeranjangController::class, 'hapus'])->name('cart.remove');
 Route::post('/keranjang/toggle/{id}', [ItemKeranjangController::class, 'toggleSelect'])->name('cart.toggle');
 Route::post('/keranjang/checkout', [ItemKeranjangController::class, 'checkout'])->name('cart.checkout');
 
@@ -226,8 +234,30 @@ Route::prefix('cs')->middleware(['auth:pegawai', 'pegawai.role:3'])->group(funct
     Route::put('/item-owners/{id}', [PenitipController::class, 'update'])->name('cs.penitip.update');
     Route::put('/item-owners/{id}/deactivate', [PenitipController::class, 'deactivate'])->name('cs.penitip.deactivate');
     Route::put('/item-owners/{id}/reactivate', [PenitipController::class, 'reactivate'])->name('cs.penitip.reactivate');
+    Route::get('/transaksi-pembelian', [TransaksiPembelianController::class, 'show'])->name('transaksi-pembelian.index');
+    Route::post('/transaksi-pembelian/{id_pembelian}/verify', [TransaksiPembelianController::class, 'verify'])
+    ->name('cs.transaksi-pembelian.verify');
+    Route::get('/transaksi-pembelian/search', [TransaksiPembelianController::class, 'search'])->name('cs.transaksi-pembelian.search');
 });
 
+Route::prefix('owner')->middleware(['auth:pegawai'])->group(function () {
+    Route::get('/dashboard', [OwnerController::class, 'dashboard'])->name('owner.dashboard');
+    Route::get('/donation/requests', [OwnerController::class, 'donationRequests'])->name('owner.donation.requests');
+    Route::get('/donation/requests/download/pdf', [OwnerController::class, 'downloadPdf'])->name('owner.download.pdf');
+    Route::get('/donation/history', [OwnerController::class, 'donationHistory'])->name('owner.donation.history');
+    Route::get('/donation/download/pdf', [OwnerController::class, 'downloadDonationPdf'])->name('owner.download.donation.pdf');
+    Route::get('/allocate-items', [OwnerController::class, 'allocateItems'])->name('owner.allocate.items');
+    Route::post('/allocate-items', [OwnerController::class, 'storeAllocation'])->name('owner.store.allocation');
+    Route::get('/update-donation', [OwnerController::class, 'updateDonation'])->name('owner.update.donation');
+    Route::post('/update-donation', [OwnerController::class, 'updateDonasiStore'])->name('owner.update.donasi.store');
+    Route::get('/rewards', [OwnerController::class, 'rewards'])->name('owner.rewards');
+    Route::get('/donasi', [OwnerController::class, 'getDonasi'])->name('owner.get.donasi');
+    Route::get('/requests-by-organisasi', [OwnerController::class, 'getRequestsByOrganisasi'])->name('owner.requests.by_organisasi');
+    Route::delete('/request/{id}', [OwnerController::class, 'deleteRequest'])->name('owner.delete.request');
+    Route::get('/consignment-report', [OwnerController::class, 'consignmentReport'])->name('owner.report');
+    Route::get('/consignment-report/download/{id}', [OwnerController::class, 'downloadConsignmentReport'])
+    ->name('owner.download.consignment.pdf');
+    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 // Gudang Routes
 Route::prefix('gudang')->middleware(['auth:pegawai', 'pegawai.role:4'])->name('gudang.')->group(function () {
     Route::get('/dashboard', [TransaksiPenitipanController::class, 'dashboard'])->name('dashboard');
@@ -257,7 +287,6 @@ Route::prefix('kurir')->middleware(['auth:pegawai', 'pegawai.role:5'])->group(fu
     Route::get('/dashboard', fn() => view('kurir.dashboard'))->name('kurir.dashboard');
 });
 
-// Hunter Routes
-Route::prefix('hunter')->middleware(['auth:pegawai', 'pegawai.role:6'])->group(function () {
-    Route::get('/dashboard', fn() => view('hunter.dashboard'))->name('hunter.dashboard');
-});
+Route::get('/login', function () {
+    return redirect('/');
+})->name('login');

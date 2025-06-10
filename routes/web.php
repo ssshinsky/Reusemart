@@ -258,6 +258,8 @@ Route::prefix('owner')->middleware(['auth:pegawai'])->group(function () {
     Route::get('/consignment-report/download/{id}', [OwnerController::class, 'downloadConsignmentReport'])
     ->name('owner.download.consignment.pdf');
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+});
+
 // Gudang Routes
 Route::prefix('gudang')->middleware(['auth:pegawai', 'pegawai.role:4'])->name('gudang.')->group(function () {
     Route::get('/dashboard', [TransaksiPenitipanController::class, 'dashboard'])->name('dashboard');
@@ -286,7 +288,3 @@ Route::prefix('gudang')->middleware(['auth:pegawai', 'pegawai.role:4'])->name('g
 Route::prefix('kurir')->middleware(['auth:pegawai', 'pegawai.role:5'])->group(function () {
     Route::get('/dashboard', fn() => view('kurir.dashboard'))->name('kurir.dashboard');
 });
-
-Route::get('/login', function () {
-    return redirect('/');
-})->name('login');

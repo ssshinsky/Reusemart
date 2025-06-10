@@ -7,6 +7,8 @@ use App\Http\Controllers\PenitipController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\BarangController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\PembeliController;
+use App\Http\Controllers\TransaksiPembelianController;
 use App\Http\Controllers\FcmTokenController;
 use App\Http\Controllers\NotificationController;
 
@@ -60,6 +62,13 @@ Route::get('/penitip/{id}', [PenitipController::class, 'getPenitipById']);
 Route::get('/penitip/{id}/history', [PenitipController::class, 'getConsignmentHistoryById']);
 Route::get('/penitip/profile', [PenitipController::class, 'getProfile']);
 Route::get('/penitip/history', [PenitipController::class, 'getConsignmentHistory']);
+
+
+// Route pembeli tanpa autentikasi
+Route::get('/pembeli/{id}', [PembeliController::class, 'getPembeliById']);
+Route::get('/pembeli/{id}/history', [TransaksiPembelianController::class, 'getPurchaseHistoryById']);
+Route::get('/pembeli/profile', [PembeliController::class, 'getProfile']);
+Route::get('/pembeli/history', [TransaksiPembelianController::class, 'getPurchaseHistory']);
 
 // Route::prefix('penitip')->middleware(['auth:sanctum', 'api_penitip'])->group(function () {
 //     Route::get('/profile', [PenitipController::class, 'getProfile']);

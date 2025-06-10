@@ -5,7 +5,10 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use App\Models\Pembeli;
+use App\Models\TransaksiPembelian;
+// use App\Http\Controllers\TransaksiPembelianController;
 
 class PembeliController extends Controller
 {
@@ -220,6 +223,188 @@ class PembeliController extends Controller
     public function apiUpdate(Request $request, $id)
     {
         return $this->update($request, $id);
+    }
+
+
+    // ====== New API Methods ======
+    public function getPembeliById($id)
+    {
+        try {
+            Log::debug('Fetching pembeli by ID', ['id_pembeli' => $id]);
+
+            $pembeli = Pembeli::find($id);
+            if (!$pembeli) {
+                Log::warning('Pembeli not found', ['id_pembeli' => $id]);
+                return response()->json(['message' => 'Pembeli not found'], 404);
+            }
+
+            return response()->json([
+                'id_pembeli' => $pembeli->id_pembeli,
+                'nama' => $pembeli->nama_pembeli,
+                'email' => $pembeli->email_pembeli,
+                'nomor_telepon' => $pembeli->nomor_telepon,
+                'tanggal_lahir' => $pembeli->tanggal_lahir ? $pembeli->tanggal_lahir->format('Y-m-d') : null,
+                'poin' => $pembeli->poin_pembeli ?? 0,
+                'profil_pict' => $pembeli->profil_pict && file_exists(storage_path('app/public/' . $pembeli->profil_pict))
+                    ? asset('storage/' . $pembeli->profil_pict)
+                    : null,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error fetching pembeli by ID', [
+                'id_pembeli' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json(['message' => 'Error fetching pembeli'], 500);
+        }
+    }
+
+    public function getPembeliProfile()
+    {
+        try {
+            Log::debug('Starting getPembeliProfile', ['user_id' => Auth::guard('pembeli')->id()]);
+            $pembeli = Auth::guard('pembeli')->user();
+
+            if (!$pembeli) {
+                return response()->json(['message' => 'Unauthorized'], 401);
+            }
+
+            return response()->json([
+                'id_pembeli' => $pembeli->id_pembeli,
+                'nama' => $pembeli->nama_pembeli,
+                'email' => $pembeli->email_pembeli,
+                'nomor_telepon' => $pembeli->nomor_telepon,
+                'tanggal_lahir' => $pembeli->tanggal_lahir ? $pembeli->tanggal_lahir->format('Y-m-d') : null,
+                'poin' => $pembeli->poin_pembeli ?? 0,
+                'profil_pict' => $pembeli->profil_pict && file_exists(storage_path('app/public/' . $pembeli->profil_pict))
+                    ? asset('storage/' . $pembeli->profil_pict)
+                    : null,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error in getPembeliProfile', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json(['message' => 'Error fetching profile'], 500);
+        }
+    }
+    
+    public function getPurchaseHistoryById(int $id)
+    {
+        try {
+            Log::debug('Fetching purchase history by ID', ['id_pembeli' => $id]);
+
+            if (!is_numeric($id) || $id <= 0) {
+                return response()->json(['message' => 'Invalid ID'], 400);
+            }
+
+            $pembeli = Pembeli::find($id);
+            if (!$pembeli) {
+                Log::warning('Pembeli not found', ['id_pembeli' => $id]);
+                return response()->json(['message' => 'Pembeli not found'], 404);
+            }
+
+            $history = TransaksiPembelian::with([
+                'keranjang.detailKeranjang.itemKeranjang.barang.gambar',
+                'alamat'
+            ])
+            ->whereHas('keranjang.itemKeranjang', function ($query) use ($id) {
+                $query->where('id_pembeli', $id);
+            })
+            ->take(50)
+            ->get()
+            ->map(function ($transaksi) {
+                Log::debug('Processing transaction', ['id_pembelian' => $transaksi->id_pembelian]);
+                return [
+                    'id_pembelian' => $transaksi->id_pembelian,
+                    'tanggal' => $transaksi->created_at ? $transaksi->created_at->format('Y-m-d') : null,
+                    'total_harga' => $transaksi->total_harga ?? 0,
+                    'status_transaksi' => $transaksi->status_transaksi ?? 'Unknown',
+                    'metode_pengiriman' => $transaksi->metode_pengiriman ?? 'Unknown',
+                    'alamat' => $transaksi->alamat ? [
+                        'id_alamat' => $transaksi->alamat->id_alamat,
+                        'alamat_lengkap' => $transaksi->alamat->alamat_lengkap ?? null
+                    ] : null,
+                    'items' => $transaksi->keranjang->detailKeranjang->map(function ($detail) {
+                        $barang = $detail->itemKeranjang->barang;
+                        return [
+                            'nama_barang' => $barang->nama_barang ?? 'Unknown',
+                            'harga_barang' => $barang->harga_barang ?? 0,
+                            'rating' => $barang->rating ?? null,
+                            'gambar' => $barang->gambar->isNotEmpty() && file_exists(storage_path('app/public/' . $barang->gambar->first()->gambar_barang))
+                                ? asset('storage/' . $barang->gambar->first()->gambar_barang)
+                                : null,
+                        ];
+                    })->toArray(),
+                ];
+            });
+
+            Log::info('History fetched', ['id_pembeli' => $id, 'count' => count($history)]);
+            return response()->json($history);
+        } catch (\Exception $e) {
+            Log::error('Error fetching purchase history by ID', [
+                'id_pembeli' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json(['message' => 'Error fetching history'], 500);
+        }
+    }
+
+    public function getPurchaseHistory()
+    {
+        try {
+            Log::debug('Starting getPurchaseHistory', ['user_id' => Auth::guard('pembeli')->id()]);
+            $pembeli = Auth::guard('pembeli')->user();
+
+            if (!$pembeli) {
+                return response()->json(['message' => 'Unauthorized'], 401);
+            }
+
+            $history = TransaksiPembelian::with([
+                'keranjang.detailKeranjang.itemKeranjang.barang.gambar',
+                'alamat'
+            ])
+            ->whereHas('keranjang.itemKeranjang', function ($query) use ($pembeli) {
+                $query->where('id_pembeli', $pembeli->id_pembeli);
+            })
+            ->take(50)
+            ->get()
+            ->map(function ($transaksi) {
+                Log::debug('Processing transaction', ['id_pembelian' => $transaksi->id_pembelian]);
+                return [
+                    'id_pembelian' => $transaksi->id_pembelian,
+                    'tanggal' => $transaksi->created_at ? $transaksi->created_at->format('Y-m-d') : null,
+                    'total_harga' => $transaksi->total_harga ?? 0,
+                    'status_transaksi' => $transaksi->status_transaksi ?? 'Unknown',
+                    'metode_pengiriman' => $transaksi->metode_pengiriman ?? 'Unknown',
+                    'alamat' => $transaksi->alamat ? [
+                        'id_alamat' => $transaksi->alamat->id_alamat,
+                        'alamat_lengkap' => $transaksi->alamat->alamat_lengkap ?? null
+                    ] : null,
+                    'items' => $transaksi->keranjang->detailKeranjang->map(function ($detail) {
+                        $barang = $detail->itemKeranjang->barang;
+                        return [
+                            'nama_barang' => $barang->nama_barang ?? 'Unknown',
+                            'harga_barang' => $barang->harga_barang ?? 0,
+                            'rating' => $barang->rating ?? null,
+                            'gambar' => $barang->gambar->isNotEmpty() && file_exists(storage_path('app/public/' . $barang->gambar->first()->gambar_barang))
+                                ? asset('storage/' . $barang->gambar->first()->gambar_barang)
+                                : null,
+                        ];
+                    })->toArray(),
+                ];
+            });
+
+            Log::info('History fetched', ['id_pembeli' => $pembeli->id_pembeli, 'count' => count($history)]);
+            return response()->json($history);
+        } catch (\Exception $e) {
+            Log::error('Error in getPurchaseHistory', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json(['message' => 'Error fetching history'], 500);
+        }
     }
 
 }

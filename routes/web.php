@@ -24,6 +24,14 @@ use App\Http\Controllers\TransaksiPembelianController;
 use App\Http\Controllers\DiskusiProdukController;
 use App\Models\Barang;
 
+Route::post('/login-api-debug', [App\Http\Controllers\AuthController::class, 'loginapi'])
+    ->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]); // Kita tetap kecualikan CSRF untuk berjaga-jaga
+
+// Route::post('/api/login', [App\Http\Controllers\AuthController::class, 'loginapi'])->name('api.login.temp');
+// Route::post('/api/login', [App\Http\Controllers\AuthController::class, 'loginapi'])
+//     ->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]) // Ini penting
+//     ->name('api.login.temp');
+
 Route::get('/', function () {
     $barangTerbatas = Barang::with('gambar')->take(12)->get();
     return view('welcome', [

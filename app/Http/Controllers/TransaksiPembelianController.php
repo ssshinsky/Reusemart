@@ -778,6 +778,7 @@ class TransaksiPembelianController extends Controller
                         'id_pembelian' => $transaksi->id_pembelian,
                         'tanggal_transaksi' => $transaksi->created_at ? $transaksi->created_at->format('Y-m-d') : 'Unknown',
                         'total_harga' => $transaksi->total_harga ?? 0,
+                        'ongkir' => $transaksi->ongkir ?? 0,
                         'metode_pengiriman' => $transaksi->metode_pengiriman ?? 'Unknown',
                         'status_transaksi' => $transaksi->status_transaksi ?? 'Unknown',
                         'items' => $transaksi->keranjang->detailKeranjang->map(function ($detail) {
@@ -831,6 +832,7 @@ class TransaksiPembelianController extends Controller
                         'id_pembelian' => $transaksi->id_pembelian,
                         'tanggal_transaksi' => $transaksi->created_at ? $transaksi->created_at->format('Y-m-d') : 'Unknown',
                         'total_harga' => $transaksi->total_harga ?? 0,
+                        'ongkir' => $transaksi->ongkir ?? 0,
                         'metode_pengiriman' => $transaksi->metode_pengiriman ?? 'Unknown',
                         'status_transaksi' => $transaksi->status_transaksi ?? 'Unknown',
                         'items' => $transaksi->keranjang->detailKeranjang->map(function ($detail) {

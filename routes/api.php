@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PegawaiController;
+use App\Http\Controllers\PenitipController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\BarangController;
 use App\Http\Controllers\AuthController;

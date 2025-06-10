@@ -619,7 +619,7 @@ class TransaksiPembelianController extends Controller
 
         return response()->json(['message' => 'Pickup schedule created']);
     }
-}
+
     public function history()
     {
         $user = session('user');

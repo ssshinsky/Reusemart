@@ -90,10 +90,12 @@ Route::prefix('pembeli')->middleware('auth:pembeli')->group(function () {
     Route::get('/history', [TransaksiPembelianController::class, 'history'])->name('pembeli.purchase');
     Route::get('/pembeli/rating/{id}', [TransaksiPembelianController::class, 'showRatingPage'])->name('pembeli.rating');
     Route::post('/pembeli/rate/{id}', [TransaksiPembelianController::class, 'rateTransaction'])->name('pembeli.rate');
-    Route::get('/riwayat', [TransaksiPembelianController::class, 'riwayat'])->name('pembeli.riwayat');
+    // Route::get('/riwayat', [TransaksiPembelianController::class, 'riwayat'])->name('pembeli.riwayat');
     Route::get('/transaksi150', [TransaksiPembelianController::class, 'transaksi150k'])->name('pembeli.transaksi')->middleware('auth');
     Route::get('/pembelian', [TransaksiPembelianController::class, 'index'])->name('pembeli.pembelian');
-    Route::get('/purchase', [PembeliController::class, 'purchase'])->name('pembeli.purchase');
+    // Route::get('/purchase', [PembeliController::class, 'purchase'])->name('pembeli.purchase');
+    
+    // Route::get('/history', [TransaksiPembelianController::class, 'history'])->name('pembeli.purchase');
     Route::get('/reward', [PembeliController::class, 'reward'])->name('pembeli.reward');
     Route::get('/process-payment', [ItemKeranjangController::class, 'processPayment'])->name('pembeli.processPayment');
     Route::post('/bayar', [TransaksiPembelianController::class, 'bayar'])->name('pembeli.bayar');
@@ -245,6 +247,19 @@ Route::prefix('owner')->middleware(['auth:pegawai'])->group(function () {
     Route::get('/consignment-report/download/{id}', [OwnerController::class, 'downloadConsignmentReport'])
     ->name('owner.download.consignment.pdf');
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+});
+
+// Gudang Routes
+Route::prefix('gudang')->middleware(['auth:pegawai', 'pegawai.role:4'])->name('gudang.')->group(function () {
+    Route::get('/dashboard', [TransaksiPenitipanController::class, 'dashboard'])->name('dashboard');
+    Route::get('/add-transaction', [TransaksiPenitipanController::class, 'create'])->name('add.transaction');
+    Route::post('/store-transaction', [TransaksiPenitipanController::class, 'store'])->name('store.transaction');
+    Route::get('/transaction-list', [TransaksiPenitipanController::class, 'transactionList'])->name('transaction.list');
+    Route::get('/search-transaction', [TransaksiPenitipanController::class, 'searchTransaction'])->name('transaction.search');
+    Route::get('/edit-transaction/{id}', [TransaksiPenitipanController::class, 'editTransaction'])->name('transaction.edit');
+    Route::put('/update-transaction/{id}', [TransaksiPenitipanController::class, 'updateTransaction'])->name('transaction.update');
+    Route::get('/print-note/{id}', [TransaksiPenitipanController::class, 'printNote'])->name('transaction.print');
+    Route::get('/item-list', [BarangController::class, 'itemList'])->name('item.list');
 });
 
 Route::get('/login', function () {

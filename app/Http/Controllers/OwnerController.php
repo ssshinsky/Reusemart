@@ -5,9 +5,6 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Carbon;
-use Barryvdh\DomPDF\Facade\Pdf;
-use Illuminate\Support\Facades\DB;
 use App\Models\RequestDonasi;
 use App\Models\Donasi;
 use App\Models\Barang;
@@ -21,7 +18,6 @@ use Carbon\Carbon;
 use PDF;
 // use App\Charts\ChartJSNodeCanvas;
 use ChartJs\Chart;
-use App\Models\TransaksiPembelian;
 
 class OwnerController extends Controller
 {
@@ -259,102 +255,6 @@ class OwnerController extends Controller
             'nama_penerima' => $donasi->nama_penerima,
             'barang' => ['status_barang' => $donasi->barang->status_barang],
         ]);
-    }
-
-    public function downloadDonationPdf(Request $request)
-    {
-        $this->ensureOwner();
-
-        $organisasi = Organisasi::all();
-        $query = Donasi::with(['requestDonasi.organisasi', 'barang', 'transaksiPenitipan.penitip']);
-
-        if ($request->filled('id_organisasi')) {
-            $query->whereHas('requestDonasi', function ($q) use ($request) {
-                $q->where('id_organisasi', $request->id_organisasi);
-            });
-        }
-
-        $donations = $query->get();
-
-        $data = [
-            'donations' => $donations,
-            'organisasi' => $organisasi,
-            'tanggal_cetak' => now()->format('d F Y'),
-        ];
-
-        $pdf = PDF::loadView('owner.donation_history_pdf', $data);
-
-        return $pdf->stream('laporan_donasi_barang.pdf');
-    }
-
-    public function downloadPdf()
-    {
-        $this->ensureOwner();
-
-        $requests = RequestDonasi::where('status_request', 'belum di proses')
-            ->with(['organisasi', 'pegawai'])
-            ->get();
-
-        $pdf = PDF::loadView('owner.donation_requests_pdf', compact('requests'));
-
-        return $pdf->stream('laporan_request_donasi.pdf');
-    }
-
-    public function consignmentReport()
-    {
-        $penitips = Penitip::all();
-        return view('owner.consignment_report', compact('penitips'));
-    }
-
-    public function downloadConsignmentReport($id)
-    {
-        $penitip = Penitip::findOrFail($id);
-        $bulanSekarang = Carbon::now()->month;
-        $tahunSekarang = Carbon::now()->year;
-
-        $penjualan = DB::table('transaksi_pembelian as tp')
-            ->join('keranjang as k', 'tp.id_keranjang', '=', 'k.id_keranjang')
-            ->join('detail_keranjang as dk', 'dk.id_keranjang', '=', 'k.id_keranjang')
-            ->join('item_keranjang as ik', 'ik.id_item_keranjang', '=', 'dk.id_item_keranjang')
-            ->join('barang as b', 'b.id_barang', '=', 'ik.id_barang')
-            ->join('transaksi_penitipan as tpen', 'b.id_transaksi_penitipan', '=', 'tpen.id_transaksi_penitipan')
-            ->where('tpen.id_penitip', $id)
-            ->whereMonth('tp.created_at', $bulanSekarang)
-            ->whereYear('tp.created_at', $tahunSekarang)
-            ->where('b.status_barang', 'sold')
-            ->where('tp.status_transaksi', 'selesai')
-            ->select(
-                'b.kode_barang',
-                'b.nama_barang',
-                'b.harga_barang',
-                DB::raw("DATE(tpen.tanggal_penitipan) as tanggal_masuk"),
-                DB::raw("DATE(tp.created_at) as tanggal_terjual")
-            )
-            ->get()
-            ->map(function ($item) {
-                $item->tanggal_masuk = Carbon::parse($item->tanggal_masuk);
-                $item->tanggal_terjual = Carbon::parse($item->tanggal_terjual);
-                $komisiReusemart = $item->harga_barang * 0.2;
-                $bonus = $item->tanggal_terjual->diffInDays($item->tanggal_masuk) < 7 ? ($komisiReusemart * 0.1) : 0;
-                $item->harga_bersih = $item->harga_barang - $komisiReusemart;
-                $item->bonus = $bonus;
-                $item->pendapatan = $item->harga_bersih + $bonus;
-                return $item;
-            });
-
-        if ($penjualan->isEmpty()) {
-            return redirect()->back()->with('error', 'Tidak ada transaksi penjualan selesai untuk penitip ini pada bulan ini.');
-        }
-
-        $pdf = Pdf::loadView('owner.consignment_report_pdf', [
-            'penitip' => $penitip,
-            'penjualan' => $penjualan,
-            'bulanSekarang' => $bulanSekarang,
-            'tahun' => $tahunSekarang
-        ]);
-
-        $namaBulan = Carbon::createFromDate(null, $bulanSekarang, 1)->format('F');
-        return $pdf->stream("Consignment_Report_{$penitip->nama_penitip}_{$namaBulan}_{$tahunSekarang}.pdf");
     }
 
     public function monthlySalesReport(Request $request)

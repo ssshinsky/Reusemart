@@ -96,12 +96,13 @@
             </table>
 
             <div class="chart-container">
-                @if($chartImage)
-                    <img src="data:image/png;base64,{{ $chartImage }}" alt="Grafik Penjualan" width="400" height="200">
-                @else
-                    <p>[Grafik Tidak Tersedia]</p>
-                @endif
-            </div>
+            @if($chartImage)
+                <p>GRAFIK PENJUALAN</p>
+                <img src="{{ $chartImage }}" alt="Grafik Penjualan" width="800" height="400" onerror="this.src='https://via.placeholder.com/400x200?text=Grafik+Gagal'">
+            @else
+                <p>Grafik Tidak Tersedia</p>
+            @endif
+        </div>
         </div>
     </div>
 </body>

@@ -573,11 +573,16 @@ public function downloadMonthlySalesOverview(\Illuminate\Http\Request $request)
             ];
         });
 
+        \Log::info('Sales Data: ' . $salesData->toJson());
+        \Log::info('All Months: ' . $allMonths->toJson());
+
         $totalBarang = $allMonths->sum('barang_terjual');
         $totalPenjualan = $allMonths->sum('penjualan_kotor_raw');
 
         // Generate chart image using GD
         $chartImage = $this->generateBarChart($allMonths);
+
+        \Log::info('Chart Image Base64 Length: ' . strlen($chartImage));
 
         $pdf = PDF::loadView('owner.monthly_sales_overview_pdf', compact('allMonths', 'date', 'totalBarang', 'totalPenjualan', 'chartImage'));
         $pdf->setPaper('A4', 'landscape');
@@ -631,6 +636,20 @@ public function downloadMonthlySalesOverview(\Illuminate\Http\Request $request)
         imagepng($image);
         $imageData = ob_get_clean();
         imagedestroy($image);
+
+        // Simpan gambar ke file untuk debug
+        $filePath = storage_path('app/public/test_chart.png');
+        imagepng($image, $filePath);
+
+        // Simpan ke base64
+        ob_start();
+        imagepng($image);
+        $imageData = ob_get_clean();
+        imagedestroy($image);
+
+        // Log panjang base64 untuk cek
+        \Log::info('Base64 Length: ' . strlen(base64_encode($imageData)));
+        \Log::info('Chart Saved to: ' . $filePath);
 
         return 'data:image/png;base64,' . base64_encode($imageData);
     }

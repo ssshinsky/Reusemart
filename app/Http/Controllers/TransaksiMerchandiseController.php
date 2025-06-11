@@ -8,10 +8,38 @@ use Illuminate\Http\Request;
 class TransaksiMerchandiseController extends Controller
 {
     // Menampilkan daftar semua transaksi merchandise
-    public function index()
+    public function index(Request $request)
     {
-        $transaksiMerchandises = TransaksiMerchandise::with(['merchandise', 'pembeli'])->get();
-        return view('CS.merchandise-claims', compact('transaksiMerchandises'));
+        $sortBy = $request->query('sort_by', 'tanggal_klaim');
+        $sortDir = $request->query('sort_dir', 'desc');
+
+        $validSortColumns = ['tanggal_klaim', 'total_poin_penukaran', 'jumlah', 'id_transaksi_merchandise'];
+        $sortBy = in_array($sortBy, $validSortColumns) ? $sortBy : 'tanggal_klaim';
+        $sortDir = in_array($sortDir, ['asc', 'desc']) ? $sortDir : 'desc';
+
+        $transaksiMerchandises = TransaksiMerchandise::with(['merchandise', 'pembeli'])
+            ->orderBy($sortBy, $sortDir)
+            ->get();
+
+        return view('CS.merchandise-claims', compact('transaksiMerchandises', 'sortBy', 'sortDir'));
+    }
+
+    public function juneClaims(Request $request)
+    {
+        $sortBy = $request->query('sort_by', 'tanggal_klaim');
+        $sortDir = $request->query('sort_dir', 'desc');
+
+        $validSortColumns = ['tanggal_klaim', 'total_poin_penukaran', 'jumlah', 'id_transaksi_merchandise'];
+        $sortBy = in_array($sortBy, $validSortColumns) ? $sortBy : 'tanggal_klaim';
+        $sortDir = in_array($sortDir, ['asc', 'desc']) ? $sortDir : 'desc';
+
+        $transaksiMerchandises = TransaksiMerchandise::with(['merchandise', 'pembeli'])
+            ->where('total_poin_penukaran', 100)
+            // ->whereYear('tanggal_klaim', 2025)
+            ->orderBy($sortBy, $sortDir)
+            ->get();
+
+        return view('CS.june-merchandise-claims', compact('transaksiMerchandises', 'sortBy', 'sortDir'));
     }
 
     // Menampilkan transaksi merchandise berdasarkan ID
@@ -67,7 +95,7 @@ class TransaksiMerchandiseController extends Controller
 
         $transaksiMerchandise->update([
             'tanggal_ambil_merch' => $request->tanggal_ambil_merch,
-            'status_transaksi' => 'diambil', // Otomatis ubah status ke diambil
+            'status_transaksi' => 'diambil',
         ]);
 
         return redirect()->route('cs.merchandise-claim.index')->with('success', 'Tanggal ambil berhasil diisi dan status diubah menjadi diambil!');

@@ -1,6 +1,6 @@
 @extends('CS.dashboard')
 
-@section('title', 'Merchandise Claims Management')
+@section('title', '100 Point Merchandise Claims')
 
 @section('content')
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
@@ -30,16 +30,15 @@
     </script>
 @endif
 
-<h2>Merchandise Claims Management</h2>
+<h2>100 Point Merchandise Claims</h2>
 
 <div style="margin: 1rem 0; display: flex; gap: 1rem; align-items: center;">
     <button class="btn-action" id="editToggle">📅 Aktifkan Isi Tanggal</button>
-    <a href="{{ route('cs.merchandise-claim.june') }}" class="btn-action">Lihat Klaim Poin 100</a>
     <span id="statusMessage" style="color: #dc3545; font-size: 14px; display: none;"></span>
 </div>
 
 <div style="margin-bottom: 1rem; display: flex; gap: 0.5rem; align-items: center;">
-    <input type="text" id="searchInput" placeholder="🔍 Search Claims" class="input-search" style="width: 100%;">
+    <input type="text" id="searchInput" placeholder="🔍 Search June Claims" class="input-search" style="width: 100%;">
 </div>
 
 <div class="table-container">
@@ -184,15 +183,11 @@
                 e.preventDefault();
                 const id = this.getAttribute('data-id');
                 const tanggal = this.querySelector('input[name="tanggal_ambil_merch"]').value;
+                const statusMessage = document.getElementById('statusMessage');
 
                 if (!tanggal) {
-                    Swal.fire({
-                        title: 'Error!',
-                        text: 'Tanggal ambil wajib diisi!',
-                        icon: 'error',
-                        confirmButtonColor: '#dc3545',
-                        confirmButtonText: 'OK'
-                    });
+                    statusMessage.textContent = 'Tanggal ambil wajib diisi!';
+                    statusMessage.style.display = 'block';
                     return;
                 }
 
@@ -275,7 +270,7 @@ body, h2, input, button, table, th, td, span {
 .col-klaim   { width: 120px; }
 .col-ambil   { width: 120px; }
 .col-status  { width: 100px; }
-.col-action {
+.col-action  {
     width: 180px;
     position: sticky;
     right: 0;
@@ -351,8 +346,6 @@ body, h2, input, button, table, th, td, span {
     background: white;
     cursor: pointer;
     font-weight: 500;
-    text-decoration: none;
-    color: #333;
 }
 .btn-action.active {
     background-color: #DCDCDC;

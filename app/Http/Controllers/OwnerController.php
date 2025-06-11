@@ -6,7 +6,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Carbon;
-use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\DB;
 use App\Models\RequestDonasi;
 use App\Models\Donasi;
@@ -19,7 +18,6 @@ use App\Models\ItemKeranjang;
 use App\Models\DetailKeranjang;
 use App\Models\Keranjang;
 use App\Models\TransaksiPenitipan;
-use Carbon\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
 
 class OwnerController extends Controller
@@ -131,72 +129,72 @@ class OwnerController extends Controller
     }
 
     public function storeAllocation(Request $request)
-{
-    $this->ensureOwner();
+    {
+        $this->ensureOwner();
 
-    $request->validate([
-        'id_request' => 'required|exists:request_donasi,id_request',
-        'id_barang' => 'required|exists:barang,id_barang',
-        'nama_penerima' => 'required|string',
-        'tanggal_donasi' => 'required|date',
-        'id_organisasi' => 'required|exists:organisasi,id_organisasi',
-    ]);
-
-    $barang = Barang::where('id_barang', $request->id_barang)
-        ->where('status_barang', 'barang untuk donasi')
-        ->with('transaksiPenitipan.penitip')
-        ->first();
-
-    if (!$barang) {
-        return redirect()->back()->with('error', 'Barang tidak tersedia untuk donasi.');
-    }
-
-    \DB::beginTransaction();
-    try {
-        $donasi = Donasi::create([
-            'id_request' => $request->id_request,
-            'id_barang' => $request->id_barang,
-            'nama_penerima' => $request->nama_penerima,
-            'tanggal_donasi' => $request->tanggal_donasi,
-            'status' => 'sudah di donasikan',
+        $request->validate([
+            'id_request' => 'required|exists:request_donasi,id_request',
+            'id_barang' => 'required|exists:barang,id_barang',
+            'nama_penerima' => 'required|string',
+            'tanggal_donasi' => 'required|date',
+            'id_organisasi' => 'required|exists:organisasi,id_organisasi',
         ]);
 
-        $barang->update(['status_barang' => 'didonasikan']);
+        $barang = Barang::where('id_barang', $request->id_barang)
+            ->where('status_barang', 'barang untuk donasi')
+            ->with('transaksiPenitipan.penitip')
+            ->first();
 
-        $poin_penitip = 0;
-        if ($barang->transaksiPenitipan && $barang->transaksiPenitipan->penitip) {
-            $hargaBarang = $barang->harga_barang ?? 0;
-            $poin_penitip = floor($hargaBarang / 10000);
-            $penitip = $barang->transaksiPenitipan->penitip;
-            \Log::info('Calculating poin for penitip', [
-                'id_barang' => $barang->id_barang,
-                'id_penitip' => $penitip->id_penitip,
-                'harga_barang' => $hargaBarang,
-                'poin_penitip' => $poin_penitip,
-            ]);
-            $penitip->increment('poin_penitip', $poin_penitip);
-            $penitip->save();
-            \Log::info('Poin updated for penitip', [
-                'id_penitip' => $penitip->id_penitip,
-                'new_poin' => $penitip->poin_penitip,
-            ]);
-        } else {
-            \Log::warning('Failed to calculate poin: transaksiPenitipan or penitip not found', [
-                'id_barang' => $barang->id_barang,
-                'transaksiPenitipan' => $barang->transaksiPenitipan ? 'exists' : 'null',
-                'penitip' => $barang->transaksiPenitipan && $barang->transaksiPenitipan->penitip ? 'exists' : 'null',
-            ]);
-            throw new \Exception('Gagal menghitung poin: Data penitip tidak ditemukan.');
+        if (!$barang) {
+            return redirect()->back()->with('error', 'Barang tidak tersedia untuk donasi.');
         }
 
-        \DB::commit();
-        return redirect()->back()->with('success', "Barang berhasil dialokasikan! Poin reward: $poin_penitip");
-    } catch (\Exception $e) {
-        \DB::rollback();
-        \Log::error('Failed to allocate item', ['error' => $e->getMessage()]);
-        return redirect()->back()->with('error', 'Gagal mengalokasikan barang: ' . $e->getMessage());
+        \DB::beginTransaction();
+        try {
+            $donasi = Donasi::create([
+                'id_request' => $request->id_request,
+                'id_barang' => $request->id_barang,
+                'nama_penerima' => $request->nama_penerima,
+                'tanggal_donasi' => $request->tanggal_donasi,
+                'status' => 'sudah di donasikan',
+            ]);
+
+            $barang->update(['status_barang' => 'didonasikan']);
+
+            $poin_penitip = 0;
+            if ($barang->transaksiPenitipan && $barang->transaksiPenitipan->penitip) {
+                $hargaBarang = $barang->harga_barang ?? 0;
+                $poin_penitip = floor($hargaBarang / 10000);
+                $penitip = $barang->transaksiPenitipan->penitip;
+                \Log::info('Calculating poin for penitip', [
+                    'id_barang' => $barang->id_barang,
+                    'id_penitip' => $penitip->id_penitip,
+                    'harga_barang' => $hargaBarang,
+                    'poin_penitip' => $poin_penitip,
+                ]);
+                $penitip->increment('poin_penitip', $poin_penitip);
+                $penitip->save();
+                \Log::info('Poin updated for penitip', [
+                    'id_penitip' => $penitip->id_penitip,
+                    'new_poin' => $penitip->poin_penitip,
+                ]);
+            } else {
+                \Log::warning('Failed to calculate poin: transaksiPenitipan or penitip not found', [
+                    'id_barang' => $barang->id_barang,
+                    'transaksiPenitipan' => $barang->transaksiPenitipan ? 'exists' : 'null',
+                    'penitip' => $barang->transaksiPenitipan && $barang->transaksiPenitipan->penitip ? 'exists' : 'null',
+                ]);
+                throw new \Exception('Gagal menghitung poin: Data penitip tidak ditemukan.');
+            }
+
+            \DB::commit();
+            return redirect()->back()->with('success', "Barang berhasil dialokasikan! Poin reward: $poin_penitip");
+        } catch (\Exception $e) {
+            \DB::rollback();
+            \Log::error('Failed to allocate item', ['error' => $e->getMessage()]);
+            return redirect()->back()->with('error', 'Gagal mengalokasikan barang: ' . $e->getMessage());
+        }
     }
-}
 
     public function donationHistory(Request $request)
     {
@@ -348,6 +346,7 @@ class OwnerController extends Controller
 
         $namaBulan = Carbon::createFromDate(null, $bulanSekarang, 1)->format('F');
         return $pdf->stream("Consignment_Report_{$penitip->nama_penitip}_{$namaBulan}_{$tahunSekarang}.pdf");
+    }
       
     public function penjualanPerKategori(Request $request)
     {
@@ -366,7 +365,7 @@ class OwnerController extends Controller
                         $queryDetailKeranjang->whereHas('keranjang', function ($queryKeranjang) use ($year) {
                             $queryKeranjang->whereHas('transaksiPembelian', function ($queryTransaksiPembelian) use ($year) {
                                 $queryTransaksiPembelian->whereYear('tanggal_pembelian', $year)
-                                                        ->where('status_transaksi', 'Done');
+                                    ->where('status_transaksi', 'Done');
                             });
                         });
                     });
@@ -404,7 +403,7 @@ class OwnerController extends Controller
                         $queryDetailKeranjang->whereHas('keranjang', function ($queryKeranjang) use ($year) {
                             $queryKeranjang->whereHas('transaksiPembelian', function ($queryTransaksiPembelian) use ($year) {
                                 $queryTransaksiPembelian->whereYear('tanggal_pembelian', $year)
-                                                        ->where('status_transaksi', 'Done');
+                                    ->where('status_transaksi', 'Done');
                             });
                         });
                     });

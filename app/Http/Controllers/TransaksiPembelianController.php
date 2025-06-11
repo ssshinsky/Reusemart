@@ -11,6 +11,7 @@ use App\Models\ItemKeranjang;
 use App\Models\Alamat;
 use App\Models\Schedule;
 use App\Models\Delivery;
+use App\Models\Barang;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
@@ -917,8 +918,46 @@ class TransaksiPembelianController extends Controller
         }
     }
 
+    /**
+     * Update status barang yang lewat 7 hari dari tanggal_berakhir
+     * dan masih 'menunggu pengambilan penitip' jadi 'barang untuk donasi'
+     */
+    protected function updateExpiredConsignmentItems()
+    {
+        try {
+            $sevenDaysAgo = Carbon::now()->subDays(7);
+
+            // Ambil barang yang memenuhi syarat
+            $expiredItems = Barang::where('status_barang', 'menunggu pengambilan penitip')
+                ->where('tanggal_berakhir', '<=', $sevenDaysAgo)
+                ->get();
+
+            if ($expiredItems->isEmpty()) {
+                Log::info('No expired consignment items found for donation update.');
+                return;
+            }
+
+            // Update status barang
+            $updatedCount = 0;
+            foreach ($expiredItems as $item) {
+                $item->status_barang = 'barang untuk donasi';
+                $item->save();
+                $updatedCount++;
+
+                Log::info("Updated item to donation: id_barang={$item->id_barang}, nama_barang={$item->nama_barang}, tanggal_berakhir={$item->tanggal_berakhir}");
+            }
+
+            Log::info("Updated {$updatedCount} expired consignment items to 'barang untuk donasi'.");
+        } catch (\Exception $e) {
+            Log::error("Error updating expired consignment items: {$e->getMessage()}");
+        }
+    }
+
     public function indextop()
     {
+        // Panggil fungsi update status barang
+        $this->updateExpiredConsignmentItems();
+
         // Ambil barang terbatas (logika existing)
         $barangTerbatas = \App\Models\Barang::with('gambar')
             ->where('status_barang', 'tersedia')

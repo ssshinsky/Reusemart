@@ -78,6 +78,23 @@
             border-radius: 4px;
         }
 
+        .menu-item button {
+            background: none;
+            border: none;
+            color: #212529;
+            font-family: 'Poppins', sans-serif;
+            font-size: 16px;
+            font-weight: 700;
+            text-align: left;
+            padding: 0;
+            margin: 0;
+            cursor: pointer;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
         .card-stat {
             width: 240px;
             height: 80px;
@@ -186,6 +203,12 @@
                 class="menu-item {{ request()->is('admin/products*') ? 'active' : '' }}">🏷️ Products</a>
             <a href="{{ route('admin.merch.index') }}"
                 class="menu-item {{ request()->is('admin/merchandise*') ? 'active' : '' }}">🎁 Merchandise</a>
+            <div class="menu-item">
+                <form action="{{ route('admin.process-top-seller') }}" method="POST" id="topSellerForm">
+                    @csrf
+                    <button type="button" onclick="confirmProcessTopSeller()">🏆 Proses Top Seller</button>
+                </form>
+            </div>
         </div>
 
         <!-- DYNAMIC CONTENT -->
@@ -206,6 +229,42 @@
                 document.getElementById("dropdownContent").style.display = "none";
             }
         }
+
+        function confirmProcessTopSeller() {
+            Swal.fire({
+                title: 'Yakin ingin memproses?',
+                text: 'Proses Top Seller akan menentukan penjual terbaik berdasarkan penjualan terbanyak.',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#30B878',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Ya, proses!',
+                cancelButtonText: 'Batal'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.getElementById('topSellerForm').submit();
+                }
+            });
+        }
+    </script>
+
+    <script>
+        @if (session('success'))
+            Swal.fire({
+                icon: 'success',
+                title: 'Berhasil!',
+                text: '{{ session('success') }}',
+                confirmButtonColor: '#30B878'
+            });
+        @endif
+        @if (session('error'))
+            Swal.fire({
+                icon: 'error',
+                title: 'Gagal!',
+                text: '{{ session('error') }}',
+                confirmButtonColor: '#d33'
+            });
+        @endif
     </script>
 </body>
 

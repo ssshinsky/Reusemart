@@ -108,6 +108,71 @@
         nav a:hover {
             color: green;
         }
+
+        .leaderboard-card {
+            background-color: #ffffff;
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .leaderboard-card h3 {
+            color: #2E7D32;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .leaderboard-card .trophy-icon {
+            font-size: 40px;
+            color: #FFD700;
+            margin-bottom: 10px;
+        }
+
+        .leaderboard-card .seller-name {
+            font-size: 24px;
+            font-weight: 600;
+            color: #333;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .leaderboard-card .stats {
+            font-size: 14px;
+            color: #666;
+            margin-top: 10px;
+        }
+
+        .top-seller-badge {
+            display: inline-flex;
+            align-items: center;
+            background-color: #2E7D32;
+            color: white;
+            font-size: 12px;
+            font-weight: 500;
+            padding: 4px 8px;
+            border-radius: 12px;
+            gap: 4px;
+        }
+
+        .top-seller-badge i {
+            font-size: 14px;
+        }
+
+        @media (max-width: 576px) {
+            .leaderboard-card .seller-name {
+                font-size: 20px;
+            }
+            .top-seller-badge {
+                font-size: 10px;
+                padding: 3px 6px;
+            }
+            .top-seller-badge i {
+                font-size: 12px;
+            }
+        }
     </style>
 </head>
 
@@ -122,6 +187,29 @@
             </div>
             <img src="/assets/images/banner.jpg" alt="Banner" class="img-fluid rounded shadow"
                 style="max-height: 255px;">
+        </div>
+    </div>
+
+    <div class="container mb-5">
+        <h5 class="mb-3 fw-bold">TOP SELLER OF {{ $lastMonth }}</h5>
+        <div class="leaderboard-card">
+            @if ($topSeller && $topSellerDetails)
+                <i class="fas fa-trophy trophy-icon"></i>
+                <h3>Top Seller</h3>
+                <div class="seller-name">
+                    {{ $topSeller->nama_penitip }}
+                    <span class="top-seller-badge"><i class="fas fa-medal"></i> Top Seller</span>
+                </div>
+                <!-- <div class="stats">
+                    <p>{{ $topSellerDetails->sold_count }} items sold</p>
+                    <p>Total Sales: Rp{{ number_format($topSellerDetails->total_sales, 0, ',', '.') }}</p>
+                </div> -->
+            @else
+                <h3>No Top Seller Yet</h3>
+                <div class="stats">
+                    <p>Top Seller for {{ $lastMonth }} has not been processed.</p>
+                </div>
+            @endif
         </div>
     </div>
 

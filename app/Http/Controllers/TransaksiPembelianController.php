@@ -11,26 +11,33 @@ use App\Models\ItemKeranjang;
 use App\Models\Alamat;
 use App\Models\Schedule;
 use App\Models\Delivery;
-use App\Models\Transaction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon;
 
 class TransaksiPembelianController extends Controller
 {
     private $baseUrl = 'http://10.53.9.31:8000/api';
 
+    private function ensureAdmin()
+    {
+        if (!Auth::guard('pegawai')->check() || Auth::guard('pegawai')->user()->id_role != 2) {
+            abort(403, 'Akses ditolak.');
+        }
+    }
+
     public function index()
     {
         $transaksiPembelian = TransaksiPembelian::with([
-            'keranjang.detailKeranjang.itemKeranjang.barang.penitip',
+            'keranjang.detailKeranjang.itemKeranjang.barang.transaksiPenitipan.penitip',
             'keranjang.detailKeranjang.itemKeranjang.pembeli'
         ])->get();
         return response()->json($transaksiPembelian);
     }
 
-    // Menambahkan transaksi pembelian baru
     public function store(Request $request)
     {
         $request->validate([
@@ -133,7 +140,6 @@ class TransaksiPembelianController extends Controller
         return response()->json(['message' => 'Transaksi pembelian deleted successfully']);
     }
 
-    // Membatalkan transaksi secara otomatis
     public function batalkanOtomatis($id)
     {
         $keranjang = Keranjang::with('detailKeranjang.itemKeranjang.barang')->find($id);
@@ -145,7 +151,7 @@ class TransaksiPembelianController extends Controller
         foreach ($keranjang->detailKeranjang as $detail) {
             $barang = $detail->itemKeranjang->barang;
             if ($barang) {
-                $barang->stok += $detail->jumlah; // Asumsi ada kolom stok di model Barang
+                $barang->stok += $detail->jumlah;
                 $barang->save();
             }
         }
@@ -156,13 +162,11 @@ class TransaksiPembelianController extends Controller
         return redirect()->route('pembeli.keranjang')->with('success', 'Checkout dibatalkan otomatis karena melewati batas waktu.');
     }
 
-    // Proses pembayaran
     public function bayar(Request $request)
     {
         Log::info('Bayar Request:', $request->all());
 
         try {
-            // Validasi input
             $request->validate([
                 'bukti_pembayaran' => 'required|image|mimes:jpeg,png,jpg|max:2048',
                 'poin_ditukar' => 'nullable|integer|min:0',
@@ -177,7 +181,6 @@ class TransaksiPembelianController extends Controller
             $idAlamat = $metodePengiriman === 'ambil' ? null : session('checkout_id_alamat');
             $totalHarga = session('checkout_total_harga');
 
-            // Validasi session
             if (!$keranjangId || !$metodePengiriman || !$totalHarga) {
                 Log::error('Missing session data', [
                     'keranjangId' => $keranjangId,
@@ -187,20 +190,17 @@ class TransaksiPembelianController extends Controller
                 return redirect()->back()->with('error', 'Data checkout tidak lengkap.');
             }
 
-            // Validasi keranjang
             $keranjang = Keranjang::find($keranjangId);
             if (!$keranjang) {
                 Log::error('Keranjang not found', ['keranjangId' => $keranjangId]);
                 return redirect()->back()->with('error', 'Keranjang tidak ditemukan.');
             }
 
-            // Validasi alamat (jika metode bukan 'ambil')
             if ($metodePengiriman === 'kurir' && $idAlamat && !Alamat::find($idAlamat)) {
                 Log::error('Alamat not found', ['idAlamat' => $idAlamat]);
                 return redirect()->back()->with('error', 'Alamat tidak ditemukan.');
             }
 
-            // Simpan bukti pembayaran
             $buktiTf = null;
             if ($request->hasFile('bukti_pembayaran')) {
                 try {
@@ -215,10 +215,8 @@ class TransaksiPembelianController extends Controller
                 return redirect()->back()->with('error', 'Bukti pembayaran tidak ditemukan.');
             }
 
-            // Hitung ongkir
             $ongkir = ($totalHarga >= 1500000 || $metodePengiriman !== 'kurir') ? 0 : 100000;
 
-            // Generate nomor resi
             $tahun = now()->format('Y');
             $bulan = now()->format('m');
             $jumlahTransaksiBulanIni = TransaksiPembelian::whereYear('created_at', $tahun)
@@ -227,7 +225,6 @@ class TransaksiPembelianController extends Controller
             $nomorUrut = str_pad($jumlahTransaksiBulanIni + 1, 3, '0', STR_PAD_LEFT);
             $noResi = $tahun . '.' . $bulan . '.' . $nomorUrut;
 
-            // Simpan transaksi dalam transaksi database
             DB::beginTransaction();
             $transaksi = TransaksiPembelian::create([
                 'id_keranjang' => $keranjangId,
@@ -246,7 +243,6 @@ class TransaksiPembelianController extends Controller
                 'poin_penitip' => 0,
             ]);
 
-            // Update poin pembeli
             $pembeli = Pembeli::find($idPembeli);
             $newPoin = ($pembeli->poin_pembeli - ($request->poin_ditukar ?? 0)) + ($request->bonus_poin ?? 0);
             if ($newPoin < 0) {
@@ -255,13 +251,10 @@ class TransaksiPembelianController extends Controller
             $pembeli->poin_pembeli = $newPoin;
             $pembeli->save();
 
-            // Hapus item keranjang
             ItemKeranjang::whereIn('id_item_keranjang', session('checkout_selected_items'))->delete();
 
-            // Commit transaksi
             DB::commit();
 
-            // Clear session
             session()->forget(['checkout_keranjang_id', 'checkout_selected_items', 'checkout_metode_pengiriman', 'checkout_id_alamat', 'checkout_total_harga']);
 
             Log::info('Transaksi created:', $transaksi->toArray());
@@ -277,7 +270,7 @@ class TransaksiPembelianController extends Controller
             return redirect()->back()->with('error', 'Gagal menyimpan transaksi: ' . $e->getMessage());
         }
     }
-    // Upload bukti transfer
+
     public function uploadBukti(Request $request, $id)
     {
         $request->validate(['bukti_tf' => 'required|image|mimes:jpeg,png,jpg|max:2048']);
@@ -294,11 +287,10 @@ class TransaksiPembelianController extends Controller
         return back()->with('success', 'Bukti transfer berhasil diupload.');
     }
 
-    // Menampilkan daftar transaksi untuk CS
     public function show()
     {
         $transaksi = TransaksiPembelian::with([
-            'keranjang.detailKeranjang.itemKeranjang.barang.penitip',
+            'keranjang.detailKeranjang.itemKeranjang.barang.transaksiPenitipan.penitip',
             'keranjang.detailKeranjang.itemKeranjang.pembeli'
         ])
             ->orderBy('tanggal_pembelian', 'desc')
@@ -307,7 +299,6 @@ class TransaksiPembelianController extends Controller
         return view('cs.transaksi-pembelian.index', compact('transaksi'));
     }
 
-    // Verifikasi transaksi
     public function verify(Request $request, $id_pembelian)
     {
         try {
@@ -334,12 +325,11 @@ class TransaksiPembelianController extends Controller
 
                 foreach ($detailKeranjang as $detail) {
                     $item = ItemKeranjang::find($detail->id_item_keranjang);
-                    if ($item && $item->barang && $item->barang->penitip) {
-                        $penitipIds[] = $item->barang->penitip->id_penitip;
+                    if ($item && $item->barang && $item->barang->transaksiPenitipan) {
+                        $penitipIds[] = $item->barang->transaksiPenitipan->id_penitip;
                     }
                 }
 
-                // Kirim notifikasi ke penitip
                 foreach ($penitipIds as $penitipId) {
                     Http::post($this->baseUrl . '/send-notification', [
                         'user_id' => $penitipId,
@@ -351,10 +341,8 @@ class TransaksiPembelianController extends Controller
                     ]);
                 }
 
-                // Kirim notifikasi ke pembeli
-                $pembeliId = $keranjang->id_pembeli;
                 Http::post($this->baseUrl . '/send-notification', [
-                    'user_id' => $pembeliId,
+                    'user_id' => $keranjang->id_pembeli,
                     'role' => 'pembeli',
                     'title' => 'Pembayaran Terverifikasi',
                     'body' => 'Pembayaran untuk transaksi ' . $transaksi->no_resi . ' telah diverifikasi.',
@@ -368,7 +356,6 @@ class TransaksiPembelianController extends Controller
                 $transaksi->status_transaksi = 'Dibatalkan';
                 $transaksi->save();
 
-                // Kembalikan stok barang
                 $keranjang = Keranjang::find($transaksi->id_keranjang);
                 foreach ($keranjang->detailKeranjang as $detail) {
                     $barang = $detail->itemKeranjang->barang;
@@ -378,10 +365,8 @@ class TransaksiPembelianController extends Controller
                     }
                 }
 
-                // Kirim notifikasi ke pembeli
-                $pembeliId = $keranjang->id_pembeli;
                 Http::post($this->baseUrl . '/send-notification', [
-                    'user_id' => $pembeliId,
+                    'user_id' => $keranjang->id_pembeli,
                     'role' => 'pembeli',
                     'title' => 'Transaksi Dibatalkan',
                     'body' => 'Transaksi ' . $transaksi->no_resi . ' dibatalkan karena bukti pembayaran tidak valid.',
@@ -403,12 +388,11 @@ class TransaksiPembelianController extends Controller
         }
     }
 
-    // Pencarian transaksi
     public function search(Request $request)
     {
         $query = $request->query('q', '');
         $transaksi = TransaksiPembelian::with([
-            'keranjang.detailKeranjang.itemKeranjang.barang.penitip',
+            'keranjang.detailKeranjang.itemKeranjang.barang.transaksiPenitipan.penitip',
             'keranjang.detailKeranjang.itemKeranjang.pembeli'
         ])
             ->where('no_resi', 'LIKE', "%{$query}%")
@@ -421,7 +405,6 @@ class TransaksiPembelianController extends Controller
         return view('cs.verifikasi_transaksi_table', compact('transaksi'))->render();
     }
 
-    // Menampilkan riwayat transaksi pembeli
     public function riwayat(Request $request)
     {
         $user = session('user');
@@ -450,7 +433,6 @@ class TransaksiPembelianController extends Controller
         return view('pembeli.history', compact('transaksi'));
     }
 
-    // Menampilkan detail transaksi
     public function detail($id)
     {
         $user = session('user');
@@ -483,7 +465,6 @@ class TransaksiPembelianController extends Controller
         return view('pembeli.transaksi_detail', compact('transaksi'));
     }
 
-    // Mengupdate status pengiriman
     public function updateDeliveryStatus(Request $request, $id)
     {
         $request->validate([
@@ -514,7 +495,6 @@ class TransaksiPembelianController extends Controller
         return response()->json(['message' => 'Delivery status updated']);
     }
 
-    // Validasi pembayaran
     public function validatePayment(Request $request, $transactionId)
     {
         $transaction = TransaksiPembelian::findOrFail($transactionId);
@@ -526,12 +506,11 @@ class TransaksiPembelianController extends Controller
 
         foreach ($detailKeranjang as $detail) {
             $item = ItemKeranjang::find($detail->id_item_keranjang);
-            if ($item && $item->barang && $item->barang->penitip) {
-                $penitipIds[] = $item->barang->penitip->id_penitip;
+            if ($item && $item->barang && $item->barang->transaksiPenitipan) {
+                $penitipIds[] = $item->barang->transaksiPenitipan->id_penitip;
             }
         }
 
-        // Kirim notifikasi ke penitip
         foreach ($penitipIds as $penitipId) {
             Http::post($this->baseUrl . '/send-notification', [
                 'user_id' => $penitipId,
@@ -543,7 +522,6 @@ class TransaksiPembelianController extends Controller
             ]);
         }
 
-        // Kirim notifikasi ke pembeli
         Http::post($this->baseUrl . '/send-notification', [
             'user_id' => $keranjang->id_pembeli,
             'role' => 'pembeli',
@@ -556,7 +534,6 @@ class TransaksiPembelianController extends Controller
         return response()->json(['message' => 'Payment validated']);
     }
 
-    // Membuat jadwal pengiriman
     public function createDeliverySchedule(Request $request)
     {
         $request->validate([
@@ -589,7 +566,6 @@ class TransaksiPembelianController extends Controller
         return response()->json(['message' => 'Delivery schedule created']);
     }
 
-    // Membuat jadwal pengambilan barang
     public function createPickupSchedule(Request $request)
     {
         $request->validate([
@@ -641,7 +617,9 @@ class TransaksiPembelianController extends Controller
             })
             ->get();
 
-        return view('Pembeli.history', compact('riwayat'));
+        $topSeller = Penitip::where('badge', 1)->first();
+
+        return view('Pembeli.history', compact('riwayat', 'topSeller'));
     }
 
     public function showRatingPage($id)
@@ -661,7 +639,6 @@ class TransaksiPembelianController extends Controller
             })
             ->firstOrFail();
 
-        // Periksa apakah ada barang yang belum dirating
         $hasUnratedItems = $transaksi->keranjang->detailKeranjang->contains(function ($detail) {
             return is_null($detail->itemKeranjang->barang->rating);
         });
@@ -711,22 +688,18 @@ class TransaksiPembelianController extends Controller
                 $rating = $ratings[$barangId] ?? null;
 
                 if ($rating && is_null($barang->rating)) {
-                    // Simpan rating di tabel barang
                     $barang->update(['rating' => $rating]);
 
-                    // Update rata_rating dan banyak_rating di penitip
                     $transaksiPenitipan = $barang->transaksiPenitipan;
                     if ($transaksiPenitipan) {
                         $penitip = $transaksiPenitipan->penitip;
                         $currentAverage = $penitip->rata_rating ?? 0;
                         $currentCount = $penitip->banyak_rating ?? 0;
 
-                        // Hitung rata-rata baru: ((rata_rating * banyak_rating) + rating) / (banyak_rating + 1)
                         $newAverage = ($currentCount > 0)
                             ? (($currentAverage * $currentCount) + $rating) / ($currentCount + 1)
                             : $rating;
 
-                        // Update penitip
                         $penitip->update([
                             'rata_rating' => $newAverage,
                             'banyak_rating' => $currentCount + 1,
@@ -748,11 +721,94 @@ class TransaksiPembelianController extends Controller
             return redirect()->route('pembeli.purchase')->with('success', 'Rating berhasil disubmit!');
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Error rating transaction: ' . $e->getMessage(), [
-                'transaksi_id' => $id,
-                'user_id' => $idPembeli,
-            ]);
+            Log::error('Error rating transaction', ['transaksi_id' => $id, 'user_id' => $idPembeli, 'error' => $e->getMessage()]);
             return redirect()->back()->with('error', 'Terjadi kesalahan saat menyimpan rating.');
+        }
+    }
+
+    public function processTopSeller()
+    {
+        Log::info('processTopSeller started', ['user_id' => Auth::guard('pegawai')->id()]);
+        $this->ensureAdmin();
+
+        try {
+            DB::beginTransaction();
+
+            $lastMonth = Carbon::now()->subMonth()->format('Y-m');
+            $lastMonthStart = Carbon::now()->subMonth()->startOfMonth();
+            $lastMonthEnd = Carbon::now()->subMonth()->endOfMonth();
+
+            $existingTopSeller = Penitip::where('badge', 1)
+                ->where('updated_at', '>=', $lastMonthStart)
+                ->where('updated_at', '<=', $lastMonthEnd)
+                ->exists();
+            Log::info('existingTopSeller check', ['exists' => $existingTopSeller]);
+            if ($existingTopSeller) {
+                DB::rollBack();
+                return redirect()->back()->with('error', "Top Seller untuk bulan $lastMonth sudah diproses.");
+            }
+
+            Penitip::where('badge', 1)->update(['badge' => 0]);
+
+            $topSeller = TransaksiPembelian::where('status_transaksi', 'Selesai')
+                ->whereBetween('tanggal_pembelian', [$lastMonthStart, $lastMonthEnd])
+                ->join('keranjang', 'transaksi_pembelian.id_keranjang', '=', 'keranjang.id_keranjang')
+                ->join('detail_keranjang', 'keranjang.id_keranjang', '=', 'detail_keranjang.id_keranjang')
+                ->join('item_keranjang', 'detail_keranjang.id_item_keranjang', '=', 'item_keranjang.id_item_keranjang')
+                ->join('barang', 'item_keranjang.id_barang', '=', 'barang.id_barang')
+                ->join('transaksi_penitipan', 'barang.id_transaksi_penitipan', '=', 'transaksi_penitipan.id_transaksi_penitipan')
+                ->join('penitip', 'transaksi_penitipan.id_penitip', '=', 'penitip.id_penitip')
+                ->select(
+                    'penitip.id_penitip',
+                    'penitip.nama_penitip',
+                    DB::raw('SUM(keranjang.banyak_barang) as sold_count')
+                )
+                ->groupBy('penitip.id_penitip', 'penitip.nama_penitip')
+                ->orderByDesc('sold_count')
+                ->first();
+
+            Log::info('TopSeller query result', ['topSeller' => $topSeller ? $topSeller->toArray() : null]);
+            if (!$topSeller) {
+                DB::rollBack();
+                return redirect()->back()->with('error', 'Tidak ada transaksi selesai bulan lalu untuk memilih Top Seller.');
+            }
+
+            $totalSales = TransaksiPembelian::where('status_transaksi', 'Selesai')
+                ->whereBetween('tanggal_pembelian', [$lastMonthStart, $lastMonthEnd])
+                ->join('keranjang', 'transaksi_pembelian.id_keranjang', '=', 'keranjang.id_keranjang')
+                ->join('detail_keranjang', 'keranjang.id_keranjang', '=', 'detail_keranjang.id_keranjang')
+                ->join('item_keranjang', 'detail_keranjang.id_item_keranjang', '=', 'item_keranjang.id_item_keranjang')
+                ->join('barang', 'item_keranjang.id_barang', '=', 'barang.id_barang')
+                ->join('transaksi_penitipan', 'barang.id_transaksi_penitipan', '=', 'transaksi_penitipan.id_transaksi_penitipan')
+                ->where('transaksi_penitipan.id_penitip', $topSeller->id_penitip)
+                ->sum(DB::raw('barang.harga_barang * keranjang.banyak_barang'));
+
+            $bonusPoints = floor($totalSales * 0.005);
+
+            $penitip = Penitip::findOrFail($topSeller->id_penitip);
+            $penitip->update([
+                'badge' => 1,
+                'poin_penitip' => ($penitip->poin_penitip ?? 0) + $bonusPoints
+            ]);
+
+            Log::info('Top Seller processed', [
+                'month' => $lastMonth,
+                'penitip_id' => $topSeller->id_penitip,
+                'nama_penitip' => $topSeller->nama_penitip,
+                'sold_count' => $topSeller->sold_count,
+                'total_sales' => $totalSales,
+                'bonus_points' => $bonusPoints
+            ]);
+
+            DB::commit();
+            return redirect()->back()->with('success', "Memberikan Top Seller $lastMonth: {$topSeller->nama_penitip} sebanyak $bonusPoints poin.");
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error processing Top Seller', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return redirect()->back()->with('error', 'Gagal memproses Top Seller: ' . $e->getMessage());
         }
     }
 
@@ -859,5 +915,89 @@ class TransaksiPembelianController extends Controller
             ]);
             return response()->json(['message' => 'Error fetching purchase history'], 500);
         }
+    }
+
+    public function indextop()
+    {
+        // Ambil barang terbatas (logika existing)
+        $barangTerbatas = \App\Models\Barang::with('gambar')
+            ->where('status_barang', 'tersedia')
+            ->take(12) // Contoh limit
+            ->get();
+
+        // Ambil Top Seller
+        $lastMonthStart = Carbon::now()->subMonth()->startOfMonth();
+        $lastMonthEnd = Carbon::now()->subMonth()->endOfMonth();
+        $lastMonth = Carbon::now()->subMonth()->format('Y-m');
+
+        $topSeller = Penitip::where('badge', 1)->first();
+
+        $topSellerDetails = null;
+        if ($topSeller) {
+            $topSellerDetails = TransaksiPembelian::where('status_transaksi', 'Selesai')
+                ->whereBetween('tanggal_pembelian', [$lastMonthStart, $lastMonthEnd])
+                ->join('keranjang', 'transaksi_pembelian.id_keranjang', '=', 'keranjang.id_keranjang')
+                ->join('detail_keranjang', 'keranjang.id_keranjang', '=', 'detail_keranjang.id_keranjang')
+                ->join('item_keranjang', 'detail_keranjang.id_item_keranjang', '=', 'item_keranjang.id_item_keranjang')
+                ->join('barang', 'item_keranjang.id_barang', '=', 'barang.id_barang')
+                ->join('transaksi_penitipan', 'barang.id_transaksi_penitipan', '=', 'transaksi_penitipan.id_transaksi_penitipan')
+                ->where('transaksi_penitipan.id_penitip', $topSeller->id_penitip)
+                ->select(
+                    'penitip.id_penitip',
+                    'penitip.nama_penitip',
+                    DB::raw('SUM(keranjang.banyak_barang) as sold_count'),
+                    DB::raw('SUM(barang.harga_barang * keranjang.banyak_barang) as total_sales')
+                )
+                ->join('penitip', 'transaksi_penitipan.id_penitip', '=', 'penitip.id_penitip')
+                ->groupBy('penitip.id_penitip', 'penitip.nama_penitip')
+                ->first();
+        }
+
+        return view('welcome', compact('barangTerbatas', 'topSeller', 'topSellerDetails', 'lastMonth'));
+    }
+
+    public function indextopapi()
+    {
+        // Ambil Top Seller
+        $lastMonthStart = Carbon::now()->subMonth()->startOfMonth();
+        $lastMonthEnd = Carbon::now()->subMonth()->endOfMonth();
+        $lastMonth = Carbon::now()->subMonth()->format('Y-m');
+
+        $topSeller = Penitip::where('badge', 1)->first();
+
+        $topSellerDetails = null;
+        if ($topSeller) {
+            $topSellerDetails = TransaksiPembelian::where('status_transaksi', 'Selesai')
+                ->whereBetween('tanggal_pembelian', [$lastMonthStart, $lastMonthEnd])
+                ->join('keranjang', 'transaksi_pembelian.id_keranjang', '=', 'keranjang.id_keranjang')
+                ->join('detail_keranjang', 'keranjang.id_keranjang', '=', 'detail_keranjang.id_keranjang')
+                ->join('item_keranjang', 'detail_keranjang.id_item_keranjang', '=', 'item_keranjang.id_item_keranjang')
+                ->join('barang', 'item_keranjang.id_barang', '=', 'barang.id_barang')
+                ->join('transaksi_penitipan', 'barang.id_transaksi_penitipan', '=', 'transaksi_penitipan.id_transaksi_penitipan')
+                ->where('transaksi_penitipan.id_penitip', $topSeller->id_penitip)
+                ->select(
+                    'penitip.id_penitip',
+                    'penitip.nama_penitip',
+                    'penitip.profil_pict',
+                    DB::raw('SUM(keranjang.banyak_barang) as sold_count'),
+                    DB::raw('SUM(barang.harga_barang * keranjang.banyak_barang) as total_sales')
+                )
+                ->join('penitip', 'transaksi_penitipan.id_penitip', '=', 'penitip.id_penitip')
+                ->groupBy('penitip.id_penitip', 'penitip.nama_penitip', 'penitip.profil_pict')
+                ->first();
+        }
+
+        $response = [
+            'last_month' => $lastMonth,
+            'top_seller' => $topSellerDetails ? [
+                'id_penitip' => $topSellerDetails->id_penitip,
+                'nama_penitip' => $topSellerDetails->nama_penitip,
+                'profil_pict' => $topSellerDetails->profil_pict ? asset('storage/' . $topSellerDetails->profil_pict) : null,
+                'sold_count' => (int) $topSellerDetails->sold_count,
+                'total_sales' => (float) $topSellerDetails->total_sales,
+            ] : null,
+        ];
+
+        return response()->json($response);
     }
 }

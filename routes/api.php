@@ -23,10 +23,11 @@ Route::post('/pegawai/login', [PegawaiController::class, 'login']);
 Route::get('/barang/{id}', [BarangController::class, 'show'])->name('barang.show');
 // Route::post('/diskusi/store', [DiskusiProdukController::class, 'store'])->name('diskusi.store')->middleware('auth:pembeli');
 
-Route::get('/top-seller', [PenitipController::class, 'getTopSeller']);
+// Route::get('/top-seller', [PenitipController::class, 'getTopSeller']);
 Route::get('/barang', [BarangController::class, 'apiIndex']);
 Route::get('/barang/{id}', [BarangController::class, 'apiShow']);
 Route::get('/kategori', [BarangController::class, 'getKategoriApi']);
+Route::get('/top-seller', [TransaksiPembelianController::class, 'indextopapi'])->name('api.top-seller');
 
 Route::middleware('auth:api')->group(function () {
     // Logout Pegawai

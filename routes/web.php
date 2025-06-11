@@ -205,8 +205,14 @@ Route::prefix('admin')->middleware(['auth:pegawai', 'pegawai.role:2'])->group(fu
     Route::get('/merchandise/search', [MerchandiseController::class, 'search'])->name('admin.merchandise.search');
     Route::get('/merchandise/{id}/edit', [MerchandiseController::class, 'edit'])->name('admin.merchandise.edit');
     Route::put('/merchandise/{id}', [MerchandiseController::class, 'update'])->name('admin.merchandise.update');
+
+    
+    // Route baru untuk Process Top Seller
+    Route::post('/process-top-seller', [TransaksiPembelianController::class, 'processTopSeller'])->name('admin.process-top-seller');
 });
 
+Route::post('/admin/process-top-seller', [TransaksiPembelianController::class, 'processTopSeller'])->name('admin.process-top-seller');
+Route::get('/', [TransaksiPembelianController::class, 'indextop'])->name('welcome');
 // CS Routes
 Route::prefix('cs')->middleware(['auth:pegawai', 'pegawai.role:3'])->group(function () {
     Route::get('/dashboard', function () {

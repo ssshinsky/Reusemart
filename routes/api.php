@@ -5,7 +5,10 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PegawaiController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\BarangController;
+use App\Http\Controllers\KurirController;
+use App\Http\Controllers\KeranjangController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\TransaksiPembelianController;
 use App\Http\Controllers\FcmTokenController;
 use App\Http\Controllers\NotificationController;
 
@@ -45,10 +48,13 @@ Route::middleware('auth:api')->group(function () {
     Route::delete('/role/delete/{id}', [RoleController::class, 'destroy']);
     
 });
+// Route::prefix('kurir')->middleware(['auth:sanctum', 'api_pegawai.role:5'])->group(function () {
 
-Route::prefix('kurir')->middleware(['auth:pegawai', 'pegawai.role:5'])->group(function () {
-    Route::get('/deliveries', [KurirController::class, 'getDeliveries']);
-    Route::post('/deliveries/update', [KurirController::class, 'updateDeliveryStatus']);
+Route::prefix('kurir')->group(function () {
+    Route::get('/profile', [AuthController::class, 'profileKurir']);
+    Route::get('/kelola-transaksi/kurir/{idPegawai}', [KurirController::class, 'getDeliveries']);
+    Route::get('/active-deliveries/{idPegawai}', [KurirController::class, 'getActiveDeliveries']);
+    Route::put('/transaksi-pembelian/{idPembelian}/status/transaksi', [KurirController::class, 'updateStatusTransaksi']);
 });
 
 Route::middleware('auth:api')->group(function () {

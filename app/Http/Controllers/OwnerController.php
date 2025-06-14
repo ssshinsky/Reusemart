@@ -273,6 +273,37 @@ class OwnerController extends Controller
         return $pdf->stream('laporan_donasi_barang.pdf');
     }
 
+    // public function downloadDonationPdf(Request $request)
+    // {
+    //     $this->ensureOwner();
+
+    //     $organisasi = Organisasi::all();
+
+    //     $query = Donasi::with(['requestDonasi.organisasi', 'barang','transaksiPenitipan.penitip'
+    //     ])
+    //     ->whereHas('barang', function ($q) {
+    //         $q->where('id_kategori', 3);
+    //     });
+
+    //     if ($request->filled('id_organisasi')) {
+    //         $query->whereHas('requestDonasi', function ($q) use ($request) {
+    //             $q->where('id_organisasi', $request->id_organisasi);
+    //         });
+    //     }
+
+    //     $donations = $query->get();
+
+    //     $data = [
+    //         'donations' => $donations,
+    //         'organisasi' => $organisasi,
+    //         'tanggal_cetak' => now()->format('d F Y'),
+    //     ];
+
+    //     $pdf = PDF::loadView('owner.donation_history_pdf', $data);
+
+    //     return $pdf->stream('laporan_donasi_barang.pdf');
+    // }
+
     public function downloadPdf()
     {
         $this->ensureOwner();
@@ -321,7 +352,7 @@ class OwnerController extends Controller
                 $item->tanggal_masuk = Carbon::parse($item->tanggal_masuk);
                 $item->tanggal_terjual = Carbon::parse($item->tanggal_terjual);
                 $komisiReusemart = $item->harga_barang * 0.2;
-                $bonus = $item->tanggal_terjual->diffInDays($item->tanggal_masuk) < 7 ? ($komisiReusemart * 0.1) : 0;
+                $bonus = $item->tanggal_terjual->diffInDays($item->tanggal_masuk) < 7 ? 0 : 0;
                 $item->harga_bersih = $item->harga_barang - $komisiReusemart;
                 $item->bonus = $bonus;
                 $item->pendapatan = $item->harga_bersih + $bonus;

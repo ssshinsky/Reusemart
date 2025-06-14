@@ -35,6 +35,7 @@ return [
     */
 
     'guard' => ['web'],
+    'guard' => ['api_pegawai', 'api_pembeli', 'api_penitip', 'api_organisasi'],
 
     /*
     |--------------------------------------------------------------------------

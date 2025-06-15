@@ -234,7 +234,7 @@ Route::prefix('cs')->middleware(['auth:pegawai', 'pegawai.role:3'])->group(funct
     Route::put('/item-owners/{id}', [PenitipController::class, 'update'])->name('cs.penitip.update');
     Route::put('/item-owners/{id}/deactivate', [PenitipController::class, 'deactivate'])->name('cs.penitip.deactivate');
     Route::put('/item-owners/{id}/reactivate', [PenitipController::class, 'reactivate'])->name('cs.penitip.reactivate');
-    Route::get('/transaksi-pembelian', [TransaksiPembelianController::class, 'show'])->name('transaksi-pembelian.index');
+    Route::get('/transaksi-pembelian', [TransaksiPembelianController::class, 'showWeb'])->name('transaksi-pembelian.index');
     Route::post('/transaksi-pembelian/{id_pembelian}/verify', [TransaksiPembelianController::class, 'verify'])
     ->name('cs.transaksi-pembelian.verify');
     Route::get('/transaksi-pembelian/search', [TransaksiPembelianController::class, 'search'])->name('cs.transaksi-pembelian.search');
@@ -282,6 +282,7 @@ Route::prefix('gudang')->middleware(['auth:pegawai', 'pegawai.role:4'])->name('g
     Route::post('/transaksi/jadwalkan/{id}', [TransaksiPenitipanController::class, 'jadwalkanPengiriman'])->name('transaksi.jadwalkanPengiriman');
     Route::post('/transaksi/confirm-pickup/{id}', [TransaksiPenitipanController::class, 'confirmPickup'])->name('transaksi.confirmPickup');
     Route::get('/transaksi/print-invoice/{id}', [TransaksiPenitipanController::class, 'printInvoice'])->name('transaksi.printInvoice');
+    Route::get('/transaksi/print-invoice-pickup/{id}', [TransaksiPenitipanController::class, 'printInvoicePickup'])->name('transaksi.printInvoicePickup');
 });
 
 // Kurir Routes

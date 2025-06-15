@@ -24,8 +24,7 @@
 
     <div class="details">
         <p><strong>Order Date:</strong> {{ $tanggal_pesan }}</p>
-        <p><strong>Shipping Method:</strong> Courier</p>
-        <p><strong>Delivered By:</strong> {{ $kurir }}</p>
+        <p><strong>Shipping Method:</strong> Pick Up</p>
     </div>
 
     <h3>Product List</h3>
@@ -50,8 +49,6 @@
         </tbody>
     </table>
 
-    <p><strong>Subtotal:</strong> Rp{{ number_format($subtotal, 0, ',', '.') }}</p>
-    <p><strong>Ongkir:</strong> Rp{{ number_format($ongkir, 0, ',', '.') }}</p>
     <p><strong>Total:</strong> Rp{{ number_format($total, 0, ',', '.') }}</p>
 
     <div class="footer">

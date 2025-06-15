@@ -4,8 +4,16 @@
 
 @section('content')
 <div class="container-fluid py-4">
+    @php
+        $tanggal = \Carbon\Carbon::parse($transaksi->waktu_pembayaran);
+        $noNota = $tanggal->format('y.m') . '.' . $transaksi->id_pembelian;
+    @endphp
     <h2 class="fw-bold mb-3 text-dark">
-        <i class="fas fa-calendar-check me-2"></i> Jadwalkan Pengiriman untuk Transaksi #{{ $transaksi->id_transaksi }}
+        @if($transaksi->metode_pengiriman == 'Courier')
+            <i class="fas fa-calendar-check me-2"></i> Schedule Delivery for Invoice #{{ $noNota}}
+        @else
+            <i class="fas fa-calendar-check me-2"></i> Schedule Pick Up for Invoice #{{ $noNota}}
+        @endif
     </h2>
 
     <div class="card shadow-lg border-0 mb-4">
@@ -20,7 +28,7 @@
         </div>
     </div>
 
-    @if($transaksi->status_transaksi == 'Preparing' || $transaksi->status_transaksi == 'Ready for Pickup' && $transaksi->tanggal_ambil == NULL)
+    @if($transaksi->status_transaksi == 'Preparing' || $transaksi->status_transaksi == 'Ready for Pickup' && $transaksi->tanggal_pengambilan == NULL)
     <form method="POST" action="{{ route('gudang.transaksi.jadwalkanPengiriman', $transaksi->id_pembelian) }}">
         @csrf
         <div class="card shadow-lg border-0 mb-4">
@@ -28,23 +36,29 @@
                 <h5 class="fw-bold mb-3 text-primary">Schedule Information</h5>
                 
                 <div class="mb-3">
-                    <label for="tanggal_pengiriman" class="form-label">Tanggal Pengiriman</label>
-                    <input type="datetime-local" class="form-control" id="tanggal_pengiriman" name="tanggal_pengiriman" required>
+                    @if($transaksi->metode_pengiriman == 'Courier')
+                        <label for="tanggal_pengiriman" class="form-label">Delivery Date</label>
+                        <input type="datetime-local" class="form-control" id="tanggal_pengiriman" name="tanggal_pengiriman" required>
+                    @else
+                        <label for="tanggal_pengiriman" class="form-label">Pick Up Date</label>
+                        <input type="datetime-local" class="form-control" id="tanggal_pengiriman" name="tanggal_pengiriman" required>
+                    @endif
                 </div>
 
-                @if($transaksi->status_transaksi == 'Preparing')
-                <div class="mb-3">
-                    <label for="id_kurir" class="form-label">Pilih Kurir</label>
-                    <select class="form-control" id="id_kurir" name="id_kurir" required>
-                        <option value="">Pilih Kurir</option>
-                        @foreach ($kurirs as $kurir)
-                            <option value="{{ $kurir->id_pegawai }}">{{ $kurir->nama_pegawai }}</option>
-                        @endforeach
-                    </select>
-                </div>
+                @if($transaksi->status_transaksi == 'Preparing' && $transaksi->metode_pengiriman == 'Courier')
+                    <div class="mb-3">
+                        <label for="id_kurir" class="form-label">Pilih Kurir</label>
+                        <select class="form-control" id="id_kurir" name="id_kurir" required>
+                            <option value="">Pilih Kurir</option>
+                            @foreach ($kurirs as $kurir)
+                                <option value="{{ $kurir->id_pegawai }}">{{ $kurir->nama_pegawai }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-success">Schedule Delivery</button>
+                @else
+                    <button type="submit" class="btn btn-success">Schedule Pick Up</button>
                 @endif
-
-                <button type="submit" class="btn btn-success">Schedule Delivery</button>
             </div>
         </div>
     </form>

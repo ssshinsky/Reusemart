@@ -18,9 +18,6 @@ use Barryvdh\DomPDF\Facade\Pdf as PDF;
 
 class TransaksiPenitipanController extends Controller
 {
-    /**
-     * Memastikan pengguna adalah gudang (id_role = 4)
-     */
     private function ensureGudang()
     {
         if (!Auth::guard('pegawai')->check() || Auth::guard('pegawai')->user()->id_role != 4) {
@@ -28,8 +25,26 @@ class TransaksiPenitipanController extends Controller
         }
     }
 
+    private function cekTransaksiHangus()
+    {
+        $transaksis = TransaksiPembelian::where('status_transaksi', 'Ready for Pickup')
+            ->whereNotNull('tanggal_pengambilan')
+            ->whereNull('tanggal_ambil')
+            ->whereDate('tanggal_pengambilan', '<', Carbon::now()->subDays(2))
+            ->get();
+
+        foreach ($transaksis as $transaksi) {
+            $transaksi->update(['status_transaksi' => 'Expired']);
+            foreach ($transaksi->detailKeranjangs as $detail) {
+                $barang = $detail->itemKeranjang->barang;
+                $barang->update(['status_barang' => 'For Donation']);
+            }
+        }
+    }
+
     public function dashboard()
     {
+        $this->cekTransaksiHangus();
         $this->ensureGudang();
         $totalTransactions = TransaksiPenitipan::whereDate('tanggal_penitipan', Carbon::today())->count();
         $totalItems = Barang::whereHas('transaksiPenitipan')->count();
@@ -39,6 +54,7 @@ class TransaksiPenitipanController extends Controller
     public function create()
     {
         $this->ensureGudang();
+        $this->cekTransaksiHangus();
         $penitips = Penitip::all();
         $qcs = Pegawai::whereHas('role', function($query) {
             $query->where('nama_role', 'gudang');
@@ -52,6 +68,7 @@ class TransaksiPenitipanController extends Controller
     public function storeTransaction(Request $request)
     {
         $this->ensureGudang();
+        $this->cekTransaksiHangus();
         try {
             $validated = $request->validate([
                 'id_penitip' => 'required|exists:penitip,id_penitip',
@@ -197,12 +214,15 @@ class TransaksiPenitipanController extends Controller
     public function store(Request $request)
     {
         $this->ensureGudang();
+        $this->cekTransaksiHangus();
+
         return $this->storeTransaction($request);
     }
 
     public function searchTransaction(Request $request)
     {
         $this->ensureGudang();
+        $this->cekTransaksiHangus();
         $query = TransaksiPenitipan::with(['penitip', 'barang']);
         if ($request->id_transaksi) {
             $query->where('id_transaksi_penitipan', $request->id_transaksi);
@@ -219,6 +239,7 @@ class TransaksiPenitipanController extends Controller
     public function editTransaction($id)
     {
         $this->ensureGudang();
+        $this->cekTransaksiHangus();
         $transaction = TransaksiPenitipan::with(['barang.gambar'])->findOrFail($id);
         $penitips = Penitip::all();
         $qcs = Pegawai::whereHas('role', function ($query) {
@@ -240,6 +261,7 @@ class TransaksiPenitipanController extends Controller
     public function updateTransaction(Request $request, $id)
     {
         $this->ensureGudang();
+        $this->cekTransaksiHangus();
         try {
             $transaction = TransaksiPenitipan::with(['barang', 'barang.gambar'])->findOrFail($id);
 
@@ -358,6 +380,7 @@ class TransaksiPenitipanController extends Controller
     public function myProduct()
     {
         $this->ensureGudang();
+        $this->cekTransaksiHangus();
         $penitipId = session('user.id');
         $products = Barang::whereHas('transaksiPenitipan', function ($query) use ($penitipId) {
             $query->where('id_penitip', $penitipId);
@@ -369,6 +392,7 @@ class TransaksiPenitipanController extends Controller
     public function index()
     {
         $this->ensureGudang();
+        $this->cekTransaksiHangus();
         $transaksiPenitipan = TransaksiPenitipan::all();
         return response()->json($transaksiPenitipan);
     }
@@ -376,6 +400,7 @@ class TransaksiPenitipanController extends Controller
     public function show($id)
     {
         $this->ensureGudang();
+        $this->cekTransaksiHangus();
         $transaksiPenitipan = TransaksiPenitipan::find($id);
         if (!$transaksiPenitipan) {
             return response()->json(['message' => 'Transaksi penitipan not found'], 404);
@@ -386,6 +411,7 @@ class TransaksiPenitipanController extends Controller
     public function update(Request $request, $id)
     {
         $this->ensureGudang();
+        $this->cekTransaksiHangus();
         $transaksiPenitipan = TransaksiPenitipan::find($id);
         if (!$transaksiPenitipan) {
             return response()->json(['message' => 'Transaksi penitipan not found'], 404);
@@ -411,6 +437,7 @@ class TransaksiPenitipanController extends Controller
     public function destroy($id)
     {
         $this->ensureGudang();
+        $this->cekTransaksiHangus();
         $transaksiPenitipan = TransaksiPenitipan::find($id);
         if (!$transaksiPenitipan) {
             return response()->json(['message' => 'Transaksi penitipan not found'], 404);
@@ -423,6 +450,7 @@ class TransaksiPenitipanController extends Controller
     public function transactionList(Request $request)
     {
         $this->ensureGudang();
+        $this->cekTransaksiHangus();
         $query = TransaksiPenitipan::with(['penitip', 'barang.gambar', 'qc', 'hunter']);
 
         if ($request->filled('keyword')) {
@@ -476,6 +504,7 @@ class TransaksiPenitipanController extends Controller
     public function printNote($id)
     {
         $this->ensureGudang();
+        $this->cekTransaksiHangus();
         try {
             $transaction = TransaksiPenitipan::with(['penitip', 'barang', 'qc', 'hunter'])->findOrFail($id);
 
@@ -522,6 +551,7 @@ class TransaksiPenitipanController extends Controller
     public function itemList(Request $request)
     {
         $this->ensureGudang();
+        $this->cekTransaksiHangus();
         $query = Barang::with(['transaksiPenitipan.penitip', 'kategori', 'gambar']);
 
         if ($request->filled('keyword')) {
@@ -570,6 +600,7 @@ class TransaksiPenitipanController extends Controller
     public function itemDetail($id)
     {
         $this->ensureGudang();
+        $this->cekTransaksiHangus();
         $barang = Barang::with(['transaksiPenitipan.penitip', 'kategori', 'gambar'])->findOrFail($id);
         return view('gudang.item_detail', compact('barang'));
     }
@@ -577,6 +608,7 @@ class TransaksiPenitipanController extends Controller
     public function pengirimanDanPengambilanList()
     {
         $this->ensureGudang();
+        $this->cekTransaksiHangus();
         $transaksi = TransaksiPembelian::with([
             'pembeli',
             'detailKeranjangs.itemKeranjang.barang',
@@ -612,6 +644,7 @@ class TransaksiPenitipanController extends Controller
     public function showDetail($id)
     {
         $this->ensureGudang();
+        $this->cekTransaksiHangus();
 
         $transaksi = TransaksiPembelian::with([
             'pembeli',
@@ -624,6 +657,7 @@ class TransaksiPenitipanController extends Controller
     public function jadwalkan($id)
     {
         $this->ensureGudang();
+        $this->cekTransaksiHangus();
 
         $transaksi = TransaksiPembelian::with([
             'pembeli',
@@ -640,14 +674,18 @@ class TransaksiPenitipanController extends Controller
     public function jadwalkanPengiriman(Request $request, $id)
     {
         $this->ensureGudang();
-
-        // Validasi input
-        $request->validate([
-            'tanggal_pengiriman' => 'required|date|after_or_equal:today',
-            'id_kurir' => 'required|exists:pegawai,id_pegawai'
-        ]);
-
+        $this->cekTransaksiHangus();
+        
         $transaksi = TransaksiPembelian::findOrFail($id);
+
+        $isSelfPickup = $transaksi->metode_pengiriman === 'Self Pick-Up';
+        
+        // Validasi input
+        $rules = ['tanggal_pengiriman' => 'required|date|after_or_equal:today'];
+        if (!$isSelfPickup) {
+            $rules['id_kurir'] = 'required|exists:pegawai,id_pegawai';
+        }
+        $request->validate($rules);
 
         // Cek apakah transaksi dilakukan setelah jam 4 sore dan apakah tanggal pengiriman adalah hari ini
         $jamPembelian = Carbon::parse($transaksi->tanggal_pembelian)->format('H');
@@ -659,17 +697,21 @@ class TransaksiPenitipanController extends Controller
         }
 
         // Logika Update berdasarkan status transaksi
-        if ($transaksi->status_transaksi == 'Preparing') {
-            $transaksi->update([
-                'tanggal_pengiriman' => $request->tanggal_pengiriman,
-                'id_kurir' => $request->id_kurir,
-                'status_transaksi' => 'In Delivery'  // Update status ke 'In Delivery'
-            ]);
-        } 
-        if ($transaksi->status_transaksi == 'Ready for Pickup') {
-            $transaksi->update([
-                'tanggal_ambil' => $request->tanggal_pengiriman,  // Update tanggal_ambil sesuai tanggal pengiriman
-            ]);
+        if ($transaksi->status_transaksi === 'Preparing') {
+            if ($isSelfPickup) {
+                // Self Pick-Up
+                $transaksi->update([
+                    'tanggal_pengambilan' => $request->tanggal_pengiriman,
+                    'status_transaksi' => 'Ready for Pickup'
+                ]);
+            } else {
+                // Courier
+                $transaksi->update([
+                    'tanggal_pengiriman' => $request->tanggal_pengiriman,
+                    'id_kurir' => $request->id_kurir,
+                    'status_transaksi' => 'In Delivery'
+                ]);
+            }
         }
 
         // Kirim notifikasi ke pembeli, penitip, dan kurir
@@ -678,7 +720,6 @@ class TransaksiPenitipanController extends Controller
         // Redirect dengan pesan sukses
         return back()->with('success', 'Pengiriman berhasil dijadwalkan.');
     }
-
 
     private function kirimNotifikasiJadwal(TransaksiPembelian $transaksi)
     {
@@ -713,6 +754,7 @@ class TransaksiPenitipanController extends Controller
     public function confirmPickup($id)
     {
         $this->ensureGudang();
+        $this->cekTransaksiHangus();
 
         $transaksi = TransaksiPembelian::findOrFail($id);
 
@@ -771,8 +813,21 @@ class TransaksiPenitipanController extends Controller
             $kurirName = $transaksi->kurir->nama_pegawai;
         }
 
+        $tanggal = \Carbon\Carbon::parse($transaksi->waktu_pembayaran);
+        $noNota = $tanggal->format('y.m') . '.' . $transaksi->id_pembelian;
+
+        $subtotal = 0;
+        foreach ($transaksi->detailKeranjangs as $detail) {
+            $barang = $detail->itemKeranjang->barang;
+            $subtotal += $barang->harga_barang;
+        }
+
+        $ongkir = $subtotal >= 1500000 ? 0 : 100000; 
+
+        $total = $subtotal + $ongkir;
+
         $invoiceData = [
-            'no_nota' => 'INV-' . $transaksi->id_pembelian . '-' . now()->format('Ymd'), 
+            'no_nota' => $noNota, 
             'tanggal_pesan' => \Carbon\Carbon::parse($transaksi->tanggal_pembelian)->format('d F Y, H:i'),
             'tanggal_kirim' => \Carbon\Carbon::parse($transaksi->tanggal_pengiriman)->format('d F Y'), 
             'pembeli' => $transaksi->pembeli->nama_pembeli,
@@ -786,11 +841,54 @@ class TransaksiPenitipanController extends Controller
                     'status' => $barang->status_barang,
                 ];
             }),
+            'subtotal' => $subtotal,
+            'ongkir' => $ongkir,
+            'total' => $total,
             'transaksi' => $transaksi, 
         ];
 
         // Generate PDF
         $pdf = PDF::loadView('gudang.invoice', $invoiceData);
+        return $pdf->download('invoice-' . $transaksi->id_pembelian . '.pdf'); 
+    }
+
+    public function printInvoicePickup($id)
+    {
+        $transaksi = TransaksiPembelian::with([
+            'pembeli',
+            'detailKeranjangs.itemKeranjang.barang',
+        ])->findOrFail($id);
+
+        $tanggal = \Carbon\Carbon::parse($transaksi->waktu_pembayaran);
+        $noNota = $tanggal->format('y.m') . '.' . $transaksi->id_pembelian;
+
+        $total = 0;
+        foreach ($transaksi->detailKeranjangs as $detail) {
+            $barang = $detail->itemKeranjang->barang;
+            $total += $barang->harga_barang;
+        }
+
+
+        $invoiceData = [
+            'no_nota' => $noNota, 
+            'tanggal_pesan' => \Carbon\Carbon::parse($transaksi->tanggal_pembelian)->format('d F Y, H:i'),
+            'tanggal_kirim' => \Carbon\Carbon::parse($transaksi->tanggal_pengiriman)->format('d F Y'), 
+            'pembeli' => $transaksi->pembeli->nama_pembeli,
+            'items' => $transaksi->detailKeranjangs->map(function ($detail) {
+                $barang = $detail->itemKeranjang->barang;
+                return [
+                    'nama_barang' => $barang->nama_barang,
+                    'harga' => number_format($barang->harga_barang, 0, ',', '.'),
+                    'berat' => $barang->berat_barang,
+                    'status' => $barang->status_barang,
+                ];
+            }),
+            'total' => $total,
+            'transaksi' => $transaksi, 
+        ];
+        
+        // Generate PDF
+        $pdf = PDF::loadView('gudang.invoicePickup', $invoiceData);
         return $pdf->download('invoice-' . $transaksi->id_pembelian . '.pdf'); 
     }
 

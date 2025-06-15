@@ -11,15 +11,19 @@
             <p class="text-muted mb-0">Waiting list on progress...</p>
         </div>
     </div>
-
+    
     <!-- Transaction Cards -->
     <div class="row g-4">
         @forelse ($transaksi as $item)
+            @php
+                $tanggal = \Carbon\Carbon::parse($item->waktu_pembayaran);
+                $noNota = $tanggal->format('y.m') . '.' . $item->id_pembelian;
+            @endphp
             <div class="col-12 col-md-6 col-lg-4">
                 <div class="card h-100 shadow-lg border-0 transition-all card-hover">
                     <div class="card-body p-4">
                         <h5 class="card-title fw-bold text-primary mb-3">
-                            <i class="fas fa-receipt me-2"></i>Invoice #{{ $item->no_nota }}
+                            <i class="fas fa-receipt me-2"></i>Invoice #{{ $noNota }}
                         </h5>
                         
                         <!-- Buyer Information (menampilkan hanya 1 barang pertama) -->
@@ -43,8 +47,11 @@
                                     $kurir = App\Models\Pegawai::find($item->id_kurir); // Ambil nama kurir berdasarkan id_kurir
                                 @endphp
                                 @if($kurir)
-                                    <p class="card-text mb-1"><i class="fas fa-truck me-2"></i><strong>Pengantar:</strong> {{ $kurir->nama_pegawai }}</p>
+                                    <p class="card-text mb-1"><i class="fas fa-truck me-2"></i><strong>Courier:</strong> {{ $kurir->nama_pegawai }}</p>
                                 @endif
+                            @endif  
+                            @if($item->metode_pengiriman == 'Self Pick-Up' && !$item->tanggal_pengambilan == NULL )
+                                <p class="card-text mb-1"><i class="fas fa-truck me-2"></i><strong>Pick Up Date:</strong> {{ \Carbon\Carbon::parse($item->tanggal_pengambilan)->format('d M Y, H:i') }}</p>
                             @endif
                         </div>
 

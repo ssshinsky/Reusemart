@@ -25,6 +25,7 @@ class TransaksiPembelian extends Model
     protected $fillable = [
         'id_keranjang',
         'id_alamat',
+        'id_pembeli',
         'no_resi',
         'tanggal_pembelian',
         'waktu_pembayaran',
@@ -41,6 +42,7 @@ class TransaksiPembelian extends Model
         'poin_penitip',
         'status_pengiriman',
         'id_kurir',
+        'tanggal_pengambilan',
     ];
 
     // Relasi ke model Keranjang

@@ -619,7 +619,7 @@ class TransaksiPembelianController extends Controller
 
         return response()->json(['message' => 'Pickup schedule created']);
     }
-}
+
     // ✅ Web: Riwayat transaksi untuk pembeli login
     public function riwayat()
     {
@@ -639,5 +639,138 @@ class TransaksiPembelianController extends Controller
             ->findOrFail($id);
 
         return view('pembeli.riwayat_detail', compact('transaksi'));
+    }
+
+    public function processTransactionCompletion(Request $request, $id_pembelian)
+    {
+        DB::transaction(function () use ($id_pembelian) {
+            $transaksi = TransaksiPembelian::with([
+                'itemsDalamKeranjang.transaksiPenitipan.hunter',
+                'pembeli',
+                'keranjang.detailKeranjang'
+            ])->find($id_pembelian);
+
+            if (!$transaksi) {
+                abort(404, 'Transaksi tidak ditemukan.');
+            }
+
+            // Pemicu: Jika status transaksi berubah menjadi 'Done' atau 'Expired'
+            $isTransactionDone = $transaksi->status_transaksi === 'Done';
+            $isTransactionExpired = $transaksi->status_transaksi === 'Expired';
+
+            if (!$isTransactionDone && !$isTransactionExpired) {
+                // Jangan proses jika status belum 'Done' atau 'Expired'
+                // Anda mungkin ingin memiliki endpoint terpisah untuk mengubah status.
+                return response()->json(['message' => 'Transaksi belum pada status final (Done/Expired).'], 400);
+            }
+
+            // --- Lakukan Perhitungan untuk setiap barang dalam transaksi ---
+            foreach ($transaksi->itemsDalamKeranjang as $barang) {
+                $hargaJual = $barang->harga_barang;
+                $isPerpanjangan = (bool) $barang->perpanjangan;
+                $isHunting = !is_null($barang->transaksiPenitipan->id_hunter);
+                $tanggalPenitipan = Carbon::parse($barang->transaksiPenitipan->tanggal_penitipan);
+                $tanggalLaku = Carbon::parse($transaksi->waktu_pembayaran); // Tanggal laku adalah waktu pembayaran
+
+                // 1. Hitung Komisi ReuseMart Dasar (20% atau 30%)
+                $komisiReuseMartDasar = ($isPerpanjangan ? 0.30 : 0.20) * $hargaJual;
+
+                // 2. Hitung Pengurang Komisi untuk Hunter (5% jika hasil hunting)
+                $pengurangHunter = 0;
+                if ($isHunting) {
+                    $pengurangHunter = 0.05 * $hargaJual;
+                }
+
+                // 3. Hitung Bonus Terjual Cepat untuk Penitip (10% dari Komisi ReuseMart Dasar)
+                $bonusPenitipTerjualCepat = 0;
+                // Hanya berikan bonus jika barang terjual dan laku < 7 hari
+                if ($isTransactionDone && $tanggalPenitipan->diffInDays($tanggalLaku) < 7) {
+                    $bonusPenitipTerjualCepat = 0.10 * $komisiReuseMartDasar;
+                }
+
+                // 4. Hitung Komisi ReuseMart Final
+                $komisiReuseMartFinal = $komisiReuseMartDasar - $pengurangHunter - $bonusPenitipTerjualCepat;
+                // Pastikan tidak ada komisi negatif
+                if ($komisiReuseMartFinal < 0) {
+                    $komisiReuseMartFinal = 0;
+                }
+
+                // 5. Hitung Penghasilan Penitip
+                // Penghasilan penitip = Harga Jual - Komisi yang diambil ReuseMart
+                $penghasilanPenitip = $hargaJual - $komisiReuseMartFinal - $pengurangHunter;
+
+                // Simpan Komisi ke Tabel `komisi` 
+                Komisi::create([
+                    'id_pembelian' => $transaksi->id_pembelian,
+                    'id_penitip' => $barang->transaksiPenitipan->id_penitip,
+                    'id_hunter' => $barang->transaksiPenitipan->id_hunter,
+                    'id_owner' => 1, // Ganti dengan ID owner yang sesuai
+                    'komisi_hunter' => $pengurangHunter,
+                    'komisi_penitip' => $penghasilanPenitip,
+                    'komisi_reusemart' => $komisiReuseMartFinal,
+                    'bonus_penitip_terjual_cepat' => $bonusPenitipTerjualCepat
+                ]);
+
+                // --- Menambahkan Saldo ke Akun Penitip ---
+                $penitip = Penitip::find($barang->transaksiPenitipan->id_penitip);
+                if ($penitip) {
+                    $penitip->saldo_penitip += $penghasilanPenitip;
+                    $penitip->save();
+                }
+
+                // --- Update status_barang ---
+                if ($isTransactionDone) {
+                    $barang->status_barang = 'Sold';
+                } elseif ($isTransactionExpired) {
+                    $barang->status_barang = 'For Donation';
+                }
+                $barang->save();
+            }
+
+            // --- Menambahkan Poin ke Akun Pembeli (Hanya jika transaksi 'Done') ---
+            if ($isTransactionDone) {
+                $pembeli = $transaksi->pembeli;
+                if ($pembeli) {
+                    // total_harga_barang adalah total dari harga_barang di keranjang, sebelum ongkir/potongan poin
+                    $totalBelanjaSebelumPotongan = $transaksi->total_harga_barang;
+                    $totalBelanjaSetelahPotonganPoin = $transaksi->total_harga_barang - ($transaksi->poin_terpakai * 100);
+
+                    $poinDasar = floor($totalBelanjaSetelahPotonganPoin / 10000);
+
+                    $bonusPoin = 0;
+                    if ($totalBelanjaSebelumPotongan > 500000) { // Cek total belanja sebelum potongan poin untuk bonus
+                        $bonusPoin = floor(0.20 * $poinDasar);
+                    }
+
+                    $totalPoinDidapat = $poinDasar + $bonusPoin;
+
+                    $pembeli->poin_pembeli += $totalPoinDidapat;
+                    $pembeli->save();
+                }
+            }
+        });
+
+        return response()->json(['message' => 'Proses penyelesaian transaksi berhasil.'], 200);
+    }
+
+    // Contoh endpoint untuk mengubah status transaksi menjadi Done atau Expired
+    public function updateTransactionStatus(Request $request, $id_pembelian)
+    {
+        $request->validate([
+            'status' => 'required|in:Done,Canceled', // Memasukkan "Expired" sebagai "Canceled" di DB
+        ]);
+
+        $transaksi = TransaksiPembelian::find($id_pembelian);
+        if (!$transaksi) {
+            return response()->json(['message' => 'Transaksi tidak ditemukan.'], 404);
+        }
+
+        $transaksi->status_transaksi = $request->status;
+        $transaksi->save();
+
+        // Panggil fungsi proses setelah status diupdate
+        $this->processTransactionCompletion($request, $id_pembelian);
+
+        return response()->json(['message' => 'Status transaksi berhasil diperbarui dan diproses.'], 200);
     }
 }

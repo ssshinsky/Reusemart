@@ -68,7 +68,7 @@ Route::prefix('pembeli')->group(function () {
     Route::get('/profile', [PembeliController::class, 'profile'])->name('pembeli.profile');
     Route::get('/{id}/edit', [PembeliController::class, 'editProfile'])->name('pembeli.edit');
     Route::put('/{id}/update', [PembeliController::class, 'updateProfile'])->name('pembeli.update');
-    Route::get('/history', [PembeliController::class, 'history'])->name('pembeli.history');
+    Route::get('/history', [TransaksiPembelianController::class, 'riwayat'])->name('pembeli.riwayat');
     Route::get('/reward', [PembeliController::class, 'reward'])->name('pembeli.reward');
     Route::get('/pembelian', [TransaksiPembelianController::class, 'index'])->name('pembeli.pembelian');
     Route::post('/bayar', [TransaksiPembelianController::class, 'bayar'])->name('pembeli.bayar');

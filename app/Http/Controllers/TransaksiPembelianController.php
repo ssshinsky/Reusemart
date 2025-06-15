@@ -8,6 +8,7 @@ use App\Models\Pembeli;
 use App\Models\Penitip;
 use App\Models\DetailKeranjang;
 use App\Models\ItemKeranjang;
+use App\Models\Barang;
 use App\Models\Alamat;
 use App\Models\Schedule;
 use App\Models\Delivery;
@@ -145,11 +146,11 @@ class TransaksiPembelianController extends Controller
             return redirect()->route('pembeli.cart')->with('error', 'Keranjang tidak ditemukan.');
         }
 
-        // Kembalikan stok barang
+        // Kembalikan status barang
         foreach ($keranjang->detailKeranjang as $detail) {
             $barang = $detail->itemKeranjang->barang;
             if ($barang) {
-                $barang->stok += $detail->jumlah; // Asumsi ada kolom stok di model Barang
+                $barang->status_barang = 'tersedia';
                 $barang->save();
             }
         }
@@ -158,7 +159,7 @@ class TransaksiPembelianController extends Controller
         DetailKeranjang::where('id_keranjang', $keranjang->id_keranjang)->delete();
         $keranjang->delete();
 
-        return redirect()->route('pembeli.keranjang')->with('success', 'Checkout dibatalkan otomatis karena melewati batas waktu.');
+        return redirect()->route('pembeli.cart')->with('success', 'Checkout dibatalkan otomatis karena melewati batas waktu.');
     }
 
     // Proses pembayaran
@@ -260,8 +261,7 @@ class TransaksiPembelianController extends Controller
             $pembeli->poin_pembeli = $newPoin;
             $pembeli->save();
 
-            // Hapus item keranjang
-            ItemKeranjang::whereIn('id_item_keranjang', session('checkout_selected_items'))->delete();
+           ItemKeranjang::whereIn('id_item_keranjang', session('checkout_selected_items'))->update(['is_selected' => true]);
 
             // Commit transaksi
             DB::commit();
@@ -351,28 +351,36 @@ class TransaksiPembelianController extends Controller
                     }
                 }
 
-                // Kirim notifikasi ke penitip
-                foreach ($penitipIds as $penitipId) {
-                    Http::post($this->baseUrl . '/send-notification', [
-                        'user_id' => $penitipId,
-                        'role' => 'penitip',
-                        'title' => 'Barang Laku!',
-                        'body' => 'Barang Anda dalam transaksi ' . $transaksi->no_resi . ' telah terjual.',
-                        'type' => 'barang_laku',
-                        'id' => $transaksi->id_keranjang,
-                    ]);
+                foreach ($keranjang->detailKeranjang as $detail) {
+                    $barang = $detail->itemKeranjang->barang ?? null;
+                    if ($barang) {
+                        $barang->status_barang = 'sold'; 
+                        $barang->save();
+                    }
                 }
 
-                // Kirim notifikasi ke pembeli
-                $pembeliId = $keranjang->id_pembeli;
-                Http::post($this->baseUrl . '/send-notification', [
-                    'user_id' => $pembeliId,
-                    'role' => 'pembeli',
-                    'title' => 'Pembayaran Terverifikasi',
-                    'body' => 'Pembayaran untuk transaksi ' . $transaksi->no_resi . ' telah diverifikasi.',
-                    'type' => 'barang_laku',
-                    'id' => $transaksi->id_keranjang,
-                ]);
+                // // Kirim notifikasi ke penitip
+                // foreach ($penitipIds as $penitipId) {
+                //     Http::post($this->baseUrl . '/send-notification', [
+                //         'user_id' => $penitipId,
+                //         'role' => 'penitip',
+                //         'title' => 'Barang Laku!',
+                //         'body' => 'Barang Anda dalam transaksi ' . $transaksi->no_resi . ' telah terjual.',
+                //         'type' => 'barang_laku',
+                //         'id' => $transaksi->id_keranjang,
+                //     ]);
+                // }
+
+                // // Kirim notifikasi ke pembeli
+                // $pembeliId = $keranjang->id_pembeli;
+                // Http::post($this->baseUrl . '/send-notification', [
+                //     'user_id' => $pembeliId,
+                //     'role' => 'pembeli',
+                //     'title' => 'Pembayaran Terverifikasi',
+                //     'body' => 'Pembayaran untuk transaksi ' . $transaksi->no_resi . ' telah diverifikasi.',
+                //     'type' => 'barang_laku',
+                //     'id' => $transaksi->id_keranjang,
+                // ]);
 
                 DB::commit();
                 return redirect()->route('transaksi-pembelian.index')->with('success', 'Bukti pembayaran valid. Status transaksi diubah ke Disiapkan.');
@@ -380,26 +388,26 @@ class TransaksiPembelianController extends Controller
                 $transaksi->status_transaksi = 'Dibatalkan';
                 $transaksi->save();
 
-                // Kembalikan stok barang
+                // Kembalikan status barang
                 $keranjang = Keranjang::find($transaksi->id_keranjang);
                 foreach ($keranjang->detailKeranjang as $detail) {
                     $barang = $detail->itemKeranjang->barang;
                     if ($barang) {
-                        $barang->stok += $detail->jumlah;
+                        $barang->status = 'tersedia';
                         $barang->save();
                     }
                 }
 
-                // Kirim notifikasi ke pembeli
-                $pembeliId = $keranjang->id_pembeli;
-                Http::post($this->baseUrl . '/send-notification', [
-                    'user_id' => $pembeliId,
-                    'role' => 'pembeli',
-                    'title' => 'Transaksi Dibatalkan',
-                    'body' => 'Transaksi ' . $transaksi->no_resi . ' dibatalkan karena bukti pembayaran tidak valid.',
-                    'type' => 'transaksi_dibatalkan',
-                    'id' => $transaksi->id_keranjang,
-                ]);
+                // // Kirim notifikasi ke pembeli
+                // $pembeliId = $keranjang->id_pembeli;
+                // Http::post($this->baseUrl . '/send-notification', [
+                //     'user_id' => $pembeliId,
+                //     'role' => 'pembeli',
+                //     'title' => 'Transaksi Dibatalkan',
+                //     'body' => 'Transaksi ' . $transaksi->no_resi . ' dibatalkan karena bukti pembayaran tidak valid.',
+                //     'type' => 'transaksi_dibatalkan',
+                //     'id' => $transaksi->id_keranjang,
+                // ]);
 
                 DB::commit();
                 return redirect()->route('transaksi-pembelian.index')->with('success', 'Bukti pembayaran tidak valid. Transaksi dibatalkan.');

@@ -25,6 +25,7 @@ class ItemKeranjangController extends Controller
 
         $items = ItemKeranjang::with('barang')
             ->where('id_pembeli', $user['id'])
+            ->where('is_selected', false)
             ->get();
 
         // Hitung total harga dengan kuantitas = 1

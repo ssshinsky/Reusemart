@@ -340,8 +340,14 @@ class TransaksiPembelianController extends Controller
 
                 foreach ($detailKeranjang as $detail) {
                     $item = ItemKeranjang::find($detail->id_item_keranjang);
-                    if ($item && $item->barang && $item->barang->penitip) {
-                        $penitipIds[] = $item->barang->penitip->id_penitip;
+                    if ($item && $item->barang) {
+                        $barang = $item->barang;
+                        $transaksiPenitipan = \App\Models\TransaksiPenitipan::find($barang->id_transaksi_penitipan);
+
+                        if ($transaksiPenitipan) {
+                            $penitipId = $transaksiPenitipan->id_penitip;
+                            $penitipIds[] = $penitipId;
+                        }
                     }
                 }
 
@@ -532,8 +538,14 @@ class TransaksiPembelianController extends Controller
 
         foreach ($detailKeranjang as $detail) {
             $item = ItemKeranjang::find($detail->id_item_keranjang);
-            if ($item && $item->barang && $item->barang->penitip) {
-                $penitipIds[] = $item->barang->penitip->id_penitip;
+            if ($item && $item->barang) {
+                $barang = $item->barang;
+                $transaksiPenitipan = \App\Models\TransaksiPenitipan::find($barang->id_transaksi_penitipan);
+
+                if ($transaksiPenitipan) {
+                    $penitipId = $transaksiPenitipan->id_penitip;
+                    $penitipIds[] = $penitipId;
+                }
             }
         }
 

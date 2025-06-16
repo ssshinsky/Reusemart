@@ -31,13 +31,24 @@ class TransaksiPenitipanController extends Controller
             ->whereNotNull('tanggal_pengambilan')
             ->whereNull('tanggal_ambil')
             ->whereDate('tanggal_pengambilan', '<', Carbon::now()->subDays(2))
+            ->with([
+                'keranjang.detailKeranjang.itemKeranjang.barang', 
+            ])
             ->get();
 
         foreach ($transaksis as $transaksi) {
             $transaksi->update(['status_transaksi' => 'Expired']);
-            foreach ($transaksi->detailKeranjangs as $detail) {
-                $barang = $detail->itemKeranjang->barang;
-                $barang->update(['status_barang' => 'For Donation']);
+
+            $transaksiPembelianController = new TransaksiPembelianController();
+            $transaksiPembelianController->processTransactionCompletion($transaksi->id_pembelian);
+
+            if ($transaksi->keranjang && $transaksi->keranjang->detailKeranjang) {
+                foreach ($transaksi->keranjang->detailKeranjang as $detailKeranjang) {
+                    $barang = $detailKeranjang->itemKeranjang->barang;
+                    if ($barang) { // Pastikan barang ditemukan
+                        $barang->update(['status_barang' => 'For Donation']);
+                    }
+                }
             }
         }
     }
@@ -112,7 +123,7 @@ class TransaksiPenitipanController extends Controller
                     'berat_barang' => $item['berat_barang'],
                     'deskripsi_barang' => $item['deskripsi_barang'],
                     'status_garansi' => $statusGaransi,
-                    'status_barang' => 'tersedia',
+                    'status_barang' => 'Available',
                     'tanggal_garansi' => $item['status_garansi'] === 'berlaku' ? $item['tanggal_garansi'] : null,
                     'tanggal_berakhir' => Carbon::parse($request->tanggal_masuk)->addDays(30),
                     'perpanjangan' => 0,
@@ -128,9 +139,9 @@ class TransaksiPenitipanController extends Controller
                             if ($image && $image->isValid()) {
                                 $originalName = pathinfo($image->getClientOriginalName(), PATHINFO_FILENAME);
                                 $fileName = strtolower(str_replace(' ', '', $originalName)) . "" . $imageIndex . "_" . time() . '.' . $image->getClientOriginalExtension();
-                                $fullPath = storage_path('app/public/gambar/' . $fileName);
+                                $fullPath = storage_path('app/public/gambar_barang/' . $fileName);
 
-                                $directory = storage_path('app/public/gambar');
+                                $directory = storage_path('app/public/gambar_barang');
                                 if (!file_exists($directory)) {
                                     if (!mkdir($directory, 0755, true)) {
                                         Log::error('Gagal membuat folder', ['directory' => $directory]);
@@ -280,7 +291,7 @@ class TransaksiPenitipanController extends Controller
                 'items.*.status_garansi' => 'required|in:berlaku,tidak',
                 'items..tanggal_garansi' => 'required_if:items..status_garansi,berlaku|date|nullable',
                 'items.*.tanggal_berakhir' => 'required|date',
-                'items.*.status_barang' => 'required|in:tersedia,selesai,sedang dikirim,menunggu pengambilan,diproses,dibatalkan,menunggu pembayaran,didonasikan,barang untuk donasi',
+                'items.*.status_barang' => 'required|in:Available,Done,In Delivery,Awaiting Owner for Pickup,Preparing,Cancled,Awaiting Payment,Donated,For Donation',
                 'items.*.images' => 'nullable|array',
                 'items..images.' => 'file|mimes:jpeg,png,jpg|max:2048',
                 'items.*.delete_images' => 'nullable|array',
@@ -711,6 +722,8 @@ class TransaksiPenitipanController extends Controller
                     'id_kurir' => $request->id_kurir,
                     'status_transaksi' => 'In Delivery'
                 ]);
+                $transaksiPembelianController = new TransaksiPembelianController();
+                $transaksiPembelianController->processTransactionCompletion($id);
             }
         }
 
@@ -766,6 +779,9 @@ class TransaksiPenitipanController extends Controller
             'status_transaksi' => 'Done',
             'tanggal_ambil' => now(),
         ]);
+
+        $transaksiPembelianController = new TransaksiPembelianController;
+        $transaksiPembelianController->processTransactionCompletion($id); 
 
         $this->kirimNotifikasiPengambilan($transaksi);
 

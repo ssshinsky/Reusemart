@@ -55,7 +55,7 @@ class PenitipController extends Controller
             'rata_rating'     => 0,
         ]);
         $pegawai = Auth::guard('pegawai')->user();
-        $prefix = $pegawai->id_role == 3 ? 'admin' : 'cs';
+        $prefix = $pegawai->id_role == 3 ? 'cs' : 'admin';
 
         return redirect()->route($prefix . '.penitip.index')->with('success', 'Penitip berhasil ditambahkan.');
     }

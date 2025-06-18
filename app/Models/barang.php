@@ -65,4 +65,16 @@ class Barang extends Model
     {
         return $this->hasMany(ItemKeranjang::class, 'id_barang', 'id_barang');
     }
+
+    public function penitip()
+    {
+        return $this->hasOneThrough(
+            \App\Models\Penitip::class,
+            \App\Models\TransaksiPenitipan::class,
+            'id_transaksi_penitipan', // Foreign key di TransaksiPenitipan
+            'id_penitip',             // Foreign key di Penitip
+            'id_transaksi_penitipan', // Local key di Barang
+            'id_transaksi_penitipan'  // Local key di TransaksiPenitipan
+        );
+    }
 }

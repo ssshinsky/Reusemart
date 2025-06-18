@@ -55,5 +55,7 @@ class Kernel extends HttpKernel
         'signed' => \Illuminate\Routing\Middleware\ValidateSignature::class,
         'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
+        'pegawai.role' => \App\Http\Middleware\PegawaiRoleMiddleware::class,
+        'api_pegawai.role' => \App\Http\Middleware\ApiPegawaiRoleMiddleware::class,
     ];
 }

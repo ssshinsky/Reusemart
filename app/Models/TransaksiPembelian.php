@@ -61,7 +61,7 @@ class TransaksiPembelian extends Model
     // Relasi ke KelolaTransaksi
     public function kelolaTransaksi()
     {
-        return $this->hasMany(KelolaTransaksi::class, 'id_pembelian', 'id_pembelian');
+        return $this->hasOne(KelolaTransaksi::class, 'id_pembelian', 'id_pembelian');
     }
 
     // Relasi ke Komisi

@@ -109,7 +109,7 @@ Route::prefix('pembeli')->middleware('auth:pembeli')->group(function () {
     Route::put('/alamat/{id}', [AlamatController::class, 'update'])->name('pembeli.alamat.update');
     Route::delete('/alamat/{id}', [AlamatController::class, 'destroy'])->name('pembeli.alamat.destroy');
     Route::post('/alamat/{id}/set-default', [AlamatController::class, 'setDefault'])->name('pembeli.alamat.set_default');
-    Route::get('/keranjang', [ItemKeranjangController::class, 'index'])->name('pembeli.cart'); // Restored to fix RouteNotFoundException
+    Route::get('/keranjang', [ItemKeranjangController::class, 'index'])->name('pembeli.cart');
 });
 
 // Organisasi Routes

@@ -127,8 +127,31 @@ class AuthController extends Controller
 
         // 1. Cek Pegawai
         $pegawai = Pegawai::where('email_pegawai', $email)->first();
-        if ($pegawai && Hash::check($password, $pegawai->password)) {
-            $token = $pegawai->createToken('mobile_token')->plainTextToken;
+        if (!$pegawai || !Hash::check($password, $pegawai->password)) {
+            \Log::error('Login: Invalid credentials', ['email' => $email]);
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Email atau kata sandi salah'
+            ], 401);
+        }else{
+            // Buat token Sanctum
+            $token = $pegawai->createToken('mobile_token', ['guard:api_pegawai'])->plainTextToken;
+
+            // Tentukan role berdasarkan id_role
+            $role = match ($pegawai->id_role) {
+                5 => 'Kurir',
+                1 => 'Admin',
+                2 => 'Owner',
+                default => 'Pegawai',
+            };
+
+            \Log::info('Login: Success', [
+                'id_pegawai' => $pegawai->id_pegawai,
+                'id_role' => $pegawai->id_role,
+                'role' => $role,
+                'token' => $token,
+            ]);
+
             return response()->json([
                 'status' => 'success',
                 'token' => $token,
@@ -136,9 +159,10 @@ class AuthController extends Controller
                     'id' => $pegawai->id_pegawai,
                     'nama' => $pegawai->nama_pegawai,
                     'email' => $pegawai->email_pegawai,
+                    'id_role' => $pegawai->id_role,
                 ],
-                'role' => 'pegawai',
-            ]);
+                'role' => $role,
+            ], 200);
         }
 
         // 2. Cek Penitip
@@ -200,50 +224,17 @@ class AuthController extends Controller
         return response()->json(['status' => 'success', 'message' => 'Berhasil logout']);
     }
 
-    public function saveFCMToken(Request $request)
-    {
-        $request->validate([
-            'fcm_token' => 'required|string|unique:fcm_tokens,fcm_token',
-            'role' => 'required|in:pembeli,penitip,hunter,kurir',
-            'user_id' => 'required|integer',
-            'device_type' => 'required|string',
+    public function profileKurir(Request $request)
+{
+    $user = $request->user();
+    if ($user instanceof Pegawai && $user->id_role == 5) {
+        return response()->json([
+            'status' => 'success',
+            'user' => $user,
         ]);
-
-        $userId = $request->user_id;
-        $role = $request->role;
-
-        $data = ['fcm_token' => $request->fcm_token, 'device_type' => $request->device_type];
-
-        Log::info("Saving FCM token: Role=$role, User ID=$userId, Token={$request->fcm_token}");
-
-        switch ($role) {
-            case 'pembeli':
-                $data['id_pembeli'] = $userId;
-                break;
-            case 'penitip':
-                $data['id_penitip'] = $userId;
-                break;
-            case 'hunter':
-                $data['id_hunter'] = $userId;
-                break;
-            case 'kurir':
-                $data['id_kurir'] = $userId;
-                break;
-        }
-
-        try {
-            FcmToken::updateOrCreate(
-                ['fcm_token' => $request->fcm_token],
-                $data
-            );
-            Log::info("FCM token saved successfully: Role=$role, User ID=$userId");
-        } catch (\Exception $e) {
-            Log::error("Failed to save FCM token: {$e->getMessage()}");
-            return response()->json(['message' => 'Failed to save FCM token'], 500);
-        }
-
-        return response()->json(['message' => 'FCM token saved successfully']);
     }
+    return response()->json(['status' => 'error', 'message' => 'Unauthorized'], 403);
+}
 
 }
 

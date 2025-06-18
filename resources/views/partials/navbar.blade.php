@@ -33,7 +33,19 @@
                         data-bs-toggle="dropdown" aria-expanded="false">
                         <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center me-2"
                             style="width: 32px; height: 32px;">
-                            <i class="fa-solid fa-user fs-6"></i>
+                            @if($role === 'pembeli')
+                                @php
+                                    $pembeli = Auth::guard('pembeli')->user();
+                                @endphp
+                                <img src="{{ $pembeli->profil_pict 
+                                        ? asset('uploads/profil_pembeli/' . $pembeli->profil_pict) 
+                                        : asset('images/default-avatar.png') }}" 
+                                alt="Profile Photo"
+                                class="rounded-circle img-fluid"
+                                style="width: 100%; height: 100%; object-fit: cover; ">
+                            @else
+                                <i class="fa-solid fa-user fs-6"></i>
+                            @endif
                         </div>
                         {{ $user['nama'] ?? 'User' }}
                     </button>

@@ -625,7 +625,7 @@ class TransaksiPembelianController extends Controller
     // ✅ Web: Riwayat transaksi untuk pembeli login
     public function riwayat()
     {
-        $riwayat = TransaksiPembelian::with('detailPembelians.barang')
+        $riwayat = TransaksiPembelian::with('keranjang.detailKeranjang.itemKeranjang.barang')
             ->where('id_pembeli', Auth::guard('pembeli')->id())
             ->latest()
             ->get();
@@ -636,7 +636,7 @@ class TransaksiPembelianController extends Controller
     // ✅ Web: Detail transaksi
     public function detail($id)
     {
-        $transaksi = TransaksiPembelian::with('detailPembelians.barang', 'alamat')
+        $transaksi = TransaksiPembelian::with('keranjang.detailKeranjang.itemKeranjang.barang', 'alamat')
             ->where('id_pembeli', Auth::guard('pembeli')->id())
             ->findOrFail($id);
 

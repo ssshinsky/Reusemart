@@ -29,13 +29,13 @@
                         <td>{{ $trans->no_resi ?? 'N/A' }}</td>
                         <td>{{ \Carbon\Carbon::parse($trans->tanggal_pembelian)->format('d M Y') }}</td>
                         <td><span class="badge bg-{{ $trans->status_transaksi === 'Selesai' ? 'success' : 'secondary' }}">
-                            {{ $trans->status_transaksi }}
-                        </span></td>
+                                {{ $trans->status_transaksi }}
+                            </span></td>
                         <td>Rp {{ number_format($trans->total_harga, 0, ',', '.') }}</td>
                         <td>{{ $trans->poin_pembeli ?? 0 }}</td>
                         <td>
-                            <a href="{{ route('pembeli.riwayat.detail', $trans->id_transaksi) }}"
-                                class="btn btn-sm btn-outline-success">Detail</a>
+                            <a href="{{ route('pembeli.riwayat.detail', $trans->id_pembelian) }}"
+                               class="btn btn-sm btn-outline-success">Detail</a>
                         </td>
                     </tr>
                     @endforeach

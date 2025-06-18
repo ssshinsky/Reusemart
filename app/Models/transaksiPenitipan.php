@@ -17,7 +17,6 @@ class TransaksiPenitipan extends Model
         'id_hunter',
         'id_penitip',
         'tanggal_penitipan',
-        'tanggal_berakhir',
         'updated_at',
         'created_at',
     ];

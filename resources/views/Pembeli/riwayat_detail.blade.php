@@ -17,6 +17,7 @@
         <hr>
 
         <h6 class="fw-semibold">Alamat Pengiriman:</h6>
+        {{-- Pastikan relasi 'alamat' ada dan di-eager load di controller --}}
         <p>{{ $transaksi->alamat->alamat_lengkap ?? '-' }}</p>
 
         <h6 class="fw-semibold mt-4">Metode Pengiriman:</h6>
@@ -35,27 +36,41 @@
                 </thead>
                 <tbody>
                     @php $subtotal = 0; @endphp
-                    @foreach($transaksi->detailPembelians as $item)
-                    <tr>
-                        <td>{{ $item->barang->nama_barang }}</td>
-                        <td>Rp {{ number_format($item->barang->harga_barang, 0, ',', '.') }}</td>
-                        <td>{{ $item->barang->berat_barang }} kg</td>
-                        <td>Rp {{ number_format($item->barang->harga_barang, 0, ',', '.') }}</td>
-                        @php $subtotal += $item->barang->harga_barang; @endphp
-                    </tr>
-                    @endforeach
+                    {{-- UBAH BAGIAN INI --}}
+                    @if($transaksi->keranjang && !$transaksi->keranjang->detailKeranjangs->isEmpty())
+                        @foreach($transaksi->keranjang->detailKeranjangs as $detailKeranjang)
+                            @if($detailKeranjang->itemKeranjang && $detailKeranjang->itemKeranjang->barang)
+                            <tr>
+                                <td>{{ $detailKeranjang->itemKeranjang->barang->nama_barang }}</td>
+                                <td>Rp {{ number_format($detailKeranjang->itemKeranjang->barang->harga_barang, 0, ',', '.') }}</td>
+                                <td>{{ $detailKeranjang->itemKeranjang->barang->berat_barang }} kg</td>
+                                {{-- Jika tidak ada kolom jumlah di detail_keranjang, asumsikan 1 unit barang --}}
+                                <td>Rp {{ number_format($detailKeranjang->itemKeranjang->barang->harga_barang, 0, ',', '.') }}</td>
+                                @php $subtotal += $detailKeranjang->itemKeranjang->barang->harga_barang; @endphp
+                            </tr>
+                            @endif
+                        @endforeach
+                    @else
+                        <tr>
+                            <td colspan="4">Tidak ada detail barang untuk transaksi ini.</td>
+                        </tr>
+                    @endif
                 </tbody>
                 <tfoot>
                     <tr>
-                        <th colspan="3" class="text-end">Subtotal</th>
-                        <th>Rp {{ number_format($subtotal, 0, ',', '.') }}</th>
+                        <th colspan="3" class="text-end">Subtotal Harga Barang</th>
+                        <th>Rp {{ number_format($transaksi->total_harga_barang ?? 0, 0, ',', '.') }}</th> {{-- Menggunakan total_harga_barang dari transaksi --}}
                     </tr>
                     <tr>
                         <th colspan="3" class="text-end">Ongkir</th>
                         <th>Rp {{ number_format($transaksi->ongkir, 0, ',', '.') }}</th>
                     </tr>
                     <tr>
-                        <th colspan="3" class="text-end">Total</th>
+                        <th colspan="3" class="text-end">Poin Terpakai</th>
+                        <th>{{ $transaksi->poin_terpakai ?? 0 }} poin</th>
+                    </tr>
+                    <tr>
+                        <th colspan="3" class="text-end">Total Pembayaran</th>
                         <th>Rp {{ number_format($transaksi->total_harga, 0, ',', '.') }}</th>
                     </tr>
                     <tr>

@@ -26,6 +26,7 @@ class TransaksiPembelian extends Model
         'id_keranjang',
         'id_alamat',
         'id_pembeli',
+        'id_kurir',
         'no_resi',
         'tanggal_pembelian',
         'waktu_pembayaran',
@@ -33,6 +34,7 @@ class TransaksiPembelian extends Model
         'total_harga_barang',
         'metode_pengiriman',
         'ongkir',
+        'tanggal_pengambilan',
         'tanggal_ambil',
         'tanggal_pengiriman',
         'total_harga',
@@ -41,8 +43,6 @@ class TransaksiPembelian extends Model
         'poin_pembeli',
         'poin_penitip',
         'status_pengiriman',
-        'id_kurir',
-        'tanggal_pengambilan',
     ];
 
     // Relasi ke model Keranjang

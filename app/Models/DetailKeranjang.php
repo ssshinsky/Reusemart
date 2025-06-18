@@ -11,6 +11,9 @@ class DetailKeranjang extends Model
 
     // Nama tabel yang digunakan oleh model
     protected $table = 'detail_keranjang';
+    protected $primaryKey = 'id_detail_keranjang'; 
+    public $incrementing = true;
+    protected $keyType = 'int';
 
     // Kolom yang dapat diisi (Mass Assignment)
     protected $fillable = [

@@ -144,6 +144,12 @@ Route::prefix('owner')->middleware(['auth:pegawai', 'pegawai.role:1'])->group(fu
     Route::get('/download/warehouse-stock-report', [OwnerController::class, 'downloadWarehouseStockReport'])->name('owner.download.warehouse.stock.report');
     Route::get('/monthly-sales-overview', [OwnerController::class, 'monthlySalesOverview'])->name('owner.monthly.sales.overview');
     Route::get('/download/monthly-sales-overview', [OwnerController::class, 'downloadMonthlySalesOverview'])->name('owner.download.monthly.sales.overview');
+    Route::get('/donation/requests', [OwnerController::class, 'donationRequests'])->name('owner.donation.requests');
+    Route::get('/donation/requests/download/pdf', [OwnerController::class, 'downloadPdf'])->name('owner.download.pdf');
+    Route::get('/donation/history', [OwnerController::class, 'donationHistory'])->name('owner.donation.history');
+    Route::get('/donation/download/pdf', [OwnerController::class, 'downloadDonationPdf'])->name('owner.download.donation.pdf');
+    Route::get('/consignment-report', [OwnerController::class, 'consignmentReport'])->name('owner.report');
+    Route::get('/consignment-report/download/{id}', [OwnerController::class, 'downloadConsignmentReport'])->name('owner.download.consignment.pdf');
 });
 
 // Admin Routes

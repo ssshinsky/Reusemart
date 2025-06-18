@@ -105,7 +105,7 @@ class PembeliController extends Controller
     // Web: Update pembeli
     public function updateProfile(Request $request, $id)
     {
-        $this->ensureAdmin();
+        // $this->ensureAdmin();
         
         $pembeli = Pembeli::findOrFail($id);
 

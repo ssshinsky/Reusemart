@@ -29,6 +29,9 @@
         <a href="{{ route('owner.rewards') }}" class="btn btn-outline-primary">
             <i class="bi bi-gift me-2"></i> Poin Reward
         </a>
+        <a href="{{ route('owner.report') }}" class="btn btn-outline-primary">
+            <i class="bi bi-file-earmark-text"></i> Laporan Penitip
+        </a>
         
         <!-- Navigation Button to Reports -->
         <div class="d-flex flex-wrap gap-3 mb-6">

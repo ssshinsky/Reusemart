@@ -230,6 +230,9 @@
             <a href="{{ route('owner.rewards') }}" class="{{ Route::is('owner.rewards') ? 'active' : '' }}">
                 <i class="bi bi-gift"></i> Poin Reward
             </a>
+            <a href="{{ route('owner.report') }}" class="{{ Route::is('owner.report') ? 'active' : '' }}">
+                <i class="bi bi-file-earmark-text"></i> Laporan Penitip
+            </a>
             <a href="{{ route('owner.reports') }}" class="{{ Route::is('owner.reports') ? 'active' : '' }}">
                 <i class="bi bi-bar-chart"></i> Laporan
             </a>

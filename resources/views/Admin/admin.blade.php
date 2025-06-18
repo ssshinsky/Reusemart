@@ -6,7 +6,7 @@
     <title>@yield('title', 'Admin Panel')</title>
     <link rel="icon" type="image/png" href="{{ asset('assets/images/logo.png') }}">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11" defer></script>
 
     <style>
         * {
@@ -219,36 +219,40 @@
 
     <!-- TOGGLE SCRIPT -->
     <script>
-        function toggleDropdown() {
-            const dropdown = document.getElementById("dropdownContent");
-            dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
-        }
-
-        window.onclick = function(e) {
-            if (!e.target.closest('.profile-dropdown')) {
-                document.getElementById("dropdownContent").style.display = "none";
+        document.addEventListener('DOMContentLoaded', () => {
+            function toggleDropdown() {
+                const dropdown = document.getElementById("dropdownContent");
+                dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
             }
-        }
 
-        function confirmProcessTopSeller() {
-            Swal.fire({
-                title: 'Yakin ingin memproses?',
-                text: 'Proses Top Seller akan menentukan penjual terbaik berdasarkan penjualan terbanyak.',
-                icon: 'question',
-                showCancelButton: true,
-                confirmButtonColor: '#30B878',
-                cancelButtonColor: '#d33',
-                confirmButtonText: 'Ya, proses!',
-                cancelButtonText: 'Batal'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    document.getElementById('topSellerForm').submit();
+            window.toggleDropdown = toggleDropdown; // Expose globally for onclick
+
+            window.onclick = function(e) {
+                if (!e.target.closest('.profile-dropdown')) {
+                    document.getElementById("dropdownContent").style.display = "none";
                 }
-            });
-        }
-    </script>
+            };
 
-    <script>
+            function confirmProcessTopSeller() {
+                Swal.fire({
+                    title: 'Yakin ingin memproses?',
+                    text: 'Proses Top Seller akan menentukan penjual terbaik berdasarkan penjualan terbanyak.',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#30B878',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Ya, proses!',
+                    cancelButtonText: 'Batal'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        document.getElementById('topSellerForm').submit();
+                    }
+                });
+            }
+
+            window.confirmProcessTopSeller = confirmProcessTopSeller; // Expose globally
+        });
+
         @if (session('success'))
             Swal.fire({
                 icon: 'success',
@@ -266,6 +270,8 @@
             });
         @endif
     </script>
+
+    @stack('scripts')
 </body>
 
 </html>

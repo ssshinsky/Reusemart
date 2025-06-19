@@ -58,15 +58,13 @@
                             <li><a class="dropdown-item" href="{{ route('penitip.myproduct') }}">My Product</a></li>
                         @elseif ($role === 'organisasi')
                             <li><a class="dropdown-item" href="{{ route('organisasi.profile') }}">My Account</a></li>
-                            <li><a class="dropdown-item" href="{{ route('organisasi.request') }}">Request Donasi
-                                    Saya</a></li>
+                            <li><a class="dropdown-item" href="{{ route('organisasi.request') }}">Request Donasi Saya</a></li>
                         @endif
                         <li>
                             <form id="logout-form" action="{{ route('logout.submit') }}" method="POST">
                                 @csrf
                                 <button type="submit" class="dropdown-item">Log Out</button>
                             </form>
-
                         </li>
                     </ul>
                 </div>

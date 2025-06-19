@@ -20,9 +20,9 @@ class AuthController extends Controller
             }
         }
 
-        // Log isi session SEBELUM invalidate (jika kamu mau debug)
-        logger('User before invalidate: ' . json_encode(session('user')));
-        logger('Role before invalidate: ' . json_encode(session('role')));
+        // Log isi session SEBELUM invalidate untuk debug
+        // logger('User before invalidate: ' . json_encode(session('user')));
+        // logger('Role before invalidate: ' . json_encode(session('role')));
 
         session()->forget(['user', 'role']);
         $request->session()->invalidate();        // Ini menghapus semua data session
@@ -107,7 +107,7 @@ class AuthController extends Controller
                 ],
                 'role' => 'organisasi',
             ]);
-            return redirect('/');
+            return redirect('/organisasi');
         }
 
         return back()->with('error', 'Email atau password salah.');

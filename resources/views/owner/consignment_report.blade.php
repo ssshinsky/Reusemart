@@ -32,8 +32,8 @@
                             <td>{{ $penitip->email_penitip }}</td>
                             <td class="text-center">
                                 <a href="{{ route('owner.download.consignment.pdf', ['id' => $penitip->id_penitip]) }}" 
-                                   class="btn btn-outline-success btn-sm" target="_blank">
-                                    <i class="bi bi-download me-1"></i> Download PDF
+                                    class="btn btn-outline-success btn-sm">
+                                        <i class="bi bi-download me-1"></i> Download PDF
                                 </a>
                             </td>
                         </tr>

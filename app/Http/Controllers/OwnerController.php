@@ -3,10 +3,11 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\DB;
 use App\Models\RequestDonasi;
 use App\Models\Donasi;
 use App\Models\Barang;
@@ -18,7 +19,9 @@ use App\Models\ItemKeranjang;
 use App\Models\DetailKeranjang;
 use App\Models\Keranjang;
 use App\Models\TransaksiPenitipan;
-use Barryvdh\DomPDF\Facade\Pdf as PDF;
+// use Barryvdh\DomPDF\Facade\Pdf as PDF;
+// use Carbon\Carbon;
+use ChartJs\Chart;
 
 class OwnerController extends Controller
 {
@@ -333,9 +336,9 @@ class OwnerController extends Controller
                 return $item;
             });
 
-        if ($penjualan->isEmpty()) {
-            return redirect()->back()->with('error', 'Tidak ada transaksi penjualan selesai untuk penitip ini pada bulan ini.');
-        }
+        // if ($penjualan->isEmpty()) {
+        //     return redirect()->back()->with('error', 'Tidak ada transaksi penjualan selesai untuk penitip ini pada bulan ini.');
+        // }
 
         $pdf = Pdf::loadView('owner.consignment_report_pdf', [
             'penitip' => $penitip,

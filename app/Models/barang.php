@@ -12,13 +12,19 @@ class Barang extends Model
 
     protected $table = 'barang';
     protected $primaryKey = 'id_barang';
+
     public $timestamps = true;
     protected $dateFormat = 'Y-m-d H:i:s';
     protected $casts = [
-        'tanggal_garansi' => 'datetime',
-        'tanggal_berakhir' => 'datetime',
+        'tanggal_garansi' => 'date',
+        'tanggal_berakhir' => 'date',
+        'tanggal_konfirmasi_pengambilan' => 'datetime', 
+        'batas_pengambilan' => 'datetime',             
+        'created_at' => 'datetime',                    
+        'updated_at' => 'datetime',  
         'rating' => 'integer',
     ];
+
     protected $fillable = [
         'id_kategori',
         'id_transaksi_penitipan',

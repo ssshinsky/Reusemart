@@ -172,10 +172,18 @@ class PenitipController extends Controller
         if (!$penitip) {
             abort(404, 'Penitip tidak ditemukan');
         }
+        $transaksiIds = TransaksiPenitipan::where('id_penitip', $penitip->id_penitip)->pluck('id_transaksi_penitipan');
+        $products = Barang::with('transaksiPenitipan')->whereIn('id_transaksi_penitipan', $transaksiIds)->get();
 
-        $transaksiIds = \App\Models\TransaksiPenitipan::where('id_penitip', $penitip->id_penitip)->pluck('id_transaksi_penitipan');
-        $produkSaya = \App\Models\Barang::whereIn('id_transaksi_penitipan', $transaksiIds)->get();
-        $products = $produkSaya;
+        // Otomatis ubah status jika masa penitipan sudah habis
+        foreach ($products as $product) {
+            $transaksi = $product->transaksiPenitipan;
+            if ($product->status_barang === 'Available' && $transaksi && now()->gt($product->tanggal_berakhir)) {
+                $product->update([
+                    'status_barang' => 'Awaiting Owner Pickup'
+                ]);
+            }
+        }
         return view('penitip.myproduct', compact('products'));
     }
 
@@ -397,13 +405,54 @@ class PenitipController extends Controller
 
     public function getPenitipById($id)
     {
-        try {
-            Log::debug('Fetching penitip by ID', ['id_penitip' => $id]);
+        if (strtolower($barang->status_barang) !== 'available' || $barang->perpanjangan == 1) {
+            return back()->with('error', 'Barang tidak dapat diperpanjang.');
+        }
 
-            $penitip = Penitip::find($id);
-            if (!$penitip) {
-                Log::warning('Penitip not found', ['id_penitip' => $id]);
-                return response()->json(['message' => 'Penitip not found'], 404);
+        $transaksi = $barang->transaksiPenitipan;
+
+        if (!$transaksi || !$barang->tanggal_berakhir) {
+            return back()->with('error', 'Transaksi atau tanggal berakhir tidak valid.');
+        }
+
+        $tanggalBaru = Carbon::parse($barang->tanggal_berakhir)->addDays(30);
+        $barang->update(['tanggal_berakhir' => $tanggalBaru]);
+
+        $barang->update(['perpanjangan' => 1]);
+
+        return back()->with('success', 'Penitipan berhasil diperpanjang 30 hari.');
+    }
+
+    public function confirmPickup($id)
+    {
+        $barang = Barang::findOrFail($id);
+
+        if (!in_array($barang->status_barang, ['Available', 'Awaiting Owner Pickup'])) {
+            return response()->json([
+                'message' => 'This item is not eligible for pickup.'
+            ], 422);
+        }
+
+        $now = Carbon::now();
+        $tanggalBerakhir = optional($barang)->tanggal_berakhir;
+
+        if (!$tanggalBerakhir) {
+            return response()->json([
+                'message' => 'Cannot determine end of storage period.'
+            ], 422);
+        }
+
+        if ($barang->status_barang === 'Available' && $now->lt($tanggalBerakhir)) {
+            // Picked up *before* end of storage
+            $batasAmbil = $now->copy()->addDays(7);
+        } else {
+            // Picked up *after* end of storage
+            $batasAmbil = Carbon::parse($tanggalBerakhir)->addDays(7);
+
+            if ($now->gt($batasAmbil)) {
+                return response()->json([
+                    'message' => 'Pickup period has already expired. This item will be donated.'
+                ], 422);
             }
 
             return response()->json([
@@ -418,14 +467,8 @@ class PenitipController extends Controller
                     ? asset('storage/' . $penitip->profil_pict)
                     : null,
             ]);
-        } catch (\Exception $e) {
-            Log::error('Error fetching penitip by ID', [
-                'id_penitip' => $id,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            return response()->json(['message' => 'Error fetching penitip'], 500);
-        }
+        } 
+        return response()->json(['message' => 'Error fetching penitip'], 500);
     }
 
     public function getProfile()
@@ -453,6 +496,21 @@ class PenitipController extends Controller
             ]);
             return response()->json(['message' => 'Error fetching profile'], 500);
         }
+
+        $now = Carbon::now();
+        $tanggalBerakhir = Carbon::parse($barang->tanggal_berakhir);
+        $batasAmbil = $barang->status_barang === 'Available' && $now->lt($tanggalBerakhir)
+            ? $now->copy()->addDays(7)
+            : $tanggalBerakhir->copy()->addDays(7);
+
+        if ($now->gt($batasAmbil)) {
+            return response()->json(['error' => true, 'message' => 'Pickup deadline already passed.']);
+        }
+
+        return response()->json([
+            'pickup_deadline' => $batasAmbil->format('d F Y H:i:s'),
+            'status_barang' => $barang->status_barang,
+        ]);
     }
 
     public function getConsignmentHistoryById($id)

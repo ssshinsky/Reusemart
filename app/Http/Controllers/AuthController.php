@@ -190,7 +190,7 @@ class AuthController extends Controller
             ]);
         }
 
-        return response()->json(['status' => 'error', 'message' => 'Email atau password salah'], 401);
+        return response()->json(['status' => 'error', 'message' => 'Email atau password salah yaa'], 401);
     }
 
 

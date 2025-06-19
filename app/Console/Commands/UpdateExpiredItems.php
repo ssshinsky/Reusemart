@@ -21,7 +21,7 @@ class UpdateExpiredItems extends Command
         foreach ($expiredItems as $item) {
             $transaksi = $item->transaksiPenitipan;
 
-            if ($transaksi && $now->gt(Carbon::parse($transaksi->tanggal_berakhir))) {
+            if ($transaksi && $now->gt(Carbon::parse($item->tanggal_berakhir))) {
                 $item->update([
                     'status_barang' => 'Awaiting Owner Pickup',
                     'batas_pengambilan' => $now->copy()->addDays(7),

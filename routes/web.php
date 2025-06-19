@@ -283,6 +283,9 @@ Route::prefix('gudang')->middleware(['auth:pegawai', 'pegawai.role:4'])->name('g
     Route::post('/transaksi/confirm-pickup/{id}', [TransaksiPenitipanController::class, 'confirmPickup'])->name('transaksi.confirmPickup');
     Route::get('/transaksi/print-invoice/{id}', [TransaksiPenitipanController::class, 'printInvoice'])->name('transaksi.printInvoice');
     Route::get('/transaksi/print-invoice-pickup/{id}', [TransaksiPenitipanController::class, 'printInvoicePickup'])->name('transaksi.printInvoicePickup');
+
+    Route::post('barang/{id}/confirm-owner-pickup', [TransaksiPenitipanController::class, 'confirmPickupBarang'])->name('transaksi.confirmPickupBarang');
+    Route::get('barang/{id}/detail', [TransaksiPenitipanController::class, 'detailBarang'])->name('barang.detail');
 });
 
 // Kurir Routes

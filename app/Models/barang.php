@@ -14,6 +14,15 @@ class Barang extends Model
     protected $primaryKey = 'id_barang';
     public $timestamps = false;
 
+    protected $casts = [
+        'tanggal_garansi' => 'date',
+        'tanggal_berakhir' => 'date',
+        'tanggal_konfirmasi_pengambilan' => 'datetime', 
+        'batas_pengambilan' => 'datetime',             
+        'created_at' => 'datetime',                    
+        'updated_at' => 'datetime',                    
+    ];
+
     protected $fillable = [
         'id_kategori',
         'id_transaksi_penitipan',

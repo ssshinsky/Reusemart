@@ -627,11 +627,19 @@ class TransaksiPenitipanController extends Controller
             'detailKeranjangs.itemKeranjang.barang.transaksiPenitipan.penitip',
 
         ])
-        ->whereIn('status_transaksi', ['Ready for Pickup', 'Preparing', 'In Delivery'])
+        ->whereIn('status_transaksi', ['Ready for Pickup', 'Preparing', 'In Delivery']) 
         ->orderBy('tanggal_pembelian', 'asc')
         ->get();
 
-        return view('gudang.transaksi_pengiriman', compact('transaksi'));
+        $barangReadyForPickup = Barang::with([
+            'gambar',
+            'transaksiPenitipan.penitip'
+        ])
+        ->where('status_barang', 'Ready for Pickup')
+        ->orderBy('tanggal_konfirmasi_pengambilan', 'asc') 
+        ->get();
+
+        return view('gudang.transaksi_pengiriman', compact('transaksi','barangReadyForPickup'));
     }
 
     public function perbaruiStatusOtomatis()
@@ -952,4 +960,43 @@ class TransaksiPenitipanController extends Controller
         return view('gudang.transaksi_detail', compact('transaksi'));
     }
 
+    public function confirmPickupBarang(Request $request, $id) 
+    {
+        $this->ensureGudang(); 
+        $this->cekTransaksiHangus(); 
+
+        $barang = Barang::find($id);
+
+        if (!$barang) {
+            return redirect()->back()->with('error', 'Barang tidak ditemukan.'); 
+        }
+
+        if ($barang->status_barang == 'Ready for Pickup' && $barang->batas_pengambilan > Carbon::now()) { 
+            $barang->status_barang = 'Returned'; 
+            $barang->tanggal_konfirmasi_pengambilan = Carbon::now(); 
+            $barang->save(); 
+
+            return redirect()->back()->with('success', 'Pengambilan barang titipan oleh pemilik berhasil dikonfirmasi!'); //
+        } else {
+            return redirect()->back()->with('error', 'Barang tidak dalam status siap untuk diambil atau batas pengambilan sudah terlewati.'); //
+        }
+    }
+
+    public function detailBarang($id) 
+    {
+        $this->ensureGudang(); 
+        $this->cekTransaksiHangus(); 
+
+        $barang = Barang::with([
+            'kategori', 
+            'gambar', 
+            'transaksiPenitipan.penitip' 
+        ])->find($id); 
+
+        if (!$barang) {
+            return redirect()->route('gudang.transaksi.pengiriman')->with('error', 'Barang tidak ditemukan.'); 
+        }
+
+        return view('gudang.detail_barang_titipan', compact('barang')); 
+    }
 }

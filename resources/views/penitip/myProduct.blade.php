@@ -105,17 +105,6 @@
                     });
                 });
         }
-
-            // document.addEventListener('DOMContentLoaded', function () {
-            //     setInterval(() => {
-            //         fetch('/penitip/myProduct/search?q=' + document.getElementById('searchInput')?.value || '')
-            //             .then(response => response.text())
-            //             .then(html => {
-            //                 document.getElementById('productGrid').innerHTML = html;
-            //             })
-            //             .catch(error => console.error('Polling error:', error));
-            //     }, 1000); // 60 detik
-            // });
     </script>
 @endsection
 

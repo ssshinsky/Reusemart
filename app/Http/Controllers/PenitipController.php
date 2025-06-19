@@ -134,7 +134,7 @@ class PenitipController extends Controller
         // Otomatis ubah status jika masa penitipan sudah habis
         foreach ($products as $product) {
             $transaksi = $product->transaksiPenitipan;
-            if ($product->status_barang === 'Available' && $transaksi && now()->gt($transaksi->tanggal_berakhir)) {
+            if ($product->status_barang === 'Available' && $transaksi && now()->gt($product->tanggal_berakhir)) {
                 $product->update([
                     'status_barang' => 'Awaiting Owner Pickup'
                 ]);
@@ -407,12 +407,12 @@ class PenitipController extends Controller
 
         $transaksi = $barang->transaksiPenitipan;
 
-        if (!$transaksi || !$transaksi->tanggal_berakhir) {
+        if (!$transaksi || !$barang->tanggal_berakhir) {
             return back()->with('error', 'Transaksi atau tanggal berakhir tidak valid.');
         }
 
-        $tanggalBaru = Carbon::parse($transaksi->tanggal_berakhir)->addDays(30);
-        $transaksi->update(['tanggal_berakhir' => $tanggalBaru]);
+        $tanggalBaru = Carbon::parse($barang->tanggal_berakhir)->addDays(30);
+        $barang->update(['tanggal_berakhir' => $tanggalBaru]);
 
         $barang->update(['perpanjangan' => 1]);
 
@@ -430,7 +430,7 @@ class PenitipController extends Controller
         }
 
         $now = Carbon::now();
-        $tanggalBerakhir = optional($barang->transaksiPenitipan)->tanggal_berakhir;
+        $tanggalBerakhir = optional($barang)->tanggal_berakhir;
 
         if (!$tanggalBerakhir) {
             return response()->json([
@@ -474,7 +474,7 @@ class PenitipController extends Controller
         }
 
         $now = Carbon::now();
-        $tanggalBerakhir = Carbon::parse($barang->transaksiPenitipan->tanggal_berakhir);
+        $tanggalBerakhir = Carbon::parse($barang->tanggal_berakhir);
         $batasAmbil = $barang->status_barang === 'Available' && $now->lt($tanggalBerakhir)
             ? $now->copy()->addDays(7)
             : $tanggalBerakhir->copy()->addDays(7);

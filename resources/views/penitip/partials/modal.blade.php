@@ -61,7 +61,7 @@
                         @php
                             use Illuminate\Support\Carbon;
 
-                            $tanggalBerakhir = optional($product->transaksiPenitipan)->tanggal_berakhir;
+                            $tanggalBerakhir = optional($product)->tanggal_berakhir;
                             $hariIni = now();
                             $hMinus3 = $tanggalBerakhir ? Carbon::parse($tanggalBerakhir)->subDays(3) : null;
 

@@ -768,9 +768,9 @@ public function downloadMonthlySalesOverview(\Illuminate\Http\Request $request)
                 return $item;
             });
 
-        if ($penjualan->isEmpty()) {
-            return redirect()->back()->with('error', 'Tidak ada transaksi penjualan selesai untuk penitip ini pada bulan ini.');
-        }
+        // if ($penjualan->isEmpty()) {
+        //     return redirect()->back()->with('error', 'Tidak ada transaksi penjualan selesai untuk penitip ini pada bulan ini.');
+        // }
 
         $pdf = Pdf::loadView('owner.consignment_report_pdf', [
             'penitip' => $penitip,
@@ -780,6 +780,6 @@ public function downloadMonthlySalesOverview(\Illuminate\Http\Request $request)
         ]);
 
         $namaBulan = Carbon::createFromDate(null, $bulanSekarang, 1)->format('F');
-        return $pdf->download("Consignment_Report_{$penitip->nama_penitip}_{$namaBulan}_{$tahunSekarang}.pdf");
+        return $pdf->stream("Consignment_Report_{$penitip->nama_penitip}_{$namaBulan}_{$tahunSekarang}.pdf");
     }
 }

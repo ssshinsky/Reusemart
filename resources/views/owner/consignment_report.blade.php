@@ -34,7 +34,7 @@
                                 <a href="{{ route('owner.download.consignment.pdf', ['id' => $penitip->id_penitip]) }}" 
                                     class="btn btn-outline-success btn-sm">
                                         <i class="bi bi-download me-1"></i> Download PDF
-                                    </a>
+                                </a>
                             </td>
                         </tr>
                     @empty

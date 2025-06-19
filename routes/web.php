@@ -54,7 +54,7 @@ Route::post('/pembeli', [PembeliController::class, 'store'])->name('pembeli.stor
 Route::post('/organisasi', [OrganisasiController::class, 'store'])->name('organisasi.store');
 Route::get('/produk/allProduct', [BarangController::class, 'allProduct'])->name('produk.allproduct');
 Route::get('/barang/{id}', [BarangController::class, 'show'])->name('umum.show');
-Route::post('/diskusi/store', [DiskusiProdukController::class, 'store'])->name('diskusi.store')->middleware('auth:pembeli');
+Route::post('/diskusi/store', [DiskusiProdukController::class, 'store'])->name('diskusi.store');
 
 // Cart Routes
 Route::post('/keranjang/tambah/{id}', [ItemKeranjangController::class, 'tambah'])->name('cart.add');
@@ -72,7 +72,7 @@ Route::post('/password/update', [ResetPasswordController::class, 'updatePassword
 Route::prefix('penitip')->middleware('auth:penitip')->group(function () {
     Route::get('/profile', [PenitipController::class, 'profile'])->name('penitip.profile');
     Route::get('/{id}/edit', [PenitipController::class, 'editProfile'])->name('penitip.edit');
-    Route::put('/{id}/update', [PenitipController::class, 'updateProfile'])->name('penitip.update');
+    Route::post('/{id}/update', [PenitipController::class, 'updateProfile'])->name('penitip.updateProfile');
     Route::get('/reward', [PenitipController::class, 'rewards'])->name('penitip.rewards');
     Route::get('/product', [PenitipController::class, 'product'])->name('penitip.product');
     Route::get('/myproduct', [PenitipController::class, 'myproduct'])->name('penitip.myproduct');

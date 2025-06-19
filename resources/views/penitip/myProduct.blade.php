@@ -28,10 +28,10 @@
                                         Status:
                                         @php
                                             $status = [
-                                                'AVAILABLE' => ['label' => 'Available', 'class' => 'success'],
-                                                'SOLD OUT' => ['label' => 'Sold Out', 'class' => 'danger'],
-                                                'DONATED' => ['label' => 'Donated', 'class' => 'warning text-dark'],
-                                                'COLLECTED' => ['label' => 'Collected', 'class' => 'primary'],
+                                                'tersedia' => ['label' => 'Available', 'class' => 'success'],
+                                                'sold' => ['label' => 'Sold Out', 'class' => 'danger'],
+                                                'didonasikan' => ['label' => 'Donated', 'class' => 'warning text-dark'],
+                                                'diambil' => ['label' => 'Collected', 'class' => 'primary'],
                                             ];
                                             $badge = $status[$product->status_barang] ?? [
                                                 'label' => 'Unknown',

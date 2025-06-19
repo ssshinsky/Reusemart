@@ -13,7 +13,7 @@
                     <div class="card-body">
                         <div class="row align-items-start">
                             <div class="col-md-3 text-center mb-3 mb-md-0">
-                                <img src="{{ asset('storage/app/private/public/foto_penitip/' . ($penitip->profil_pict ?? 'default.png')) }}"
+                                <img src="{{ asset('storage/foto_penitip/' . ($penitip->profil_pict ?? 'default.png')) }}"
                                     alt="Profile Photo" class="rounded" width="120" height="120"
                                     style="object-fit: cover;">
                             </div>
@@ -66,10 +66,10 @@
     <div class="modal fade" id="editProfileModal" tabindex="-1" aria-labelledby="editProfileModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
-                <form action="{{ route('penitip.update', $penitip->id_penitip) }}" method="POST"
+                <form action="{{ route('penitip.updateProfile', $penitip->id_penitip) }}" method="POST"
                     enctype="multipart/form-data">
                     @csrf
-                    @method('PUT')
+                    @method('POST')
 
                     <div class="modal-header">
                         <h5 class="modal-title" id="editProfileModalLabel">Edit Profile</h5>

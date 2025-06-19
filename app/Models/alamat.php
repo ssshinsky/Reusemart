@@ -16,8 +16,8 @@ class Alamat extends Model
     // Kolom yang dapat diisi (Mass Assignment)
    protected $fillable = [
         'id_pembeli',
-        'nama_orang',
         'label_alamat',
+        'nama_orang',
         'alamat_lengkap',
         'kecamatan',
         'kabupaten',

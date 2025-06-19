@@ -77,7 +77,7 @@ class OrganisasiController extends Controller
             'role' => 'organisasi'
         ]);
 
-        return redirect()->route('organisasi.organisasi');
+        return redirect()->route('organisasi.store');
     }
 
 

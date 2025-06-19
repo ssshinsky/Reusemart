@@ -13,7 +13,24 @@
                     <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#addAddressModal">+ Add New
                         Address</button>
                 </div>
+                
+                <!-- Form Pencarian -->
+                <form method="GET" class="mb-4">
+                    <div class="input-group">
+                        <input type="text" name="search" class="form-control"
+                            placeholder="Cari Alamat"
+                            value="{{ request('search') }}">
+                        <button class="btn btn-outline-success" type="submit"><i class="bi bi-search"></i> Cari</button>
+                    </div>
+                </form>
 
+                @if (session('error'))
+                    <div class="alert alert-danger">{{ session('error') }}</div>
+                @endif
+                @if (session('success'))
+                    <div class="alert alert-success">{{ session('success') }}</div>
+                @endif
+                
                 @forelse ($alamatList as $alamat)
                     <div class="card mb-3 shadow-sm">
                         <div class="card-body">
@@ -44,7 +61,8 @@
                                         <form action="{{ route('pembeli.alamat.set_default', $alamat->id_alamat) }}"
                                             method="POST">
                                             @csrf
-                                            <button type="submit" class="btn btn-outline-secondary btn-sm">Set As Default</button>
+                                            <button type="submit" class="btn btn-outline-secondary btn-sm">Set As
+                                                Default</button>
                                         </form>
                                     @endif
                                 </div>

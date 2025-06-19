@@ -127,31 +127,8 @@ class AuthController extends Controller
 
         // 1. Cek Pegawai
         $pegawai = Pegawai::where('email_pegawai', $email)->first();
-        if (!$pegawai || !Hash::check($password, $pegawai->password)) {
-            \Log::error('Login: Invalid credentials', ['email' => $email]);
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Email atau kata sandi salah'
-            ], 401);
-        }else{
-            // Buat token Sanctum
-            $token = $pegawai->createToken('mobile_token', ['guard:api_pegawai'])->plainTextToken;
-
-            // Tentukan role berdasarkan id_role
-            $role = match ($pegawai->id_role) {
-                5 => 'Kurir',
-                1 => 'Admin',
-                2 => 'Owner',
-                default => 'Pegawai',
-            };
-
-            \Log::info('Login: Success', [
-                'id_pegawai' => $pegawai->id_pegawai,
-                'id_role' => $pegawai->id_role,
-                'role' => $role,
-                'token' => $token,
-            ]);
-
+        if ($pegawai && Hash::check($password, $pegawai->password)) {
+            $token = $pegawai->createToken('mobile_token')->plainTextToken;
             return response()->json([
                 'status' => 'success',
                 'token' => $token,
@@ -159,10 +136,9 @@ class AuthController extends Controller
                     'id' => $pegawai->id_pegawai,
                     'nama' => $pegawai->nama_pegawai,
                     'email' => $pegawai->email_pegawai,
-                    'id_role' => $pegawai->id_role,
                 ],
-                'role' => $role,
-            ], 200);
+                'role' => 'pegawai',
+            ]);
         }
 
         // 2. Cek Penitip

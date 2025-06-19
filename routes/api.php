@@ -31,6 +31,18 @@ Route::get('/barang/{id}', [BarangController::class, 'apiShow']);
 Route::get('/kategori', [BarangController::class, 'getKategoriApi']);
 Route::get('/top-seller', [TransaksiPembelianController::class, 'indextopapi'])->name('api.top-seller');
 
+// Route tanpa autentikasi
+Route::get('/penitip/{id}', [PenitipController::class, 'getPenitipById']);
+Route::get('/penitip/{id}/history', [PenitipController::class, 'getConsignmentHistoryById']);
+Route::get('/penitip/profile', [PenitipController::class, 'getProfile']);
+Route::get('/penitip/history', [PenitipController::class, 'getConsignmentHistory']);
+
+// Route pembeli tanpa autentikasi
+Route::get('/pembeli/{id}', [PembeliController::class, 'getPembeliById']);
+Route::get('/pembeli/{id}/history', [TransaksiPembelianController::class, 'getPurchaseHistoryById']);
+Route::get('/pembeli/profile', [PembeliController::class, 'getProfile']);
+Route::get('/pembeli/history', [TransaksiPembelianController::class, 'getPurchaseHistory']);
+
 Route::middleware('auth:api')->group(function () {
     // Logout Pegawai
     Route::post('/pegawai/logout', [PegawaiController::class, 'logout']);

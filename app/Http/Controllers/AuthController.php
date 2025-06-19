@@ -139,9 +139,9 @@ class AuthController extends Controller
 
             // Tentukan role berdasarkan id_role
             $role = match ($pegawai->id_role) {
-                5 => 'Kurir',
-                1 => 'Admin',
-                2 => 'Owner',
+                5 => 'kurir',
+                1 => 'admin',
+                2 => 'owner',
                 default => 'Pegawai',
             };
 
@@ -214,7 +214,7 @@ class AuthController extends Controller
             ]);
         }
 
-        return response()->json(['status' => 'error', 'message' => 'Email atau password salah'], 401);
+        return response()->json(['status' => 'error', 'message' => 'Email atau password salah yaa'], 401);
     }
 
 

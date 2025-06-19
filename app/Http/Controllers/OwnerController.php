@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use App\Models\RequestDonasi;
@@ -16,7 +17,7 @@ use App\Models\TransaksiPembelian;
 use App\Models\ItemKeranjang;
 use App\Models\DetailKeranjang;
 use Carbon\Carbon;
-use PDF;
+// use PDF;
 // use App\Charts\ChartJSNodeCanvas;
 use ChartJs\Chart;
 
@@ -771,7 +772,7 @@ public function downloadMonthlySalesOverview(\Illuminate\Http\Request $request)
             return redirect()->back()->with('error', 'Tidak ada transaksi penjualan selesai untuk penitip ini pada bulan ini.');
         }
 
-        $pdf = Pdf::loadView('consignment_report_pdf', [
+        $pdf = Pdf::loadView('owner.consignment_report_pdf', [
             'penitip' => $penitip,
             'penjualan' => $penjualan,
             'bulanSekarang' => $bulanSekarang,
@@ -779,7 +780,6 @@ public function downloadMonthlySalesOverview(\Illuminate\Http\Request $request)
         ]);
 
         $namaBulan = Carbon::createFromDate(null, $bulanSekarang, 1)->format('F');
-        return $pdf->stream('Consignment_Report_{$penitip->nama_penitip}{$namaBulan}{$tahunSekarang}.pdf');
+        return $pdf->download("Consignment_Report_{$penitip->nama_penitip}_{$namaBulan}_{$tahunSekarang}.pdf");
     }
-    
 }

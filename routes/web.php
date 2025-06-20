@@ -115,6 +115,7 @@ Route::prefix('pembeli')->middleware('auth:pembeli')->group(function () {
 // Organisasi Routes
 Route::prefix('organisasi')->middleware('auth:organisasi')->name('organisasi.')->group(function () {
     Route::get('/', [RequestDonasiController::class, 'index'])->name('index');
+    Route::get('/request', [RequestDonasiController::class, 'index'])->name('request');
     Route::get('/request-donasi/add', [RequestDonasiController::class, 'create'])->name('request.create');
     Route::post('/request-donasi', [RequestDonasiController::class, 'store'])->name('request.store');
     Route::get('/request-donasi/{id}/edit', [RequestDonasiController::class, 'edit'])->name('request.edit');

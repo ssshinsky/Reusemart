@@ -16,7 +16,7 @@
             <span>{{ $barang->nama_barang ?? 'Nama barang tidak tersedia' }}</span>
         </nav>
 
-        <!-- Main Content -->
+        {{-- <!-- Main Content -->
         <div class="card grid grid-cols-1 md:grid-cols-3 gap-4">
             <!-- Slider Gambar -->
             <div class="col-span-2">
@@ -28,7 +28,39 @@
                             @endforeach
                         @else
                             <p class="text-muted text-sm">Tidak ada gambar</p>
-                        @endif
+                        @endif --}}
+    <body>
+        <main class="flex-grow-1">
+            <div class="container">
+                <!-- Breadcrumb -->
+                <nav class="breadcrumb">
+                    <a href="/">Home</a>
+                    <span class="text-gray-400">/</span>
+                    <a href="/kategori/{{ $barang->kategori->id_kategori }}">{{ $barang->kategori->nama_kategori }}</a>
+                    <span class="text-gray-400">/</span>
+                    <span>{{ $barang->nama_barang }}</span>
+                </nav>
+
+                <!-- Main Content -->
+                <div class="card grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <!-- Slider Gambar -->
+                    <div class="col-span-2">
+                        <div class="slider">
+                            <div class="slider-container" id="slider-container">
+                                @foreach ($barang->gambar as $gambar)
+                                    <img src="{{ asset('storage/gambar_barang/' . ($barang->gambar->first()->gambar_barang ?? 'default.png')) }}" alt="Slide"
+                                        class="slide">
+                                @endforeach
+                            </div>
+                            <button class="slider-btn prev" onclick="moveSlide(-1)">❮</button>
+                            <button class="slider-btn next" onclick="moveSlide(1)">❯</button>
+                            <div class="dots" id="dots">
+                                @for ($i = 0; $i < $barang->gambar->count(); $i++)
+                                    <span class="dot @if ($i == 0) active @endif"
+                                        onclick="currentSlide({{ $i + 1 }})"></span>
+                                @endfor
+                            </div>
+                        </div>
                     </div>
                     @if ($barang->gambar && $barang->gambar->isNotEmpty())
                         <button class="slider-btn prev" onclick="moveSlide(-1)">❮</button>

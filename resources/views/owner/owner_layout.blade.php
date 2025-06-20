@@ -242,6 +242,12 @@
                     <i class="bi bi-box-arrow-right me-2"></i> Logout
                 </button>
             </form>
+            <a href="{{ route('owner.reports.sales_by_category') }}" class="{{ Route::is('owner.reports.sales_by_category') ? 'active' : '' }}">
+                <i class="bi bi-bar-chart-line me-2"></i>Lap. Penjualan per Kategori
+            </a>
+            <a href="{{ route('owner.reports.expired_items') }}" class="{{ Route::is('owner.reports.expired_items') ? 'active' : '' }}">
+                <i class="bi bi-calendar-x me-2"></i>Lap. Masa Penitipan Habis
+            </a>
         </nav>
     </div>
 

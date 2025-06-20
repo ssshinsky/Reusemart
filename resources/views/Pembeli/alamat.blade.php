@@ -61,8 +61,7 @@
                                         <form action="{{ route('pembeli.alamat.set_default', $alamat->id_alamat) }}"
                                             method="POST">
                                             @csrf
-                                            <button type="submit" class="btn btn-outline-secondary btn-sm">Set As
-                                                Default</button>
+                                            <button type="submit" class="btn btn-outline-secondary btn-sm">Set As Default</button>
                                         </form>
                                     @endif
                                 </div>

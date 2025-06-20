@@ -22,9 +22,9 @@ class AuthController extends Controller
             }
         }
 
-        // Log isi session SEBELUM invalidate (jika kamu mau debug)
-        logger('User before invalidate: ' . json_encode(session('user')));
-        logger('Role before invalidate: ' . json_encode(session('role')));
+        // Log isi session SEBELUM invalidate untuk debug
+        // logger('User before invalidate: ' . json_encode(session('user')));
+        // logger('Role before invalidate: ' . json_encode(session('role')));
 
         session()->forget(['user', 'role']);
         $request->session()->invalidate();        // Ini menghapus semua data session
@@ -77,7 +77,7 @@ class AuthController extends Controller
                 'role' => 'penitip',
             ]);
             $request->session()->regenerate();
-            return redirect('/');
+            return redirect('/penitip/myProduct');
         }
 
         // 3. Cek Pembeli
@@ -109,7 +109,7 @@ class AuthController extends Controller
                 ],
                 'role' => 'organisasi',
             ]);
-            return redirect('/');
+            return redirect('/organisasi');
         }
 
         return back()->with('error', 'Email atau password salah.');
@@ -120,45 +120,16 @@ class AuthController extends Controller
         $request->validate([
             'email' => 'required|email',
             'password' => 'required|string'
+        ], [
+            'email.required' => 'Email tidak boleh kosong.',
+            'email.email' => 'Format email tidak valid.',
+            'password.required' => 'Password tidak boleh kosong.',
         ]);
 
         $email = $request->email;
         $password = $request->password;
 
-        // 2. Cek Penitip
-        $penitip = Penitip::where('email_penitip', $email)->first();
-        if ($penitip && Hash::check($password, $penitip->password)) {
-            $token = $penitip->createToken('mobile_token')->plainTextToken;
-            return response()->json([
-                'status' => 'success',
-                'token' => $token,
-                'user' => [
-                    'id' => $penitip->id_penitip,
-                    'nama' => $penitip->nama_penitip,
-                    'email' => $penitip->email_penitip,
-                ],
-                'role' => 'penitip',
-            ]);
-        }
-
-        // 3. Cek Pembeli
-        $pembeli = Pembeli::where('email_pembeli', $email)->first();
-        if ($pembeli && Hash::check($password, $pembeli->password)) {
-            $token = $pembeli->createToken('mobile_token')->plainTextToken;
-            return response()->json([
-                'status' => 'success',
-                'token' => $token,
-                'user' => [
-                    'id' => $pembeli->id_pembeli,
-                    'nama' => $pembeli->nama_pembeli,
-                    'email' => $pembeli->email_pembeli,
-                    'poin' => $pembeli->poin_pembeli ?? 0,
-                ],
-                'role' => 'pembeli',
-            ]);
-        }
-
-        // 1. Cek Pegawai
+        // Coba login sebagai Pegawai
         $pegawai = Pegawai::where('email_pegawai', $email)->first();
         if (!$pegawai || !Hash::check($password, $pegawai->password)) {
             \Log::error('Login: Invalid credentials', ['email' => $email]);
@@ -167,7 +138,7 @@ class AuthController extends Controller
                 'message' => 'Email atau kata sandi salah'
             ], 401);
         }else{
-            // // Buat token Sanctum
+            // Buat token Sanctum
             $token = $pegawai->createToken('mobile_token', ['guard:api_pegawai'])->plainTextToken;
 
             // Tentukan role berdasarkan id_role
@@ -197,9 +168,72 @@ class AuthController extends Controller
                 'role' => $role,
             ], 200);
         }
-        return response()->json(['status' => 'error', 'message' => 'Email atau password salah yaa'], 401);
-    }
 
+        // Coba login sebagai Penitip
+        $penitip = Penitip::where('email_penitip', $email)->first();
+        if ($penitip) {
+            if (Hash::check($password, $penitip->password)) {
+                if ($penitip->status_penitip == 'Non Active') {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Akun penitip tidak aktif. Silakan hubungi administrator.',
+                    ], 401);
+                }
+                $token = $penitip->createToken('mobile_token')->plainTextToken;
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Login berhasil!',
+                    'token' => $token,
+                    'user_type' => 'penitip',
+                    'user' => $penitip->toArray(),
+                ], 200);
+            }
+        }
+
+        // Coba login sebagai Pembeli
+        $pembeli = Pembeli::where('email_pembeli', $email)->first();
+        if ($pembeli) {
+            if (Hash::check($password, $pembeli->password)) {
+                if ($pembeli->status_pembeli == 'Non Active') {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Akun pembeli tidak aktif. Silakan hubungi administrator.',
+                    ], 401);
+                }
+                $token = $pembeli->createToken('mobile_token')->plainTextToken;
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Login berhasil!',
+                    'token' => $token,
+                    'user_type' => 'pembeli',
+                    'user' => $pembeli->toArray(),
+                ], 200);
+            }
+        }
+
+        // Coba login sebagai Organisasi
+        $organisasi = Organisasi::where('email_organisasi', $email)->first();
+        if ($organisasi) {
+            if (Hash::check($password, $organisasi->password)) {
+                if ($organisasi->status_organisasi == 'Non Active') {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Akun organisasi tidak aktif. Silakan hubungi administrator.',
+                    ], 401);
+                }
+                $token = $organisasi->createToken('mobile_token')->plainTextToken;
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Login berhasil!',
+                    'token' => $token,
+                    'user_type' => 'organisasi',
+                    'user' => $organisasi->toArray(),
+                ], 200);
+            }
+        }
+        // Jika tidak ada user yang cocok atau password salah
+        return response()->json(['success' => false, 'message' => 'Email atau password salah.'], 401);
+    }
 
     public function logoutapi(Request $request)
     {
@@ -220,4 +254,3 @@ class AuthController extends Controller
 }
 
 }
-

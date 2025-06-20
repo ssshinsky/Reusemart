@@ -14,6 +14,8 @@ use App\Http\Controllers\TransaksiPembelianController;
 use App\Http\Controllers\FcmTokenController;
 use App\Http\Controllers\NotificationController;
 
+// dd('API Route File Loaded');
+
 Route::post('/login', [AuthController::class, 'loginapi']);
 Route::middleware('auth:sanctum')->post('/logout', [AuthController::class, 'logoutapi']);
 

@@ -11,6 +11,7 @@ class Komisi extends Model
 
     // Nama tabel yang digunakan oleh model
     protected $table = 'komisi';
+    protected $primaryKey = 'id_komisi';
 
     // Kolom yang dapat diisi (Mass Assignment)
     protected $fillable = [
@@ -21,6 +22,7 @@ class Komisi extends Model
         'komisi_hunter',
         'komisi_penitip',
         'komisi_reusemart',
+        'bonus_penitip_terjual_cepat',
     ];
 
     // Relasi ke Pembelian

@@ -265,7 +265,7 @@
         <h5 class="mb-3 fw-bold">ALL PRODUCT</h5>
         <div class="row row-cols-2 row-cols-sm-3 row-cols-md-4 row-cols-lg-6 g-3">
             @foreach ($barangTerbatas as $item)
-                @if ($item->status_barang == 'tersedia')
+                {{-- @if ($item->status_barang == 'tersedia')
                     <div class="col">
                         <div class="card h-100 text-center p-2">
                             <img src="{{ asset('storage/gambar/' . ($item->gambar->first()->gambar_barang ?? 'default.png')) }}"
@@ -276,7 +276,17 @@
                                 <div class="mt-auto">
                                     <a href="{{ route('umum.show', $item->id_barang) }}"
                                         class="btn btn-success btn-sm w-100">View Details</a>
-                                </div>
+                                </div> --}}
+                <div class="col">
+                    <div class="card h-100 text-center p-2">
+                        <img src="{{ asset('storage/gambar_barang/' . ($item->gambar->first()->gambar_barang ?? 'default.png')) }}"
+                            class="card-img-top" alt="{{ $item->nama_barang }}">
+                        <div class="card-body d-flex flex-column">
+                            <p class="card-title small">{{ $item->nama_barang }}</p>
+                            <p class="fw-bold text-success">Rp{{ number_format($item->harga_barang, 0, ',', '.') }}</p>
+                            <div class="mt-auto">
+                                <a href="{{ route('umum.show', $item->id_barang) }}"
+                                    class="btn btn-success btn-sm w-100">View Details</a>
                             </div>
                         </div>
                     </div>

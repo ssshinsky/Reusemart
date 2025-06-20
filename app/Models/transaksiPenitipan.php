@@ -17,6 +17,8 @@ class TransaksiPenitipan extends Model
         'id_hunter',
         'id_penitip',
         'tanggal_penitipan',
+        'updated_at',
+        'created_at',
     ];
 
     protected $casts = [

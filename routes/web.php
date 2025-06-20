@@ -25,6 +25,14 @@ use App\Http\Controllers\TransaksiMerchandiseController;
 use App\Http\Controllers\DiskusiProdukController;
 use App\Models\Barang;
 
+Route::post('/login-api-debug', [App\Http\Controllers\AuthController::class, 'loginapi'])
+    ->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]); // Kita tetap kecualikan CSRF untuk berjaga-jaga
+
+// Route::post('/api/login', [App\Http\Controllers\AuthController::class, 'loginapi'])->name('api.login.temp');
+// Route::post('/api/login', [App\Http\Controllers\AuthController::class, 'loginapi'])
+//     ->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]) // Ini penting
+//     ->name('api.login.temp');
+
 Route::get('/', function () {
     $barangTerbatas = Barang::with('gambar')->take(12)->get();
     return view('welcome', [
@@ -75,41 +83,59 @@ Route::prefix('penitip')->middleware('auth:penitip')->group(function () {
     Route::post('/{id}/update', [PenitipController::class, 'updateProfile'])->name('penitip.updateProfile');
     Route::get('/reward', [PenitipController::class, 'rewards'])->name('penitip.rewards');
     Route::get('/product', [PenitipController::class, 'product'])->name('penitip.product');
-    Route::get('/myproduct', [PenitipController::class, 'myproduct'])->name('penitip.myproduct');
+    Route::get('/myProduct', [PenitipController::class, 'myProduct'])->name('penitip.myproduct');
     Route::get('/transaction', [PenitipController::class, 'transaction'])->name('penitip.transaction');
     Route::get('/transaction/filter/{type}', [PenitipController::class, 'filterTransaction'])->name('penitip.transaction.filter');
     Route::get('/transaksi/hasil', [PenitipController::class, 'showSearchResult'])->name('penitip.detail');
     Route::get('/reset-password', [ResetPasswordController::class, 'showResetForm'])->name('penitip.password');
+    Route::get('/myProduct/search', [PenitipController::class, 'searchProducts'])->name('penitip.products.search');
+    Route::post('/perpanjang/{id}', [PenitipController::class, 'perpanjang'])->name('penitip.perpanjang');
+    Route::patch('/barang/{id}/confirm-pickup', [PenitipController::class, 'confirmPickup']);
+    Route::get('/api/barang/{id}/check-pickup-info', [PenitipController::class, 'getPickupDeadline']);
 });
 
-// Pembeli Routes
-Route::prefix('pembeli')->middleware('auth:pembeli')->group(function () {
-    Route::get('/profile', [PembeliController::class, 'profile'])->name('pembeli.profile');
-    Route::get('/{id}/edit', [PembeliController::class, 'editProfile'])->name('pembeli.edit');
-    Route::put('/{id}/update', [PembeliController::class, 'updateProfile'])->name('pembeli.update');
-    Route::get('/history', [TransaksiPembelianController::class, 'history'])->name('pembeli.purchase');
-    Route::get('/pembeli/rating/{id}', [TransaksiPembelianController::class, 'showRatingPage'])->name('pembeli.rating');
-    Route::post('/pembeli/rate/{id}', [TransaksiPembelianController::class, 'rateTransaction'])->name('pembeli.rate');
-    // Route::get('/riwayat', [TransaksiPembelianController::class, 'riwayat'])->name('pembeli.riwayat');
-    Route::get('/transaksi150', [TransaksiPembelianController::class, 'transaksi150k'])->name('pembeli.transaksi')->middleware('auth');
-    Route::get('/pembelian', [TransaksiPembelianController::class, 'index'])->name('pembeli.pembelian');
-    // Route::get('/purchase', [PembeliController::class, 'purchase'])->name('pembeli.purchase');
-    
-    // Route::get('/history', [TransaksiPembelianController::class, 'history'])->name('pembeli.purchase');
-    Route::get('/reward', [PembeliController::class, 'reward'])->name('pembeli.reward');
-    Route::get('/process-payment', [ItemKeranjangController::class, 'processPayment'])->name('pembeli.processPayment');
-    Route::post('/bayar', [TransaksiPembelianController::class, 'bayar'])->name('pembeli.bayar');
-    Route::get('/batal-checkout/{id}', [TransaksiPembelianController::class, 'batalkanOtomatis'])->name('pembeli.batalCheckout');
-    Route::post('/rate/{id}', [TransaksiPembelianController::class, 'rateTransaction'])->name('pembeli.rate');
-    // Route::get('/reset-password', [ResetPasswordController::class, 'showResetForm'])->name('pembeli.password');
+Route::prefix('pembeli')->middleware('auth:pembeli')->name('pembeli.')->group(function () {
 
-    Route::get('/transaksi/{id}', [TransaksiPembelianController::class, 'detail'])->name('pembeli.transaksi.detail');
-    Route::get('/alamat', [AlamatController::class, 'alamatPembeli'])->name('pembeli.alamat');
-    Route::post('/alamat', [AlamatController::class, 'store'])->name('pembeli.alamat.store');
-    Route::put('/alamat/{id}', [AlamatController::class, 'update'])->name('pembeli.alamat.update');
-    Route::delete('/alamat/{id}', [AlamatController::class, 'destroy'])->name('pembeli.alamat.destroy');
-    Route::post('/alamat/{id}/set-default', [AlamatController::class, 'setDefault'])->name('pembeli.alamat.set_default');
-    Route::get('/keranjang', [ItemKeranjangController::class, 'index'])->name('pembeli.cart');
+    // 🔐 Profil Pengguna & Reward
+    Route::get('/profile', [PembeliController::class, 'profile'])->name('profile');
+    Route::get('/profile/{id}/edit', [PembeliController::class, 'editProfile'])->name('profile.edit');
+    Route::put('/profile/{id}/update', [PembeliController::class, 'updateProfile'])->name('profile.update'); // Update profile dengan ID
+    Route::get('/reward', [PembeliController::class, 'reward'])->name('reward');
+
+    // 🧾 Riwayat Transaksi Pembelian
+    // Menggabungkan history/riwayat pembelian umum
+    Route::get('/riwayat', [TransaksiPembelianController::class, 'riwayat'])->name('riwayat');
+    Route::get('/riwayat/{id}', [TransaksiPembelianController::class, 'detail'])->name('riwayat.detail');
+    
+    // Alias untuk riwayat umum (jika ada link lama yang menggunakan 'purchase')
+    Route::get('/purchase', [TransaksiPembelianController::class, 'riwayat'])->name('purchase');
+
+
+    // 💳 Transaksi & Pembayaran
+    Route::get('/process-payment', [ItemKeranjangController::class, 'processPayment'])->name('processPayment');
+    Route::post('/bayar', [TransaksiPembelianController::class, 'bayar'])->name('bayar');
+    Route::get('/batal-checkout/{id}', [TransaksiPembelianController::class, 'batalkanOtomatis'])->name('batalCheckout');
+
+    // 🌟 Ulasan & Rating
+    Route::get('/rating/{id}', [TransaksiPembelianController::class, 'showRatingPage'])->name('rating');
+    Route::post('/rate/{id}', [TransaksiPembelianController::class, 'rateTransaction'])->name('rate');
+
+    // 🔒 Reset Password (diaktifkan)
+    Route::get('/reset-password', [ResetPasswordController::class, 'showResetForm'])->name('password');
+
+    // 📦 Alamat Pengiriman
+    Route::get('/alamat', [AlamatController::class, 'alamatPembeli'])->name('alamat');
+    Route::post('/alamat', [AlamatController::class, 'store'])->name('alamat.store');
+    Route::put('/alamat/{id}', [AlamatController::class, 'update'])->name('alamat.update');
+    Route::delete('/alamat/{id}', [AlamatController::class, 'destroy'])->name('alamat.destroy');
+    Route::post('/alamat/{id}/set-default', [AlamatController::class, 'setDefault'])->name('alamat.set_default');
+
+    // 🛒 Keranjang Belanja
+    // Pastikan ini menggunakan controller yang benar: KeranjangController atau ItemKeranjangController
+    Route::get('/keranjang', [KeranjangController::class, 'index'])->name('cart'); 
+
+    // (Opsional) 📢 Diskusi Produk - Uncomment jika diperlukan
+    // Route::post('/diskusi/store', [DiskusiProdukController::class, 'store'])->name('diskusi.store');
 });
 
 // Organisasi Routes
@@ -150,6 +176,10 @@ Route::prefix('owner')->middleware(['auth:pegawai', 'pegawai.role:1'])->group(fu
     Route::get('/donation/download/pdf', [OwnerController::class, 'downloadDonationPdf'])->name('owner.download.donation.pdf');
     Route::get('/consignment-report', [OwnerController::class, 'consignmentReport'])->name('owner.report');
     Route::get('/consignment-report/download/{id}', [OwnerController::class, 'downloadConsignmentReport'])->name('owner.download.consignment.pdf');
+    Route::get('/reports/sales-by-category', [OwnerController::class, 'penjualanPerKategori'])->name('owner.reports.sales_by_category');
+    Route::get('/reports/sales-by-category/download', [OwnerController::class, 'downloadPenjualanPerKategori'])->name('owner.reports.download_sales_by_category');
+    Route::get('/reports/expired-items', [OwnerController::class, 'expiredItems'])->name('owner.reports.expired_items');
+    Route::get('/reports/expired-items/download', [OwnerController::class, 'downloadExpiredItems'])->name('owner.reports.download_expired_items'); 
 });
 
 // Admin Routes
@@ -235,7 +265,8 @@ Route::prefix('cs')->middleware(['auth:pegawai', 'pegawai.role:3'])->group(funct
     Route::get('/merchandise-claims', [TransaksiMerchandiseController::class, 'index'])->name('cs.merchandise-claim.index');
     Route::get('/merchandise-claims/search', [TransaksiMerchandiseController::class, 'search'])->name('cs.merchandise-claim.search');
     Route::put('/merchandise-claims/{id}', [TransaksiMerchandiseController::class, 'update'])->name('cs.merchandise-claim.update');
-    Route::get('/transaksi-pembelian', [TransaksiPembelianController::class, 'show'])->name('transaksi-pembelian.index');
+    // Route::get('/transaksi-pembelian', [TransaksiPembelianController::class, 'show'])->name('transaksi-pembelian.index');
+    Route::get('/transaksi-pembelian', [TransaksiPembelianController::class, 'showWeb'])->name('transaksi-pembelian.index');
     Route::post('/transaksi-pembelian/{id_pembelian}/verify', [TransaksiPembelianController::class, 'verify'])
     ->name('cs.transaksi-pembelian.verify');
     Route::get('/transaksi-pembelian/search', [TransaksiPembelianController::class, 'search'])->name('cs.transaksi-pembelian.search');
@@ -272,8 +303,24 @@ Route::prefix('gudang')->middleware(['auth:pegawai', 'pegawai.role:4'])->name('g
     Route::put('/update-transaction/{id}', [TransaksiPenitipanController::class, 'updateTransaction'])->name('transaction.update');
     Route::get('/print-note/{id}', [TransaksiPenitipanController::class, 'printNote'])->name('transaction.print');
     Route::get('/item-list', [BarangController::class, 'itemList'])->name('item.list');
+
+    Route::get('/transaksi-pengiriman', [TransaksiPenitipanController::class, 'pengirimanDanPengambilanList'])->name('transaksi.pengiriman');
+    Route::patch('/perbarui-status-transaksi', [TransaksiPenitipanController::class, 'perbaruiStatusOtomatis'])->name('gudang.updateStatusTransaksi');
+    Route::get('/transaksi/detail/{id}', [TransaksiPenitipanController::class, 'showDetail'])->name('transaksi.detail');
+    Route::get('/transaksi-pengambilan', [TransaksiPenitipanController::class, 'transaksiPengambilan'])->name('transaksi.pengambilan');
+    Route::patch('/mark-as-returned/{id}', [TransaksiPenitipanController::class, 'markAsReturned'])->name('markAsReturned');
+    Route::get('/transaksi/schedule/{id}', [TransaksiPenitipanController::class, 'jadwalkan'])->name('transaksi.schedule');  
+    Route::post('/transaksi/jadwal/{id}', [TransaksiPenitipanController::class, 'jadwalkanPengiriman'])->name('transaksi.jadwalkanPengiriman');  
+    Route::post('/transaksi/jadwalkan/{id}', [TransaksiPenitipanController::class, 'jadwalkanPengiriman'])->name('transaksi.jadwalkanPengiriman');
+    Route::post('/transaksi/confirm-pickup/{id}', [TransaksiPenitipanController::class, 'confirmPickup'])->name('transaksi.confirmPickup');
+    Route::get('/transaksi/print-invoice/{id}', [TransaksiPenitipanController::class, 'printInvoice'])->name('transaksi.printInvoice');
+    Route::get('/transaksi/print-invoice-pickup/{id}', [TransaksiPenitipanController::class, 'printInvoicePickup'])->name('transaksi.printInvoicePickup');
+
+    Route::post('barang/{id}/confirm-owner-pickup', [TransaksiPenitipanController::class, 'confirmPickupBarang'])->name('transaksi.confirmPickupBarang');
+    Route::get('barang/{id}/detail', [TransaksiPenitipanController::class, 'detailBarang'])->name('barang.detail');
 });
 
-Route::get('/login', function () {
-    return redirect('/');
-})->name('login');
+// Kurir Routes
+Route::prefix('kurir')->middleware(['auth:pegawai', 'pegawai.role:5'])->group(function () {
+    Route::get('/dashboard', fn() => view('kurir.dashboard'))->name('kurir.dashboard');
+});

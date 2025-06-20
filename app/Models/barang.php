@@ -15,8 +15,12 @@ class Barang extends Model
     public $timestamps = true;
     protected $dateFormat = 'Y-m-d H:i:s';
     protected $casts = [
-        'tanggal_garansi' => 'datetime',
-        'tanggal_berakhir' => 'datetime',
+        'tanggal_garansi' => 'date',
+        'tanggal_berakhir' => 'date',
+        'tanggal_konfirmasi_pengambilan' => 'datetime', 
+        'batas_pengambilan' => 'datetime',             
+        'created_at' => 'datetime',                    
+        'updated_at' => 'datetime',   
         'rating' => 'integer',
     ];
     protected $fillable = [
@@ -33,9 +37,12 @@ class Barang extends Model
         'tanggal_garansi',
         'tanggal_berakhir',
         'perpanjangan',
+        'batas_pengambilan',
+        'tanggal_konfirmasi_pengambilan',
+        'updated_at',
+        'created_at',
     ];
-
-    
+  
     public function kategori()
     {
         return $this->belongsTo(Kategori::class, 'id_kategori', 'id_kategori');
@@ -43,7 +50,7 @@ class Barang extends Model
 
     public function transaksiPenitipan()
     {
-        return $this->belongsTo(TransaksiPenitipan::class, 'id_transaksi_penitipan', 'id_transaksi_penitipan');
+        return $this->belongsTo(TransaksiPenitipan::class, 'id_transaksi_penitipan');
     }
 
     public function diskusiProduk()

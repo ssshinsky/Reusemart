@@ -82,6 +82,6 @@ class Pembeli extends Authenticatable
 
     public function fcmTokens()
     {
-        return $this->hasMany(FcmToken::class, 'id_pembeli');
+        return $this->morphMany(FcmToken::class, 'tokenable');
     }
 }

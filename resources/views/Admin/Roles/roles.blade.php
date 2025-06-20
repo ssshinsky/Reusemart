@@ -32,17 +32,17 @@
                     <td class="action-cell" style="background-color:rgb(255, 245, 220)">
                         <a href="{{ route('admin.roles.edit', $role->id_role) }}" class="edit-btn">✏️</a>
                         @if($role->is_active)
-                        <form action="{{ route('admin.roles.deactivate', $role->id_role) }}" method="POST" class="form-nonaktif" style="display:inline;">
-                            @csrf
-                            @method('PUT')
-                            <button type="submit" class="redeactivate-btn" title="Deactivate Role">🛑</button>
-                        </form>
+                            <form action="{{ route('admin.roles.deactivate', $role->id_role) }}" method="POST" class="form-nonaktif" style="display:inline;">
+                                @csrf
+                                @method('PUT')
+                                <button type="submit" class="redeactivate-btn" title="Deactivate Role">🛑</button>
+                            </form>
                         @else
-                        <form action="{{ route('admin.roles.reactivate', $role->id_role) }}" method="POST" class="form-reactivate" style="display:inline;">
-                            @csrf
-                            @method('PUT')
-                            <button type="submit" class="redeactivate-btn" title="Reactivate Role">♻️</button>
-                        </form>
+                            <form action="{{ route('admin.roles.reactivate', $role->id_role) }}" method="POST" class="form-reactivate" style="display:inline;">
+                                @csrf
+                                @method('PUT')
+                                <button type="submit" class="redeactivate-btn" title="Reactivate Role">♻️</button>
+                            </form>
                         @endif
                     </td>
                 </tr>

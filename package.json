@@ -12,29 +12,5 @@
         "laravel-vite-plugin": "^1.2.0",
         "tailwindcss": "^4.0.0",
         "vite": "^6.2.4"
-    },
-    
-    "dependencies": {
-        "chartjs": "^0.3.24",
-        "chartjs-node-canvas": "^5.0.0",
-        "type": "commonjs"
-    },
-    "name": "reusemart_backend",
-    "version": "1.0.0",
-    "description": "<p align=\"center\"><a href=\"https://laravel.com\" target=\"_blank\"><img src=\"https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg\" width=\"400\" alt=\"Laravel Logo\"></a></p>",
-    "main": "vite.config.js",
-    "directories": {
-        "test": "tests"
-    },
-    "repository": {
-        "type": "git",
-        "url": "git+https://github.com/ssshinsky/Reusemart.git"
-    },
-    "keywords": [],
-    "author": "",
-    "license": "ISC",
-    "bugs": {
-        "url": "https://github.com/ssshinsky/Reusemart/issues"
-    },
-    "homepage": "https://github.com/ssshinsky/Reusemart#readme"
+    }
 }

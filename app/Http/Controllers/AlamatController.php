@@ -48,7 +48,7 @@ class AlamatController extends Controller
 
         Alamat::create($validated);
 
-        return redirect()->route('pembeli.alamat')->with('success', 'Alamat berhasil ditambahkan');
+        return $this->alamatPembeli()->with('success', 'Alamat berhasil ditambahkan');
     }
 
     public function update(Request $request, $id)
@@ -81,7 +81,7 @@ class AlamatController extends Controller
 
         $alamat->update($request->all());
 
-        return redirect()->route('pembeli.alamat')->with('success', 'Alamat berhasil diperbarui');
+        return $this->alamatPembeli()->with('success', 'Alamat berhasil diperbarui');
     }
 
     // Web: Hapus alamat
@@ -99,36 +99,20 @@ class AlamatController extends Controller
 
         $alamat->delete();
 
-        return redirect()->route('pembeli.alamat')->with('success', 'Alamat berhasil dihapus');
+        return $this->alamatPembeli()->with('success', 'Alamat berhasil dihapus');
     }
 
     // Web: Tampilkan alamat untuk user login
-    public function alamatPembeli(Request $request)
+    public function alamatPembeli()
     {
         $user = session('user');
 
         if (!$user || !isset($user['id'])) {
-            return redirect('/')->with('error', 'Akses ditolak. Silakan login terlebih dahulu.');
+            return redirect('/')->with('error', 'Akses ditolak.');
         }
 
         $pembeli = Pembeli::find($user['id']);
-        $query = Alamat::where('id_pembeli', $user['id']);
-
-        // Ambil parameter search
-        $search = $request->query('search');
-        if ($search) {
-            $query->where(function ($q) use ($search) {
-                $q->where('nama_orang', 'like', "%{$search}%")
-                  ->orWhere('label_alamat', 'like', "%{$search}%")
-                  ->orWhere('alamat_lengkap', 'like', "%{$search}%")
-                  ->orWhere('kecamatan', 'like', "%{$search}%")
-                  ->orWhere('kabupaten', 'like', "%{$search}%")
-                  ->orWhere('kode_pos', 'like', "%{$search}%")
-                  ->orWhere('no_telepon', 'like', "%{$search}%");
-            });
-        }
-
-        $alamatList = $query->get();
+        $alamatList = Alamat::where('id_pembeli', $user['id'])->get();
 
         return view('pembeli.alamat', compact('alamatList', 'pembeli'));
     }

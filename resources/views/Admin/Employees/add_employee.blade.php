@@ -5,7 +5,7 @@
 @section('content')
     <h2 style="margin-bottom: 1.5rem;">Add Employee</h2>
 
-    <form action="{{ route('admin.employees.store') }}" method="POST" class="form-container" novalidate id="employeeForm">
+    <form action="{{ route('admin.employees.store') }}" method="POST" class="form-container" novalidate>
         @csrf
 
         @if ($errors->any())
@@ -90,210 +90,95 @@
         </div>
     </form>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            console.log('add_employee script loaded'); // Debug log
-            const form = document.getElementById('employeeForm');
-            const passwordInput = document.getElementById('password');
-            const helpText = document.getElementById('passwordHelp');
-            const salaryInput = document.getElementById('gaji_pegawai');
-            const phoneInput = document.getElementById('nomor_telepon');
-            const nameInput = document.getElementById('nama_pegawai');
+    @if ($errors->has('email_pegawai'))
+        <script>
+            Swal.fire({
+                icon: 'error',
+                title: 'Validation Failed',
+                text: 'Email is already in use.',
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3000
+            });
+        </script>
+    @endif
 
-            if (!form) {
-                console.error('Form #employeeForm not found'); // Debug log
+    @if ($errors->any() && !$errors->has('email_pegawai'))
+        <script>
+            Swal.fire({
+                icon: 'error',
+                title: 'Validation Failed',
+                text: 'Please check your input again.',
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3000
+            });
+        </script>
+    @endif
+
+    <script>
+        const passwordInput = document.getElementById('password');
+        const helpText = document.getElementById('passwordHelp');
+        const submitBtn = document.getElementById('submitBtn');
+
+        function validateForm() {
+            const requiredFields = document.querySelectorAll('form [required]');
+            let allFilled = true;
+            let firstInvalid = null;
+
+            requiredFields.forEach(field => {
+                if (!field.value.trim()) {
+                    allFilled = false;
+                    if (!firstInvalid) firstInvalid = field;
+                }
+            });
+
+            if (!allFilled) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Incomplete Form',
+                    text: 'Please fill in all required fields before submitting.',
+                    confirmButtonColor: '#3085d6',
+                    confirmButtonText: 'OK'
+                });
+
+                if (firstInvalid) {
+                    firstInvalid.focus();
+                }
+                return false;
+            }
+            return true;
+        }
+
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const password = const password = passwordInput.value.trim();
+            if (password.length >= 8) {
+                helpText.textContent = ''; // clear warning if password becomes valid
+            }
+            if (password.length < 8) {
+                e.preventDefault();
+                helpText.textContent = 'Password must be at least 8 characters.';
+                passwordInput.focus();
                 return;
             }
 
-            function validateForm() {
-                console.log('Validating form...'); // Debug log
-                const requiredFields = form.querySelectorAll('[required]');
-                let allFilled = true;
-                let firstInvalid = null;
-                let errors = [];
-
-                requiredFields.forEach(field => {
-                    if (!field.value.trim()) {
-                        allFilled = false;
-                        if (!firstInvalid) firstInvalid = field;
-                        errors.push(`${field.previousElementSibling.textContent} belum diisi.`);
-                    }
-                });
-
-                if (!nameInput.value.match(/^[A-Za-z\s]{2,50}$/)) {
-                    errors.push('Nama harus terdiri dari 2-50 karakter, hanya huruf dan spasi.');
-                    if (!firstInvalid) firstInvalid = nameInput;
-                }
-
-                if (!phoneInput.value.match(/^08[0-9]{8,12}$/)) {
-                    errors.push('Nomor telepon harus diawali 08 dan terdiri dari 10-13 digit.');
-                    if (!firstInvalid) firstInvalid = phoneInput;
-                }
-
-                if (passwordInput.value.length < 8) {
-                    errors.push('Kata sandi harus minimal 8 karakter.');
-                    if (!firstInvalid) firstInvalid = passwordInput;
-                }
-
-                const salaryValue = salaryInput.value.replace(/[^0-9]/g, '');
-                if (!salaryValue || parseInt(salaryValue) <= 0) {
-                    errors.push('Gaji harus berupa angka positif.');
-                    if (!firstInvalid) firstInvalid = salaryInput;
-                }
-
-                const birthDate = new Date(document.getElementById('tanggal_lahir').value);
-                const minDate = new Date();
-                minDate.setFullYear(minDate.getFullYear() - 18);
-                if (birthDate > minDate) {
-                    errors.push('Karyawan harus berusia minimal 18 tahun.');
-                    if (!firstInvalid) firstInvalid = document.getElementById('tanggal_lahir');
-                }
-
-                if (errors.length > 0) {
-                    console.log('Validation errors:', errors); // Debug log
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Kolom Kosong atau Tidak Valid',
-                        html: errors.join('<br>'),
-                        confirmButtonColor: '#3085d6',
-                        confirmButtonText: 'Perbaiki'
-                    });
-                    if (firstInvalid) firstInvalid.focus();
-                    return false;
-                }
-                console.log('Form validated successfully'); // Debug log
-                return true;
-            }
-
-            form.addEventListener('submit', (e) => {
+            if (!validateForm()) {
                 e.preventDefault();
-                console.log('Form submit triggered'); // Debug log
-
-                if (!validateForm()) {
-                    console.log('Form validation failed'); // Debug log
-                    return;
-                }
-
-                Swal.fire({
-                    title: 'Konfirmasi',
-                    text: 'Apakah Anda yakin ingin menambahkan data pegawai?',
-                    icon: 'question',
-                    showCancelButton: true,
-                    confirmButtonColor: '#28a745',
-                    cancelButtonColor: '#dc3545',
-                    confirmButtonText: 'Ya, Simpan',
-                    cancelButtonText: 'Batal'
-                }).then((result) => {
-                    console.log('SweetAlert result:', result); // Debug log
-                    if (result.isConfirmed) {
-                        console.log('Submitting form...'); // Debug log
-                        form.submit(); // Submit form secara default
-                    } else {
-                        console.log('Form submission cancelled'); // Debug log
-                    }
-                });
-            });
-
-            // Salary formatting
-            salaryInput.addEventListener('input', function (e) {
-                let rawValue = e.target.value.replace(/[^0-9]/g, '');
-                if (rawValue) {
-                    const formatted = new Intl.NumberFormat('id-ID').format(rawValue);
-                    e.target.value = 'Rp ' + formatted;
-                } else {
-                    e.target.value = '';
-                }
-            });
-
-            // Prevent invalid input for phone number
-            phoneInput.addEventListener('input', function (e) {
-                let value = e.target.value.replace(/[^0-9]/g, '');
-                if (value.length > 13) {
-                    value = value.slice(0, 13);
-                }
-                e.target.value = value;
-            });
-
-            // Prevent invalid input for name
-            nameInput.addEventListener('input', function (e) {
-                let value = e.target.value.replace(/[^A-Za-z\s]/g, '');
-                if (value.length > 50) {
-                    value = value.slice(0, 50);
-                }
-                e.target.value = value;
-            });
-
-            // Deactivate confirmation (for use in employee index page)
-            window.confirmDeactivate = function(employeeId, employeeName) {
-                console.log('Deactivate confirmation triggered for ID:', employeeId); // Debug log
-                Swal.fire({
-                    title: 'Konfirmasi',
-                    text: 'Apakah Anda yakin ingin menonaktifkan data pegawai?',
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#dc3545',
-                    cancelButtonColor: '#6c757d',
-                    confirmButtonText: 'Ya, Nonaktifkan',
-                    cancelButtonText: 'Batal'
-                }).then((result) => {
-                    console.log('Deactivate SweetAlert result:', result); // Debug log
-                    if (result.isConfirmed) {
-                        console.log('Deactivating employee...'); // Debug log
-                        const form = document.createElement('form');
-                        form.method = 'POST';
-                        form.action = `/admin/employees/${employeeId}/deactivate`;
-                        const methodInput = document.createElement('input');
-                        methodInput.type = 'hidden';
-                        methodInput.name = '_method';
-                        methodInput.value = 'PUT';
-                        const csrfInput = document.createElement('input');
-                        csrfInput.type = 'hidden';
-                        csrfInput.name = '_token';
-                        csrfInput.value = '{{ csrf_token() }}';
-                        form.appendChild(methodInput);
-                        form.appendChild(csrfInput);
-                        document.body.appendChild(form);
-                        form.submit();
-                    } else {
-                        console.log('Deactivate cancelled'); // Debug log
-                    }
-                });
-            };
+            }
         });
 
-        @if ($errors->has('email_pegawai'))
-            Swal.fire({
-                icon: 'error',
-                title: 'Validasi Gagal',
-                text: 'Email sudah digunakan.',
-                toast: true,
-                position: 'top-end',
-                showConfirmButton: false,
-                timer: 3000
-            });
-        @endif
-
-        @if ($errors->any() && !$errors->has('email_pegawai'))
-            Swal.fire({
-                icon: 'error',
-                title: 'Validasi Gagal',
-                text: 'Silakan periksa kembali input Anda.',
-                toast: true,
-                position: 'top-end',
-                showConfirmButton: false,
-                timer: 3000
-            });
-        @endif
-
-        @if (session('success'))
-            Swal.fire({
-                icon: 'success',
-                title: 'Berhasil',
-                text: '{{ session('success') }}',
-                timer: 2000,
-                showConfirmButton: false
-            });
-        @endif
+        const salaryInput = document.getElementById('gaji_pegawai');
+        salaryInput.addEventListener('input', function (e) {
+            let rawValue = e.target.value.replace(/[^0-9]/g, '');
+            if (rawValue) {
+                const formatted = new Intl.NumberFormat('id-ID').format(rawValue);
+                e.target.value = 'Rp ' + formatted;
+            } else {
+                e.target.value = '';
+            }
+        });
     </script>
 
     <style>
@@ -387,11 +272,10 @@
                 justify-content: center;
             }
         }
-
         .text-danger {
-            color: #dc3545;
-            font-size: 14px;
-            margin-top: 4px;
-        }
-    </style>
+        color: #dc3545;
+        font-size: 14px;
+        margin-top: 4px;
+    }
+</style>
 @endsection

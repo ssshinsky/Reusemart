@@ -17,11 +17,8 @@ class TransaksiPenitipan extends Model
         'id_hunter',
         'id_penitip',
         'tanggal_penitipan',
-    ];
-
-    protected $casts = [
-        'tanggal_penitipan' => 'datetime',
-        // atau 'datetime' jika kolomnya DATETIME/TIMESTAMP
+        'updated_at',
+        'created_at',
     ];
 
     public function qc()

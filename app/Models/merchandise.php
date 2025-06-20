@@ -11,9 +11,6 @@ class Merchandise extends Model
 
     // Nama tabel yang digunakan oleh model
     protected $table = 'merchandise';
-    
-    // Primary key kustom
-    protected $primaryKey = 'id_merchandise';
 
     // Kolom yang dapat diisi (Mass Assignment)
     protected $fillable = [

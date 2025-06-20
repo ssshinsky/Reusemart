@@ -118,7 +118,7 @@
         .dropdown-content {
             display: none;
             position: absolute;
-            top: 50px;
+            top: 100px;
             right: 2rem;
             background-color: white;
             min-width: 120px;
@@ -141,17 +141,10 @@
             font-family: 'Poppins', sans-serif;
             font-weight: 400;
             cursor: pointer;
-            color: #212529;
-            background-color: #fff;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            border-radius: 4px;
-            transition: background-color 0.2s ease-in-out, transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
         }
 
         .dropdown-content button:hover {
             background-color: #f1f1f1;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
         }
     </style>
 </head>
@@ -186,8 +179,6 @@
         <div class="sidebar">
             <a href="{{ route('cs.penitip.index') }}"
                 class="menu-item {{ request()->is('cs/item-owners*') ? 'active' : '' }}">📦 Item Owners</a>
-            <a href="{{ route('cs.merchandise-claim.index') }}"
-                class="menu-item {{ request()->is('cs/merchandise-claims*') ? 'active' : '' }}">🎁 Merchandise Claims</a>
             <a href="{{ route('transaksi-pembelian.index') }}"
                 class="menu-item {{ request()->is('cs/transaksi-pembelian*') ? 'active' : '' }}">💳 Konfirmasi
                 Transaksi</a>

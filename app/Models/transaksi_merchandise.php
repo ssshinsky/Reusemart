@@ -12,10 +12,6 @@ class TransaksiMerchandise extends Model
     // Nama tabel yang digunakan oleh model
     protected $table = 'transaksi_merchandise';
 
-    // Primary key kustom
-    protected $primaryKey = 'id_transaksi_merchandise';
-
-
     // Kolom yang dapat diisi (Mass Assignment)
     protected $fillable = [
         'id_merchandise',
@@ -23,8 +19,6 @@ class TransaksiMerchandise extends Model
         'jumlah',
         'total_poin_penukaran',
         'tanggal_klaim',
-        'tanggal_ambil_merch',
-        'status_transaksi', 
     ];
 
     // Relasi ke model Merchandise

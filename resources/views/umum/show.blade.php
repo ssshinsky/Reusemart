@@ -21,7 +21,7 @@
                         <div class="slider">
                             <div class="slider-container" id="slider-container">
                                 @foreach ($barang->gambar as $gambar)
-                                    <img src="{{ asset('storage/gambar/' . $gambar->gambar_barang) }}" alt="Slide"
+                                    <img src="{{ asset('storage/gambar_barang/' . ($barang->gambar->first()->gambar_barang ?? 'default.png')) }}" alt="Slide"
                                         class="slide">
                                 @endforeach
                             </div>

@@ -22,7 +22,6 @@ class CreateBarangsTable extends Migration
             $table->string('status_garansi');
             $table->string('status_barang');
             $table->date('tanggal_garansi')->nullable();
-            $table->integer('rating')->nullable();
             $table->date('tanggal_berakhir');
             $table->integer('perpanjangan');
             $table->timestamps();

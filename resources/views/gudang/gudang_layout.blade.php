@@ -245,6 +245,9 @@
             <a href="{{ route('gudang.item.list') }}" class="{{ Route::is('gudang.item.list') ? 'active' : '' }}">
                 <i class="bi bi-boxes"></i> Daftar Barang
             </a>
+            <a href="{{ route('gudang.transaksi.pengiriman') }}" class="{{ request()->routeIs('gudang.transaksi.pengiriman') ? 'active' : '' }}">
+                <i class="bi bi-truck me-1"></i> Pengiriman & Pengambilan
+            </a>
             
             <form action="{{ route('logout') }}" method="POST" class="mt-4">
                 @csrf

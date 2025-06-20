@@ -47,7 +47,7 @@
             @forelse ($produk as $item)
                 <div class="col">
                     <div class="card h-100 text-center p-2">
-                        <img src="{{ asset('storage/gambar/' . ($item->gambar->first()->gambar_barang ?? 'default.png')) }}"
+                        <img src="{{ asset('storage/gambar_barang/' . ($item->gambar->first()->gambar_barang ?? 'default.png')) }}"
                             class="card-img-top" alt="{{ $item->nama_barang }}">
                         <div class="card-body d-flex flex-column">
                             <p class="card-title small">{{ $item->nama_barang }}</p>

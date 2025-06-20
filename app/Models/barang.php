@@ -12,30 +12,36 @@ class Barang extends Model
 
     protected $table = 'barang';
     protected $primaryKey = 'id_barang';
-    public $timestamps = true;
-    protected $dateFormat = 'Y-m-d H:i:s';
+    public $timestamps = false;
+
     protected $casts = [
-        'tanggal_garansi' => 'datetime',
-        'tanggal_berakhir' => 'datetime',
-        'rating' => 'integer',
+        'tanggal_garansi' => 'date',
+        'tanggal_berakhir' => 'date',
+        'tanggal_konfirmasi_pengambilan' => 'datetime', 
+        'batas_pengambilan' => 'datetime',             
+        'created_at' => 'datetime',                    
+        'updated_at' => 'datetime',                    
     ];
+
     protected $fillable = [
         'id_kategori',
         'id_transaksi_penitipan',
-        'kode_barang',
-        'nama_barang',
-        'harga_barang',
-        'berat_barang',
-        'deskripsi_barang',
-        'status_garansi',
-        'status_barang',
-        'rating',
+        'kode_barang', 
+        'nama_barang', 
+        'harga_barang', 
+        'berat_barang', 
+        'deskripsi_barang', 
+        'status_garansi', 
+        'status_barang', 
         'tanggal_garansi',
         'tanggal_berakhir',
         'perpanjangan',
+        'batas_pengambilan',
+        'tanggal_konfirmasi_pengambilan',
+        'updated_at',
+        'created_at',
     ];
 
-    
     public function kategori()
     {
         return $this->belongsTo(Kategori::class, 'id_kategori', 'id_kategori');
@@ -43,7 +49,7 @@ class Barang extends Model
 
     public function transaksiPenitipan()
     {
-        return $this->belongsTo(TransaksiPenitipan::class, 'id_transaksi_penitipan', 'id_transaksi_penitipan');
+        return $this->belongsTo(TransaksiPenitipan::class, 'id_transaksi_penitipan');
     }
 
     public function diskusiProduk()
@@ -64,17 +70,5 @@ class Barang extends Model
     public function itemKeranjangs()
     {
         return $this->hasMany(ItemKeranjang::class, 'id_barang', 'id_barang');
-    }
-
-    public function penitip()
-    {
-        return $this->hasOneThrough(
-            \App\Models\Penitip::class,
-            \App\Models\TransaksiPenitipan::class,
-            'id_transaksi_penitipan', // Foreign key di TransaksiPenitipan
-            'id_penitip',             // Foreign key di Penitip
-            'id_transaksi_penitipan', // Local key di Barang
-            'id_transaksi_penitipan'  // Local key di TransaksiPenitipan
-        );
     }
 }

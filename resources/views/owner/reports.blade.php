@@ -23,6 +23,12 @@
         <a href="{{ route('owner.monthly.sales.overview') }}" class="btn btn-outline-primary">
             <i class="bi bi-bar-chart me-2"></i> Laporan Penjualan Bulanan Keseluruhan
         </a>
+        <a href="{{ route('owner.reports.sales_by_category') }}" class="btn btn-outline-primary">
+            <i class="bi bi-bar-chart-line me-2"></i> Lap. Penjualan per Kategori
+        </a>
+        <a href="{{ route('owner.reports.expired_items') }}" class="btn btn-outline-primary">
+            <i class="bi bi-calendar-x me-2"></i> Lap. Masa Penitipan Habis
+        </a>
     </div>
 
     <!-- Statistics Cards (kosongkan kalau nggak perlu data spesifik) -->

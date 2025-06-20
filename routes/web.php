@@ -258,6 +258,10 @@ Route::prefix('owner')->middleware(['auth:pegawai'])->group(function () {
     Route::get('/consignment-report', [OwnerController::class, 'consignmentReport'])->name('owner.report');
     Route::get('/consignment-report/download/{id}', [OwnerController::class, 'downloadConsignmentReport'])
     ->name('owner.download.consignment.pdf');
+    Route::get('/reports/sales-by-category', [OwnerController::class, 'penjualanPerKategori'])->name('owner.reports.sales_by_category');
+    Route::get('/reports/sales-by-category/download', [OwnerController::class, 'downloadPenjualanPerKategori'])->name('owner.reports.download_sales_by_category');
+    Route::get('/reports/expired-items', [OwnerController::class, 'expiredItems'])->name('owner.reports.expired_items');
+    Route::get('/reports/expired-items/download', [OwnerController::class, 'downloadExpiredItems'])->name('owner.reports.download_expired_items'); 
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 });
 

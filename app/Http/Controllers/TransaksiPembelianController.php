@@ -987,7 +987,7 @@ class TransaksiPembelianController extends Controller
 
         // Ambil barang terbatas (logika existing)
         $barangTerbatas = \App\Models\Barang::with('gambar')
-            ->where('status_barang', 'tersedia')
+            ->where('status_barang', 'Available')
             ->take(12) // Contoh limit
             ->get();
 

@@ -12,6 +12,7 @@ use App\Models\Donasi;
 use App\Models\Barang;
 use App\Models\Organisasi;
 use App\Models\Penitip;
+use App\Models\Kategori;
 use App\Models\Keranjang;
 use App\Models\TransaksiPembelian;
 use App\Models\ItemKeranjang;
@@ -781,5 +782,121 @@ public function downloadMonthlySalesOverview(\Illuminate\Http\Request $request)
 
         $namaBulan = Carbon::createFromDate(null, $bulanSekarang, 1)->format('F');
         return $pdf->stream("Consignment_Report_{$penitip->nama_penitip}_{$namaBulan}_{$tahunSekarang}.pdf");
+    }
+
+    public function penjualanPerKategori(Request $request)
+    {
+        $this->ensureOwner();
+
+        $year = $request->input('year', Carbon::now()->year);
+        $reportDate = Carbon::now()->format('d F Y');
+
+        $categories = Kategori::all();
+        $salesData = [];
+
+        foreach ($categories as $category) {
+            $soldItems = Barang::where('id_kategori', $category->id_kategori)
+                ->whereHas('itemKeranjangs', function ($queryItemKeranjang) use ($year) {
+                    $queryItemKeranjang->whereHas('detailKeranjang', function ($queryDetailKeranjang) use ($year) {
+                        $queryDetailKeranjang->whereHas('keranjang', function ($queryKeranjang) use ($year) {
+                            $queryKeranjang->whereHas('transaksiPembelian', function ($queryTransaksiPembelian) use ($year) {
+                                $queryTransaksiPembelian->whereYear('tanggal_pembelian', $year)
+                                    ->where('status_transaksi', 'Done');
+                            });
+                        });
+                    });
+                })
+                ->count();
+
+            $failedItems = Barang::where('id_kategori', $category->id_kategori)
+                ->whereIn('status_barang', ['Returned', 'Donated'])
+                ->count();
+
+            $salesData[] = [
+                'kategori' => $category->nama_kategori,
+                'jumlah_terjual' => $soldItems,
+                'jumlah_gagal_terjual' => $failedItems,
+            ];
+        }
+
+        return view('owner.Laporan.penjualanPerKategori', compact('salesData', 'year', 'reportDate'));
+    }
+
+    public function downloadPenjualanPerKategori(Request $request)
+    {
+        $this->ensureOwner();
+
+        $year = $request->input('year', Carbon::now()->year);
+        $reportDate = Carbon::now()->format('d F Y');
+
+        $categories = Kategori::all();
+        $salesData = [];
+
+        foreach ($categories as $category) {
+            $soldItems = Barang::where('id_kategori', $category->id_kategori)
+                ->whereHas('itemKeranjangs', function ($queryItemKeranjang) use ($year) {
+                    $queryItemKeranjang->whereHas('detailKeranjang', function ($queryDetailKeranjang) use ($year) {
+                        $queryDetailKeranjang->whereHas('keranjang', function ($queryKeranjang) use ($year) {
+                            $queryKeranjang->whereHas('transaksiPembelian', function ($queryTransaksiPembelian) use ($year) {
+                                $queryTransaksiPembelian->whereYear('tanggal_pembelian', $year)
+                                    ->where('status_transaksi', 'Done');
+                            });
+                        });
+                    });
+                })
+                ->count();
+
+            $failedItems = Barang::where('id_kategori', $category->id_kategori)
+                ->whereIn('status_barang', ['Returned', 'Donated'])
+                ->count();
+
+            $salesData[] = [
+                'kategori' => $category->nama_kategori,
+                'jumlah_terjual' => $soldItems,
+                'jumlah_gagal_terjual' => $failedItems,
+            ];
+        }
+
+        $pdf = PDF::loadView('owner.Laporan.DownloadPenjualanPerKategori', compact('salesData', 'year', 'reportDate'));
+        $pdf->setPaper('A4', 'portrait');
+
+        return $pdf->download('Laporan Penjualan per Kategori ' . $year . '.pdf');
+    }
+
+    public function expiredItems(Request $request)
+    {
+        $this->ensureOwner();
+
+        $reportDate = Carbon::now()->format('d F Y');
+        $today = Carbon::now();
+
+        $expiredItems = Barang::whereHas('transaksiPenitipan', function ($query) use ($today) {
+                $query->whereDate('tanggal_berakhir', '<', $today);
+            })
+            ->whereNotIn('status_barang', ['Sold', 'Donated'])
+            ->with(['transaksiPenitipan.penitip'])
+            ->get();
+
+        return view('owner.Laporan.expiredItem', compact('expiredItems', 'reportDate'));
+    }
+
+    public function downloadExpiredItems(Request $request)
+    {
+        $this->ensureOwner();
+
+        $reportDate = Carbon::now()->format('d F Y');
+        $today = Carbon::now();
+
+        $expiredItems = Barang::whereHas('transaksiPenitipan', function ($query) use ($today) {
+                $query->whereDate('tanggal_berakhir', '<', $today);
+            })
+            ->whereNotIn('status_barang', ['Sold', 'Donated'])
+            ->with(['transaksiPenitipan.penitip'])
+            ->get();
+
+        $pdf = PDF::loadView('owner.Laporan.DownloadExpiredItem', compact('expiredItems', 'reportDate'));
+        $pdf->setPaper('A4', 'portrait');
+
+        return $pdf->download('Laporan Barang Perlu Dikembalikan ' . $reportDate . '.pdf');
     }
 }

@@ -39,12 +39,12 @@
                 <i class="bi bi-bar-chart me-2"></i> Lihat Laporan
             </a>
         </div>
-        <!-- <a href="{{ route('owner.monthly.sales.report') }}" class="btn btn-outline-primary">
+        {{-- <a href="{{ route('owner.monthly.sales.report') }}" class="btn btn-outline-primary">
             <i class="bi bi-file-earmark-text me-2"></i> Laporan Penjualan
         </a>
         <a href="{{ route('owner.warehouse.stock.report') }}" class="btn btn-outline-primary">
             <i class="bi bi-warehouse me-2"></i> Laporan Stok Gudang
-        </a> -->
+        </a> --}}
     </div>
     
     <p></p>

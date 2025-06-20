@@ -18,8 +18,6 @@ class CreateTransaksiMerchandisesTable extends Migration
             $table->integer('jumlah');
             $table->integer('total_poin_penukaran');
             $table->date('tanggal_klaim')->nullable();
-            $table->date('tanggal_ambil_merch')->nullable();
-            $table->string('status_transaksi')->default('belum di ambil');
             $table->timestamps();
         });
     }
@@ -28,4 +26,4 @@ class CreateTransaksiMerchandisesTable extends Migration
     {
         Schema::dropIfExists('transaksi_merchandise');
     }
-}
+};

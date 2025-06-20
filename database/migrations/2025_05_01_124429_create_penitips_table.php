@@ -22,7 +22,6 @@ class CreatePenitipsTable extends Migration
             $table->double('saldo_penitip');
             $table->string('profil_pict')->nullable();
             $table->boolean('badge')->nullable();
-            $table->integer('banyak_rating')->nullable();
             $table->timestamps();
         });
     }

@@ -33,14 +33,8 @@ class ItemKeranjang extends Model
     }
 
     // Relasi ke DetailKeranjang
-    public function detailKeranjangs()
+    public function detailKeranjang()
     {
-        return $this->hasMany(DetailKeranjang::class, 'id_item_keranjang', 'id_item_keranjang');
-    }
-
-    // Relasi many-to-many ke Keranjang melalui detail_keranjang
-    public function keranjang()
-    {
-        return $this->belongsToMany(Keranjang::class, 'detail_keranjang', 'id_item_keranjang', 'id_keranjang');
+        return $this->hasOne(DetailKeranjang::class, 'id_item_keranjang', 'id_item_keranjang');
     }
 }

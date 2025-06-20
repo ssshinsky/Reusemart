@@ -11,7 +11,6 @@ class KelolaTransaksi extends Model
 
     // Nama tabel yang digunakan oleh model
     protected $table = 'kelola_transaksi';
-    protected $primaryKey = 'id_kelola';
 
     // Kolom yang dapat diisi (Mass Assignment)
     protected $fillable = [

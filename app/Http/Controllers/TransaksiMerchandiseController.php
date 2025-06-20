@@ -10,14 +10,14 @@ class TransaksiMerchandiseController extends Controller
     // Menampilkan daftar semua transaksi merchandise
     public function index()
     {
-        $transaksiMerchandises = TransaksiMerchandise::with(['merchandise', 'pembeli'])->get();
-        return view('CS.merchandise-claims', compact('transaksiMerchandises'));
+        $transaksiMerchandise = TransaksiMerchandise::all();
+        return response()->json($transaksiMerchandise);
     }
 
     // Menampilkan transaksi merchandise berdasarkan ID
     public function show($id)
     {
-        $transaksiMerchandise = TransaksiMerchandise::with(['merchandise', 'pembeli'])->find($id);
+        $transaksiMerchandise = TransaksiMerchandise::find($id);
         if (!$transaksiMerchandise) {
             return response()->json(['message' => 'Transaksi merchandise not found'], 404);
         }
@@ -30,10 +30,9 @@ class TransaksiMerchandiseController extends Controller
         $request->validate([
             'id_merchandise' => 'required|exists:merchandise,id_merchandise',
             'id_pembeli' => 'required|exists:pembeli,id_pembeli',
-            'jumlah' => 'required|integer|min:1',
-            'total_poin_penukaran' => 'required|integer|min:0',
+            'jumlah' => 'required|integer',
+            'total_poin_penukaran' => 'required|integer',
             'tanggal_klaim' => 'nullable|date',
-            'status_transaksi' => 'nullable|string|max:50|in:belum diambil,diambil',
         ]);
 
         $transaksiMerchandise = TransaksiMerchandise::create([
@@ -41,8 +40,7 @@ class TransaksiMerchandiseController extends Controller
             'id_pembeli' => $request->id_pembeli,
             'jumlah' => $request->jumlah,
             'total_poin_penukaran' => $request->total_poin_penukaran,
-            'tanggal_klaim' => $request->tanggal_klaim ?? now()->toDateString(),
-            'status_transaksi' => $request->status_transaksi ?? 'belum diambil',
+            'tanggal_klaim' => $request->tanggal_klaim,
         ]);
 
         return response()->json($transaksiMerchandise, 201);
@@ -56,21 +54,23 @@ class TransaksiMerchandiseController extends Controller
             return response()->json(['message' => 'Transaksi merchandise not found'], 404);
         }
 
-        // Cek jika tanggal_ambil_merch sudah diisi
-        if ($transaksiMerchandise->tanggal_ambil_merch) {
-            return redirect()->route('cs.merchandise-claim.index')->with('error', 'Tanggal ambil sudah diisi dan tidak dapat diubah!');
-        }
-
         $request->validate([
-            'tanggal_ambil_merch' => 'required|date|after_or_equal:' . $transaksiMerchandise->tanggal_klaim,
+            'id_merchandise' => 'nullable|exists:merchandise,id_merchandise',
+            'id_pembeli' => 'nullable|exists:pembeli,id_pembeli',
+            'jumlah' => 'nullable|integer',
+            'total_poin_penukaran' => 'nullable|integer',
+            'tanggal_klaim' => 'nullable|date',
         ]);
 
         $transaksiMerchandise->update([
-            'tanggal_ambil_merch' => $request->tanggal_ambil_merch,
-            'status_transaksi' => 'diambil', // Otomatis ubah status ke diambil
+            'id_merchandise' => $request->id_merchandise ?? $transaksiMerchandise->id_merchandise,
+            'id_pembeli' => $request->id_pembeli ?? $transaksiMerchandise->id_pembeli,
+            'jumlah' => $request->jumlah ?? $transaksiMerchandise->jumlah,
+            'total_poin_penukaran' => $request->total_poin_penukaran ?? $transaksiMerchandise->total_poin_penukaran,
+            'tanggal_klaim' => $request->tanggal_klaim ?? $transaksiMerchandise->tanggal_klaim,
         ]);
 
-        return redirect()->route('cs.merchandise-claim.index')->with('success', 'Tanggal ambil berhasil diisi dan status diubah menjadi diambil!');
+        return response()->json($transaksiMerchandise);
     }
 
     // Menghapus transaksi merchandise berdasarkan ID
@@ -83,21 +83,5 @@ class TransaksiMerchandiseController extends Controller
 
         $transaksiMerchandise->delete();
         return response()->json(['message' => 'Transaksi merchandise deleted successfully']);
-    }
-
-    // Pencarian live untuk daftar klaim
-    public function search(Request $request)
-    {
-        $query = $request->input('q');
-        $transaksiMerchandises = TransaksiMerchandise::with(['merchandise', 'pembeli'])
-            ->whereHas('pembeli', function ($q) use ($query) {
-                $q->where('nama_pembeli', 'like', "%{$query}%");
-            })
-            ->orWhereHas('merchandise', function ($q) use ($query) {
-                $q->where('nama_merch', 'like', "%{$query}%");
-            })
-            ->get();
-
-        return view('CS.partials.merchandise-claims-table', compact('transaksiMerchandises'))->render();
     }
 }

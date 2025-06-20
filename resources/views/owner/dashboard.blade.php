@@ -29,6 +29,22 @@
         <a href="{{ route('owner.rewards') }}" class="btn btn-outline-primary">
             <i class="bi bi-gift me-2"></i> Poin Reward
         </a>
+        <a href="{{ route('owner.report') }}" class="btn btn-outline-primary">
+            <i class="bi bi-file-earmark-text"></i> Laporan Penitip
+        </a>
+        
+        <!-- Navigation Button to Reports -->
+        <div class="d-flex flex-wrap gap-3 mb-6">
+            <a href="{{ route('owner.reports') }}" class="btn btn-outline-primary">
+                <i class="bi bi-bar-chart me-2"></i> Lihat Laporan
+            </a>
+        </div>
+        <!-- <a href="{{ route('owner.monthly.sales.report') }}" class="btn btn-outline-primary">
+            <i class="bi bi-file-earmark-text me-2"></i> Laporan Penjualan
+        </a>
+        <a href="{{ route('owner.warehouse.stock.report') }}" class="btn btn-outline-primary">
+            <i class="bi bi-warehouse me-2"></i> Laporan Stok Gudang
+        </a> -->
         <a href="{{ route('owner.reports.sales_by_category') }}" class="btn btn-outline-primary">
             <i class="bi bi-bar-chart-line me-2"></i> Lap. Penjualan per Kategori
         </a>
@@ -48,10 +64,10 @@
                         <i class="bi bi-list-check text-success" style="font-size: 1.5rem;"></i>
                     </div>
                     <div>
-                      <a href="{{ route('owner.donation.requests') }}">
-                          <h3 class="fw-semibold text-dark">Request Donasi</h3>
-                          <p class="text-muted mb-0" id="total-requests">{{ $totalRequests }} Request Baru</p>
-                      </a>
+                        <a href="{{ route('owner.donation.requests') }}">
+                            <h3 class="fw-semibold text-dark">Request Donasi</h3>
+                            <p class="text-muted mb-0" id="total-requests">{{ $totalRequests }} Request Baru</p>
+                        </a>
                     </div>
                 </div>
             </div>
@@ -64,8 +80,8 @@
                     </div>
                     <div>
                         <a href="{{ route('owner.donation.history') }}">
-                          <h3 class="fw-semibold text-dark">Total Donasi</h3>
-                          <p class="text-muted mb-0" id="total-donations">{{ $totalDonations }} Barang</p>
+                            <h3 class="fw-semibold text-dark">Total Donasi</h3>
+                            <p class="text-muted mb-0" id="total-donations">{{ $totalDonations }} Barang</p>
                         </a>
                     </div>
                 </div>

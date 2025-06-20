@@ -3,13 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Models\Penitip;
+use App\Models\TransaksiPenitipan;
+use App\Models\TransaksiPembelian;
+use App\Models\Barang;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
-use App\Models\TransaksiPenitipan;
-use App\Models\Barang;
+use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
 class PenitipController extends Controller
@@ -24,7 +26,6 @@ class PenitipController extends Controller
 
         return view('CS.add_penitip');
     }
-
 
     public function store(Request $request)
     {
@@ -60,7 +61,6 @@ class PenitipController extends Controller
         return redirect()->route($prefix . '.penitip.index')->with('success', 'Penitip berhasil ditambahkan.');
     }
 
-    // Tampilkan profil penitip yang sedang login
     public function profile()
     {
         $penitip = auth()->guard('penitip')->user();
@@ -77,8 +77,6 @@ class PenitipController extends Controller
         return view('penitip.profile', compact('penitip'));
     }
 
-
-    // Tampilkan halaman produk yang tersedia
     public function product()
     {
         $id = Auth::guard('penitip')->id();
@@ -86,11 +84,58 @@ class PenitipController extends Controller
         return view('Penitip.product', compact('produk'));
     }
 
-    // Tampilkan riwayat transaksi penitip
-    public function transaction()
+    public function transaction(Request $request)
     {
-        $transaksis = \App\Models\TransaksiPenitipan::with('barang')->where('id_penitip', Auth::guard('penitip')->id());
-        return view('Penitip.transaction', compact('transaksis'));
+        $id_penitip = Auth::guard('penitip')->id();
+
+        // Pastikan user sudah login
+        if (!$id_penitip) {
+            return redirect()->back()->with('error', 'Anda belum login sebagai penitip.');
+        }
+
+        // Ambil parameter search
+        $search = $request->query('search');
+
+        // Query untuk transaksi penjualan
+        $query = DB::table('transaksi_pembelian as tp')
+            ->join('keranjang as k', 'tp.id_keranjang', '=', 'k.id_keranjang')
+            ->join('detail_keranjang as dk', 'dk.id_keranjang', '=', 'k.id_keranjang')
+            ->join('item_keranjang as ik', 'ik.id_item_keranjang', '=', 'dk.id_item_keranjang')
+            ->join('barang as b', 'b.id_barang', '=', 'ik.id_barang')
+            ->join('transaksi_penitipan as tpen', 'b.id_transaksi_penitipan', '=', 'tpen.id_transaksi_penitipan')
+            ->where('tpen.id_penitip', $id_penitip)
+            ->where('b.status_barang', 'sold')
+            ->where('tp.status_transaksi', 'selesai')
+            ->select(
+                'tp.id_pembelian as id_transaksi',
+                'b.kode_barang',
+                'b.nama_barang',
+                'b.harga_barang',
+                DB::raw("DATE(tpen.tanggal_penitipan) as tanggal_masuk"),
+                DB::raw("DATE(tp.created_at) as tanggal_terjual")
+            );
+
+        // Terapkan pencarian jika ada
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('b.nama_barang', 'like', "%{$search}%")
+                ->orWhere('b.kode_barang', 'like', "%{$search}%")
+                ->orWhere('tp.id_transaksi_pembelian', 'like', "%{$search}%");
+            });
+        }
+
+        // Eksekusi query dan format data
+        $penjualan = $query->get()->map(function ($item) {
+            $item->tanggal_masuk = Carbon::parse($item->tanggal_masuk);
+            $item->tanggal_terjual = Carbon::parse($item->tanggal_terjual);
+            $komisiReusemart = $item->harga_barang * 0.2; // Komisi 20%
+            $item->harga_bersih = $item->harga_barang - $komisiReusemart;
+            $item->pendapatan = $item->harga_bersih;
+            return $item;
+        });
+
+        // Kirim data ke view
+        return view('penitip.transaction', compact('penjualan'));
     }
 
     public function filterTransaction($type)
@@ -115,11 +160,9 @@ class PenitipController extends Controller
 
         $transaksis = $query->get();
 
-        // Kembalikan view partial untuk AJAX
         return view('Penitip.partials.table', compact('transaksis'));
     }
 
-    // Tampilkan produk milik penitip sendiri
     public function myproduct()
     {
         $penitip = auth()->guard('penitip')->user();
@@ -144,7 +187,6 @@ class PenitipController extends Controller
         return view('penitip.myproduct', compact('products'));
     }
 
-
     // Tampilkan saldo dan reward penitip
     public function rewards()
     {
@@ -161,7 +203,6 @@ class PenitipController extends Controller
         return view('penitip.rewards', compact('penitip'));
     }
 
-    // Menampilkan halaman daftar penitip (item owners)
     public function index()
     {
         $pegawai = Auth::guard('pegawai')->user();
@@ -174,8 +215,6 @@ class PenitipController extends Controller
         return view('CS.penitip', compact('penitips'));
     }
 
-
-    // Menampilkan form edit penitip
     public function edit($id)
     {
         $pegawai = Auth::guard('pegawai')->user();
@@ -199,42 +238,48 @@ class PenitipController extends Controller
         $penitip = Penitip::findOrFail($id);
 
         $request->validate([
-                'nik_penitip' => 'required|string|unique:penitip,nik_penitip,' . $id . ',id_penitip',
-                'nama_penitip' => 'required|string',
-                'email_penitip' => 'required|email|unique:penitip,email_penitip,' . $id . ',id_penitip',
-                'no_telp' => 'required|string',
-                'alamat' => 'required|string',
-                'profil_pict' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
-            ]);
+            'nik_penitip' => 'required|string|unique:penitip,nik_penitip,' . $id . ',id_penitip',
+            'nama_penitip' => 'required|string',
+            'email_penitip' => 'required|email|unique:penitip,email_penitip,' . $id . ',id_penitip',
+            'no_telp' => 'required|string',
+            'alamat' => 'required|string',
+            'profil_pict' => 'nullable|image|mimes:jpeg,png,jpg',
+        ]);
 
+        // Handle file upload
         if ($request->hasFile('profil_pict')) {
             $file = $request->file('profil_pict');
             $filename = time() . '_' . $file->getClientOriginalName();
 
+            // Simpan file baru
             Storage::disk('public')->putFileAs('foto_penitip', $file, $filename);
 
-            $penitip->profil_pict = $filename;
+            // Hapus foto lama (jika bukan default)
+            if ($penitip->profil_pict && $penitip->profil_pict !== 'default.png') {
+                Storage::disk('public')->delete('foto_penitip/' . $penitip->profil_pict);
+            }
+
+            $penitip->profil_pict = $filename; // set foto baru
         }
 
-            $penitip->update([
-                'nik_penitip' => $request->nik_penitip,
-                'nama_penitip' => $request->nama_penitip,
-                'email_penitip' => $request->email_penitip,
-                'no_telp' => $request->no_telp,
-                'alamat' => $request->alamat,
-                'profil_pict' => $penitip->profil_pict,
-            ]);
+        // Update semua field termasuk yang mungkin baru diset di atas
+        $penitip->update([
+            'nik_penitip' => $request->nik_penitip,
+            'nama_penitip' => $request->nama_penitip,
+            'email_penitip' => $request->email_penitip,
+            'no_telp' => $request->no_telp,
+            'alamat' => $request->alamat,
+            'profil_pict' => $penitip->profil_pict, // yang ini sekarang sudah pasti berisi nilai baru atau lama
+        ]);
 
         return redirect()->route('penitip.profile')->with('success', 'Profil berhasil diperbarui.');
     }
 
 
-    // Update data penitip
     public function update(Request $request, $id)
     {
         $penitip = Penitip::findOrFail($id);
 
-        // Setelah di Add, seharusnya KTP tidak bisa dihapus atau diedit
         if ($request->hasFile('foto_ktp')) {
             abort(403, 'Mengubah foto KTP tidak diperbolehkan.');
         }
@@ -248,7 +293,7 @@ class PenitipController extends Controller
             'profil_pict' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ]);
 
-       if ($request->hasFile('profil_pict')) {
+        if ($request->hasFile('profil_pict')) {
             $file = $request->file('profil_pict');
             $filename = time() . '_' . $file->getClientOriginalName();
 
@@ -269,7 +314,6 @@ class PenitipController extends Controller
         return redirect()->route('cs.penitip.index')->with('success', 'Data berhasil diperbarui.');
     }
 
-    // Menonaktifkan penitip
     public function deactivate($id)
     {
         $penitip = Penitip::findOrFail($id);
@@ -278,7 +322,6 @@ class PenitipController extends Controller
         return redirect()->route('cs.penitip.index')->with('success', 'Penitip dinonaktifkan.');
     }
 
-    // Mengaktifkan kembali penitip
     public function reactivate($id)
     {
         $penitip = Penitip::findOrFail($id);
@@ -287,12 +330,11 @@ class PenitipController extends Controller
         return redirect()->route('cs.penitip.index')->with('success', 'Penitip diaktifkan kembali.');
     }
 
-    // Reset password penitip (ke tanggal lahir atau default tertentu, misalnya "123456")
     public function resetPassword($id)
     {
         $penitip = Penitip::findOrFail($id);
         $penitip->update([
-            'password' => Hash::make('123456') // ganti dengan password default sesuai kebutuhan
+            'password' => Hash::make('123456')
         ]);
 
         return redirect()->route('cs.penitip.index')->with('success', 'Password berhasil direset.');
@@ -397,6 +439,159 @@ class PenitipController extends Controller
         return response($html);
     }
 
+    public function getPenitipById($id)
+    {
+        try {
+            Log::debug('Fetching penitip by ID', ['id_penitip' => $id]);
+
+            $penitip = Penitip::find($id);
+            if (!$penitip) {
+                Log::warning('Penitip not found', ['id_penitip' => $id]);
+                return response()->json(['message' => 'Penitip not found'], 404);
+            }
+
+            return response()->json([
+                'id_penitip' => $penitip->id_penitip,
+                'nama' => $penitip->nama_penitip,
+                'email' => $penitip->email_penitip,
+                'saldo' => $penitip->saldo_penitip ?? 0,
+                'poin' => $penitip->poin_penitip ?? 0,
+                'rata_rating' => $penitip->rata_rating ?? 0,
+                'banyak_rating' => $penitip->banyak_rating ?? 0,
+                'profil_pict' => $penitip->profil_pict && file_exists(storage_path('app/public/' . $penitip->profil_pict))
+                    ? asset('storage/' . $penitip->profil_pict)
+                    : null,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error fetching penitip by ID', [
+                'id_penitip' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json(['message' => 'Error fetching penitip'], 500);
+        }
+    }
+
+    public function getProfile()
+    {
+        try {
+            Log::debug('Starting getProfile', ['user_id' => Auth::id()]);
+            $penitip = Auth::user();
+
+            return response()->json([
+                'id_penitip' => $penitip->id_penitip,
+                'nama' => $penitip->nama_penitip,
+                'email' => $penitip->email_penitip,
+                'saldo' => $penitip->saldo_penitip ?? 0,
+                'poin' => $penitip->poin_penitip ?? 0,
+                'rata_rating' => $penitip->rata_rating ?? 0,
+                'banyak_rating' => $penitip->banyak_rating ?? 0,
+                'profil_pict' => $penitip->profil_pict && file_exists(storage_path('app/public/' . $penitip->profil_pict))
+                    ? asset('storage/' . $penitip->profil_pict)
+                    : null,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error in getProfile', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json(['message' => 'Error fetching profile'], 500);
+        }
+    }
+
+    public function getConsignmentHistoryById($id)
+    {
+        try {
+            Log::debug('Fetching consignment history by ID', ['id_penitip' => $id]);
+
+            if (!is_numeric($id) || $id <= 0) {
+                return response()->json(['message' => 'Invalid ID'], 400);
+            }
+
+            $penitip = Penitip::find($id);
+            if (!$penitip) {
+                Log::warning('Penitip not found', ['id_penitip' => $id]);
+                return response()->json(['message' => 'Penitip not found'], 404);
+            }
+
+            $history = TransaksiPenitipan::with(['barang.gambar'])
+                ->where('id_penitip', $id)
+                ->take(50)
+                ->get()
+                ->map(function ($transaksi) {
+                    Log::debug('Processing transaction', ['id_transaksi' => $transaksi->id_transaksi_penitipan]);
+                    return [
+                        'id_transaksi' => $transaksi->id_transaksi_penitipan,
+                        'tanggal_penitipan' => $transaksi->tanggal_penitipan ? $transaksi->tanggal_penitipan->format('Y-m-d') : 'Unknown',
+                        'status' => $transaksi->status_transaksi ?? 'Unknown',
+                        'barang' => $transaksi->barang->map(function ($barang) {
+                            return [
+                                'nama_barang' => $barang->nama_barang,
+                                'harga_barang' => $barang->harga_barang ?? 0,
+                                'status_barang' => $barang->status_barang ?? 'Unknown',
+                                'gambar' => $barang->gambar->isNotEmpty() && file_exists(storage_path('app/public/' . $barang->gambar->first()->gambar_barang))
+                                    ? asset('storage/' . $barang->gambar->first()->gambar_barang)
+                                    : null,
+                                'tanggal_berakhir' => $barang->tanggal_berakhir ? $barang->tanggal_berakhir->format('Y-m-d') : 'Unknown',
+                                'perpanjangan' => $barang->perpanjangan ?? 0,
+                            ];
+                        })->take(1)->toArray(),
+                    ];
+                });
+
+            Log::info('History fetched', ['id_penitip' => $id, 'count' => count($history)]);
+            return response()->json($history);
+        } catch (\Exception $e) {
+            Log::error('Error fetching consignment history by ID', [
+                'id_penitip' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json(['message' => 'Error fetching history'], 500);
+        }
+    }
+
+    public function getConsignmentHistory()
+    {
+        try {
+            Log::debug('Starting getConsignmentHistory', ['user_id' => Auth::id()]);
+            $penitip = Auth::user();
+
+            $history = TransaksiPenitipan::with(['barang.gambar'])
+                ->where('id_penitip', $penitip->id_penitip)
+                ->take(50)
+                ->get()
+                ->map(function ($transaksi) {
+                    Log::debug('Processing transaction', ['id_transaksi' => $transaksi->id_transaksi_penitipan]);
+                    return [
+                        'id_transaksi' => $transaksi->id_transaksi_penitipan,
+                        'tanggal_penitipan' => $transaksi->tanggal_penitipan ? $transaksi->tanggal_penitipan->format('Y-m-d') : 'Unknown',
+                        'status' => $transaksi->status_transaksi ?? 'Unknown',
+                        'barang' => $transaksi->barang->map(function ($barang) {
+                            return [
+                                'nama_barang' => $barang->nama_barang,
+                                'harga_barang' => $barang->harga_barang ?? 0,
+                                'status_barang' => $barang->status_barang ?? 'Unknown',
+                                'gambar' => $barang->gambar->isNotEmpty() && file_exists(storage_path('app/public/' . $barang->gambar->first()->gambar_barang))
+                                    ? asset('storage/' . $barang->gambar->first()->gambar_barang)
+                                    : null,
+                                'tanggal_berakhir' => $barang->tanggal_berakhir ? $barang->tanggal_berakhir->format('Y-m-d') : 'Unknown',
+                                'perpanjangan' => $barang->perpanjangan ?? 0,
+                            ];
+                        })->take(1)->toArray(),
+                    ];
+                });
+
+            Log::info('History fetched', ['count' => count($history)]);
+            return response()->json($history);
+        } catch (\Exception $e) {
+            Log::error('Error in getConsignmentHistory', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json(['message' => 'Error fetching history'], 500);
+        }
+    }
     public function perpanjang($id)
     {
         $barang = Barang::findOrFail($id);
@@ -488,5 +683,4 @@ class PenitipController extends Controller
             'status_barang' => $barang->status_barang,
         ]);
     }
-
 }

@@ -40,6 +40,10 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
+        'api' => [
+            'driver' => 'sanctum',
+            'provider' => 'penitip', // Sesuaikan dengan provider penitip
+        ],
 
         // Ini guard untuk untuk login
         'pegawai' => [

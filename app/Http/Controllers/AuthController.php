@@ -4,10 +4,12 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use App\Models\Pegawai;
 use App\Models\Pembeli;
 use App\Models\Penitip;
 use App\Models\Organisasi;
+use App\Models\FcmToken;
 
 class AuthController extends Controller
 {
@@ -129,26 +131,42 @@ class AuthController extends Controller
 
         // Coba login sebagai Pegawai
         $pegawai = Pegawai::where('email_pegawai', $email)->first();
-        if ($pegawai) {
-            // Perhatian: Pastikan password di database ter-hash.
-            if (Hash::check($password, $pegawai->password)) {
-                if ($pegawai->is_active == 0) { // Asumsi 0 = Non Active
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Akun pegawai tidak aktif. Silakan hubungi administrator.',
-                    ], 401);
-                }
-                $token = $pegawai->createToken('mobile_token')->plainTextToken;
-                // Pastikan Anda sudah meng-import Role: use App\Models\Role;
-                $roleName = \App\Models\Role::find($pegawai->id_role)->nama_role ?? 'unknown';
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Login berhasil!',
-                    'token' => $token,
-                    'user_type' => $roleName, // Kirim nama role (owner, admin, cs, dll)
-                    'user' => $pegawai->toArray(), // Kirim data user lengkap
-                ], 200);
-            }
+        if (!$pegawai || !Hash::check($password, $pegawai->password)) {
+            \Log::error('Login: Invalid credentials', ['email' => $email]);
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Email atau kata sandi salah'
+            ], 401);
+        }else{
+            // Buat token Sanctum
+            $token = $pegawai->createToken('mobile_token', ['guard:api_pegawai'])->plainTextToken;
+
+            // Tentukan role berdasarkan id_role
+            $role = match ($pegawai->id_role) {
+                5 => 'kurir',
+                1 => 'admin',
+                2 => 'owner',
+                default => 'Pegawai',
+            };
+
+            \Log::info('Login: Success', [
+                'id_pegawai' => $pegawai->id_pegawai,
+                'id_role' => $pegawai->id_role,
+                'role' => $role,
+                'token' => $token,
+            ]);
+
+            return response()->json([
+                'status' => 'success',
+                'token' => $token,
+                'user' => [
+                    'id' => $pegawai->id_pegawai,
+                    'nama' => $pegawai->nama_pegawai,
+                    'email' => $pegawai->email_pegawai,
+                    'id_role' => $pegawai->id_role,
+                ],
+                'role' => $role,
+            ], 200);
         }
 
         // Coba login sebagai Penitip
@@ -213,7 +231,6 @@ class AuthController extends Controller
                 ], 200);
             }
         }
-
         // Jika tidak ada user yang cocok atau password salah
         return response()->json(['success' => false, 'message' => 'Email atau password salah.'], 401);
     }
@@ -224,5 +241,16 @@ class AuthController extends Controller
         return response()->json(['status' => 'success', 'message' => 'Berhasil logout']);
     }
 
+    public function profileKurir(Request $request)
+{
+    $user = $request->user();
+    if ($user instanceof Pegawai && $user->id_role == 5) {
+        return response()->json([
+            'status' => 'success',
+            'user' => $user,
+        ]);
+    }
+    return response()->json(['status' => 'error', 'message' => 'Unauthorized'], 403);
 }
 
+}

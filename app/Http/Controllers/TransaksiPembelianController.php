@@ -9,10 +9,10 @@ use App\Models\Pembeli;
 use App\Models\Penitip;
 use App\Models\DetailKeranjang;
 use App\Models\ItemKeranjang;
+use App\Models\Barang;
 use App\Models\Alamat;
 use App\Models\Schedule;
 use App\Models\Delivery;
-use App\Models\Transaction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
@@ -22,13 +22,22 @@ use Carbon\Carbon;
 
 class TransaksiPembelianController extends Controller
 {
+    private $baseUrl = 'http://10.53.9.31:8000/api';
+
+    private function ensureAdmin()
+    {
+        if (!Auth::guard('pegawai')->check() || Auth::guard('pegawai')->user()->id_role != 2) {
+            abort(403, 'Akses ditolak.');
+        }
+    }
+
 //     private $baseUrl = 'http://10.53.9.31:8000/api';
   
     // 🔓 API: Menampilkan semua transaksi pembelian
     public function index()
     {
         $transaksiPembelian = TransaksiPembelian::with([
-            'keranjang.detailKeranjang.itemKeranjang.barang.penitip',
+            'keranjang.detailKeranjang.itemKeranjang.barang.transaksiPenitipan.penitip',
             'keranjang.detailKeranjang.itemKeranjang.pembeli'
         ])->get();
         return response()->json($transaksiPembelian);
@@ -119,7 +128,6 @@ class TransaksiPembelianController extends Controller
 
         return response()->json($transaksiPembelian);
     }
-
     // 🔓 API: Hapus transaksi
     public function destroy($id)
     {
@@ -141,11 +149,11 @@ class TransaksiPembelianController extends Controller
             return redirect()->route('pembeli.cart')->with('error', 'Keranjang tidak ditemukan.');
         }
 
-        // Kembalikan stok barang
+        // Kembalikan status barang
         foreach ($keranjang->detailKeranjang as $detail) {
             $barang = $detail->itemKeranjang->barang;
             if ($barang) {
-                $barang->stok += $detail->jumlah; // Asumsi ada kolom stok di model Barang
+                $barang->status_barang = 'tersedia';
                 $barang->save();
             }
         }
@@ -154,7 +162,7 @@ class TransaksiPembelianController extends Controller
         DetailKeranjang::where('id_keranjang', $keranjang->id_keranjang)->delete();
         $keranjang->delete();
 
-        return redirect()->route('pembeli.keranjang')->with('success', 'Checkout dibatalkan otomatis karena melewati batas waktu.');
+        return redirect()->route('pembeli.cart')->with('success', 'Checkout dibatalkan otomatis karena melewati batas waktu.');
     }
 
     // Proses pembayaran
@@ -256,8 +264,7 @@ class TransaksiPembelianController extends Controller
             $pembeli->poin_pembeli = $newPoin;
             $pembeli->save();
 
-            // Hapus item keranjang
-            ItemKeranjang::whereIn('id_item_keranjang', session('checkout_selected_items'))->delete();
+           ItemKeranjang::whereIn('id_item_keranjang', session('checkout_selected_items'))->update(['is_selected' => true]);
 
             // Commit transaksi
             DB::commit();
@@ -267,7 +274,7 @@ class TransaksiPembelianController extends Controller
 
             Log::info('Transaksi created:', $transaksi->toArray());
 
-            return redirect()->route('pembeli.riwayat')->with('success', 'Pembayaran berhasil! Menunggu konfirmasi admin.');
+            return redirect()->route('pembeli.purchase')->with('success', 'Pembayaran berhasil! Menunggu konfirmasi admin.');
         } catch (\Illuminate\Validation\ValidationException $e) {
             DB::rollBack();
             Log::error('Validation failed in bayar', ['errors' => $e->errors()]);
@@ -336,33 +343,47 @@ class TransaksiPembelianController extends Controller
 
                 foreach ($detailKeranjang as $detail) {
                     $item = ItemKeranjang::find($detail->id_item_keranjang);
-                    if ($item && $item->barang && $item->barang->penitip) {
-                        $penitipIds[] = $item->barang->penitip->id_penitip;
+                    if ($item && $item->barang) {
+                        $barang = $item->barang;
+                        $transaksiPenitipan = \App\Models\TransaksiPenitipan::find($barang->id_transaksi_penitipan);
+
+                        if ($transaksiPenitipan) {
+                            $penitipId = $transaksiPenitipan->id_penitip;
+                            $penitipIds[] = $penitipId;
+                        }
                     }
                 }
 
-                // Kirim notifikasi ke penitip
-                foreach ($penitipIds as $penitipId) {
-                    Http::post($this->baseUrl . '/send-notification', [
-                        'user_id' => $penitipId,
-                        'role' => 'penitip',
-                        'title' => 'Barang Laku!',
-                        'body' => 'Barang Anda dalam transaksi ' . $transaksi->no_resi . ' telah terjual.',
-                        'type' => 'barang_laku',
-                        'id' => $transaksi->id_keranjang,
-                    ]);
+                foreach ($keranjang->detailKeranjang as $detail) {
+                    $barang = $detail->itemKeranjang->barang ?? null;
+                    if ($barang) {
+                        $barang->status_barang = 'sold'; 
+                        $barang->save();
+                    }
                 }
 
-                // Kirim notifikasi ke pembeli
-                $pembeliId = $keranjang->id_pembeli;
-                Http::post($this->baseUrl . '/send-notification', [
-                    'user_id' => $pembeliId,
-                    'role' => 'pembeli',
-                    'title' => 'Pembayaran Terverifikasi',
-                    'body' => 'Pembayaran untuk transaksi ' . $transaksi->no_resi . ' telah diverifikasi.',
-                    'type' => 'barang_laku',
-                    'id' => $transaksi->id_keranjang,
-                ]);
+                // // Kirim notifikasi ke penitip
+                // foreach ($penitipIds as $penitipId) {
+                //     Http::post($this->baseUrl . '/send-notification', [
+                //         'user_id' => $penitipId,
+                //         'role' => 'penitip',
+                //         'title' => 'Barang Laku!',
+                //         'body' => 'Barang Anda dalam transaksi ' . $transaksi->no_resi . ' telah terjual.',
+                //         'type' => 'barang_laku',
+                //         'id' => $transaksi->id_keranjang,
+                //     ]);
+                // }
+
+                // // Kirim notifikasi ke pembeli
+                // $pembeliId = $keranjang->id_pembeli;
+                // Http::post($this->baseUrl . '/send-notification', [
+                //     'user_id' => $pembeliId,
+                //     'role' => 'pembeli',
+                //     'title' => 'Pembayaran Terverifikasi',
+                //     'body' => 'Pembayaran untuk transaksi ' . $transaksi->no_resi . ' telah diverifikasi.',
+                //     'type' => 'barang_laku',
+                //     'id' => $transaksi->id_keranjang,
+                // ]);
 
                 DB::commit();
                 return redirect()->route('transaksi-pembelian.index')->with('success', 'Bukti pembayaran valid. Status transaksi diubah ke Disiapkan.');
@@ -370,26 +391,26 @@ class TransaksiPembelianController extends Controller
                 $transaksi->status_transaksi = 'Dibatalkan';
                 $transaksi->save();
 
-                // Kembalikan stok barang
+                // Kembalikan status barang
                 $keranjang = Keranjang::find($transaksi->id_keranjang);
                 foreach ($keranjang->detailKeranjang as $detail) {
                     $barang = $detail->itemKeranjang->barang;
                     if ($barang) {
-                        $barang->stok += $detail->jumlah;
+                        $barang->status = 'tersedia';
                         $barang->save();
                     }
                 }
 
-                // Kirim notifikasi ke pembeli
-                $pembeliId = $keranjang->id_pembeli;
-                Http::post($this->baseUrl . '/send-notification', [
-                    'user_id' => $pembeliId,
-                    'role' => 'pembeli',
-                    'title' => 'Transaksi Dibatalkan',
-                    'body' => 'Transaksi ' . $transaksi->no_resi . ' dibatalkan karena bukti pembayaran tidak valid.',
-                    'type' => 'transaksi_dibatalkan',
-                    'id' => $transaksi->id_keranjang,
-                ]);
+                // // Kirim notifikasi ke pembeli
+                // $pembeliId = $keranjang->id_pembeli;
+                // Http::post($this->baseUrl . '/send-notification', [
+                //     'user_id' => $pembeliId,
+                //     'role' => 'pembeli',
+                //     'title' => 'Transaksi Dibatalkan',
+                //     'body' => 'Transaksi ' . $transaksi->no_resi . ' dibatalkan karena bukti pembayaran tidak valid.',
+                //     'type' => 'transaksi_dibatalkan',
+                //     'id' => $transaksi->id_keranjang,
+                // ]);
 
                 DB::commit();
                 return redirect()->route('transaksi-pembelian.index')->with('success', 'Bukti pembayaran tidak valid. Transaksi dibatalkan.');
@@ -528,8 +549,14 @@ class TransaksiPembelianController extends Controller
 
         foreach ($detailKeranjang as $detail) {
             $item = ItemKeranjang::find($detail->id_item_keranjang);
-            if ($item && $item->barang && $item->barang->penitip) {
-                $penitipIds[] = $item->barang->penitip->id_penitip;
+            if ($item && $item->barang) {
+                $barang = $item->barang;
+                $transaksiPenitipan = \App\Models\TransaksiPenitipan::find($barang->id_transaksi_penitipan);
+
+                if ($transaksiPenitipan) {
+                    $penitipId = $transaksiPenitipan->id_penitip;
+                    $penitipIds[] = $penitipId;
+                }
             }
         }
 
@@ -622,6 +649,449 @@ class TransaksiPembelianController extends Controller
         return response()->json(['message' => 'Pickup schedule created']);
     }
 
+    public function history()
+    {
+        $user = session('user');
+        if (!$user || session('role') !== 'pembeli') {
+            Log::warning('Unauthorized access to history', ['user' => $user, 'role' => session('role')]);
+            return redirect()->route('login')->with('error', 'Anda harus login sebagai pembeli.');
+        }
+
+        $idPembeli = $user['id'];
+        $pembeli = Pembeli::find($idPembeli);
+        if (!$pembeli) {
+            Log::error('Pembeli not found', ['id_pembeli' => $idPembeli]);
+            return redirect()->back()->with('error', 'Data pembeli tidak ditemukan.');
+        }
+
+        $riwayat = TransaksiPembelian::with(['keranjang.detailKeranjang.itemKeranjang.barang.transaksiPenitipan.penitip'])
+            ->whereHas('keranjang.detailKeranjang.itemKeranjang', function ($query) use ($idPembeli) {
+                $query->where('id_pembeli', $idPembeli);
+            })
+            ->get();
+
+        $topSeller = Penitip::where('badge', 1)->first();
+
+        return view('Pembeli.history', compact('riwayat', 'topSeller'));
+    }
+
+    public function showRatingPage($id)
+    {
+        $user = session('user');
+        if (!$user || session('role') !== 'pembeli') {
+            Log::warning('Unauthorized access to rating page', ['user' => $user, 'role' => session('role')]);
+            return redirect()->route('login')->with('error', 'Anda harus login sebagai pembeli.');
+        }
+
+        $idPembeli = $user['id'];
+        $transaksi = TransaksiPembelian::with('keranjang.detailKeranjang.itemKeranjang.barang.transaksiPenitipan.penitip')
+            ->where('id_pembelian', $id)
+            ->where('status_transaksi', 'selesai')
+            ->whereHas('keranjang.detailKeranjang.itemKeranjang', function ($query) use ($idPembeli) {
+                $query->where('id_pembeli', $idPembeli);
+            })
+            ->firstOrFail();
+
+        $hasUnratedItems = $transaksi->keranjang->detailKeranjang->contains(function ($detail) {
+            return is_null($detail->itemKeranjang->barang->rating);
+        });
+
+        if (!$hasUnratedItems) {
+            return redirect()->route('pembeli.purchase')->with('info', 'Semua item dalam transaksi ini sudah dirating.');
+        }
+
+        return view('Pembeli.rating', compact('transaksi'));
+    }
+
+    public function rateTransaction(Request $request, $id)
+    {
+        $user = session('user');
+        if (!$user || session('role') !== 'pembeli') {
+            Log::warning('Unauthorized rating attempt', ['user' => $user, 'role' => session('role')]);
+            return redirect()->route('login')->with('error', 'Anda harus login sebagai pembeli.');
+        }
+
+        $idPembeli = $user['id'];
+        $transaksi = TransaksiPembelian::with('keranjang.detailKeranjang.itemKeranjang.barang.transaksiPenitipan.penitip')
+            ->where('id_pembelian', $id)
+            ->where('status_transaksi', 'selesai')
+            ->whereHas('keranjang.detailKeranjang.itemKeranjang', function ($query) use ($idPembeli) {
+                $query->where('id_pembeli', $idPembeli);
+            })
+            ->firstOrFail();
+
+        $request->validate([
+            'ratings' => 'required|array',
+            'ratings.*' => 'required|integer|min:1|max:5',
+        ], [
+            'ratings.required' => 'Harap berikan rating untuk semua item.',
+            'ratings.*.required' => 'Rating untuk setiap item wajib diisi.',
+            'ratings.*.integer' => 'Rating harus berupa angka bulat.',
+            'ratings.*.min' => 'Rating minimal adalah 1.',
+            'ratings.*.max' => 'Rating maksimal adalah 5.',
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $ratings = $request->ratings;
+            foreach ($transaksi->keranjang->detailKeranjang as $detail) {
+                $barang = $detail->itemKeranjang->barang;
+                $barangId = $barang->id_barang;
+                $rating = $ratings[$barangId] ?? null;
+
+                if ($rating && is_null($barang->rating)) {
+                    $barang->update(['rating' => $rating]);
+
+                    $transaksiPenitipan = $barang->transaksiPenitipan;
+                    if ($transaksiPenitipan) {
+                        $penitip = $transaksiPenitipan->penitip;
+                        $currentAverage = $penitip->rata_rating ?? 0;
+                        $currentCount = $penitip->banyak_rating ?? 0;
+
+                        $newAverage = ($currentCount > 0)
+                            ? (($currentAverage * $currentCount) + $rating) / ($currentCount + 1)
+                            : $rating;
+
+                        $penitip->update([
+                            'rata_rating' => $newAverage,
+                            'banyak_rating' => $currentCount + 1,
+                        ]);
+
+                        Log::info('Rating processed', [
+                            'transaksi_id' => $id,
+                            'barang_id' => $barangId,
+                            'rating' => $rating,
+                            'penitip_id' => $penitip->id_penitip,
+                            'new_average' => $newAverage,
+                            'new_count' => $currentCount + 1,
+                        ]);
+                    }
+                }
+            }
+
+            DB::commit();
+            return redirect()->route('pembeli.purchase')->with('success', 'Rating berhasil disubmit!');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error rating transaction', ['transaksi_id' => $id, 'user_id' => $idPembeli, 'error' => $e->getMessage()]);
+            return redirect()->back()->with('error', 'Terjadi kesalahan saat menyimpan rating.');
+        }
+    }
+
+    public function processTopSeller()
+    {
+        Log::info('processTopSeller started', ['user_id' => Auth::guard('pegawai')->id()]);
+        $this->ensureAdmin();
+
+        try {
+            DB::beginTransaction();
+
+            $lastMonth = Carbon::now()->subMonth()->format('Y-m');
+            $lastMonthStart = Carbon::now()->subMonth()->startOfMonth();
+            $lastMonthEnd = Carbon::now()->subMonth()->endOfMonth();
+
+            $existingTopSeller = Penitip::where('badge', 1)
+                ->where('updated_at', '>=', $lastMonthStart)
+                ->where('updated_at', '<=', $lastMonthEnd)
+                ->exists();
+            Log::info('existingTopSeller check', ['exists' => $existingTopSeller]);
+            if ($existingTopSeller) {
+                DB::rollBack();
+                return redirect()->back()->with('error', "Top Seller untuk bulan $lastMonth sudah diproses.");
+            }
+
+            Penitip::where('badge', 1)->update(['badge' => 0]);
+
+            $topSeller = TransaksiPembelian::where('status_transaksi', 'Selesai')
+                ->whereBetween('tanggal_pembelian', [$lastMonthStart, $lastMonthEnd])
+                ->join('keranjang', 'transaksi_pembelian.id_keranjang', '=', 'keranjang.id_keranjang')
+                ->join('detail_keranjang', 'keranjang.id_keranjang', '=', 'detail_keranjang.id_keranjang')
+                ->join('item_keranjang', 'detail_keranjang.id_item_keranjang', '=', 'item_keranjang.id_item_keranjang')
+                ->join('barang', 'item_keranjang.id_barang', '=', 'barang.id_barang')
+                ->join('transaksi_penitipan', 'barang.id_transaksi_penitipan', '=', 'transaksi_penitipan.id_transaksi_penitipan')
+                ->join('penitip', 'transaksi_penitipan.id_penitip', '=', 'penitip.id_penitip')
+                ->select(
+                    'penitip.id_penitip',
+                    'penitip.nama_penitip',
+                    DB::raw('SUM(keranjang.banyak_barang) as sold_count')
+                )
+                ->groupBy('penitip.id_penitip', 'penitip.nama_penitip')
+                ->orderByDesc('sold_count')
+                ->first();
+
+            Log::info('TopSeller query result', ['topSeller' => $topSeller ? $topSeller->toArray() : null]);
+            if (!$topSeller) {
+                DB::rollBack();
+                return redirect()->back()->with('error', 'Tidak ada transaksi selesai bulan lalu untuk memilih Top Seller.');
+            }
+
+            $totalSales = TransaksiPembelian::where('status_transaksi', 'Selesai')
+                ->whereBetween('tanggal_pembelian', [$lastMonthStart, $lastMonthEnd])
+                ->join('keranjang', 'transaksi_pembelian.id_keranjang', '=', 'keranjang.id_keranjang')
+                ->join('detail_keranjang', 'keranjang.id_keranjang', '=', 'detail_keranjang.id_keranjang')
+                ->join('item_keranjang', 'detail_keranjang.id_item_keranjang', '=', 'item_keranjang.id_item_keranjang')
+                ->join('barang', 'item_keranjang.id_barang', '=', 'barang.id_barang')
+                ->join('transaksi_penitipan', 'barang.id_transaksi_penitipan', '=', 'transaksi_penitipan.id_transaksi_penitipan')
+                ->where('transaksi_penitipan.id_penitip', $topSeller->id_penitip)
+                ->sum(DB::raw('barang.harga_barang * keranjang.banyak_barang'));
+
+            $bonusPoints = floor($totalSales * 0.005);
+
+            $penitip = Penitip::findOrFail($topSeller->id_penitip);
+            $penitip->update([
+                'badge' => 1,
+                'poin_penitip' => ($penitip->poin_penitip ?? 0) + $bonusPoints
+            ]);
+
+            Log::info('Top Seller processed', [
+                'month' => $lastMonth,
+                'penitip_id' => $topSeller->id_penitip,
+                'nama_penitip' => $topSeller->nama_penitip,
+                'sold_count' => $topSeller->sold_count,
+                'total_sales' => $totalSales,
+                'bonus_points' => $bonusPoints
+            ]);
+
+            DB::commit();
+            return redirect()->back()->with('success', "Memberikan Top Seller $lastMonth: {$topSeller->nama_penitip} sebanyak $bonusPoints poin.");
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error processing Top Seller', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return redirect()->back()->with('error', 'Gagal memproses Top Seller: ' . $e->getMessage());
+        }
+    }
+
+    public function getPurchaseHistory()
+    {
+        try {
+            Log::debug('Starting getPurchaseHistory', ['user_id' => Auth::guard('pembeli')->id()]);
+            $pembeli = Auth::guard('pembeli')->user();
+
+            if (!$pembeli) {
+                Log::warning('Pembeli not authenticated');
+                return response()->json(['message' => 'Unauthenticated'], 401);
+            }
+
+            $riwayat = TransaksiPembelian::with(['keranjang.detailKeranjang.itemKeranjang.barang.transaksiPenitipan.penitip'])
+                ->whereHas('keranjang.detailKeranjang.itemKeranjang', function ($query) use ($pembeli) {
+                    $query->where('id_pembeli', $pembeli->id_pembeli);
+                })
+                ->take(50)
+                ->get()
+                ->map(function ($transaksi) {
+                    return [
+                        'id_pembelian' => $transaksi->id_pembelian,
+                        'tanggal_transaksi' => $transaksi->created_at ? $transaksi->created_at->format('Y-m-d') : 'Unknown',
+                        'total_harga' => $transaksi->total_harga ?? 0,
+                        'ongkir' => $transaksi->ongkir ?? 0,
+                        'metode_pengiriman' => $transaksi->metode_pengiriman ?? 'Unknown',
+                        'status_transaksi' => $transaksi->status_transaksi ?? 'Unknown',
+                        'items' => $transaksi->keranjang->detailKeranjang->map(function ($detail) {
+                            $barang = $detail->itemKeranjang->barang;
+                            return [
+                                'nama_barang' => $barang->nama_barang ?? 'Unknown',
+                                'harga_barang' => $barang->harga_barang ?? 0,
+                                'rating' => $barang->rating ?? null,
+                                'gambar' => $barang->gambar->isNotEmpty() && file_exists(storage_path('app/public/' . $barang->gambar->first()->gambar_barang))
+                                    ? asset('storage/' . $barang->gambar->first()->gambar_barang)
+                                    : null,
+                            ];
+                        })->toArray(),
+                    ];
+                });
+
+            Log::info('Purchase history fetched', ['count' => count($riwayat)]);
+            return response()->json($riwayat);
+        } catch (\Exception $e) {
+            Log::error('Error in getPurchaseHistory', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json(['message' => 'Error fetching purchase history'], 500);
+        }
+    }
+
+    public function getPurchaseHistoryById($id)
+    {
+        try {
+            Log::debug('Fetching purchase history by ID', ['id_pembeli' => $id]);
+
+            if (!is_numeric($id) || $id <= 0) {
+                return response()->json(['message' => 'Invalid ID'], 400);
+            }
+
+            $pembeli = Pembeli::find($id);
+            if (!$pembeli) {
+                Log::warning('Pembeli not found', ['id_pembeli' => $id]);
+                return response()->json(['message' => 'Pembeli not found'], 404);
+            }
+
+            $riwayat = TransaksiPembelian::with(['keranjang.detailKeranjang.itemKeranjang.barang.transaksiPenitipan.penitip'])
+                ->whereHas('keranjang.detailKeranjang.itemKeranjang', function ($query) use ($id) {
+                    $query->where('id_pembeli', $id);
+                })
+                ->take(50)
+                ->get()
+                ->map(function ($transaksi) {
+                    return [
+                        'id_pembelian' => $transaksi->id_pembelian,
+                        'tanggal_transaksi' => $transaksi->created_at ? $transaksi->created_at->format('Y-m-d') : 'Unknown',
+                        'total_harga' => $transaksi->total_harga ?? 0,
+                        'ongkir' => $transaksi->ongkir ?? 0,
+                        'metode_pengiriman' => $transaksi->metode_pengiriman ?? 'Unknown',
+                        'status_transaksi' => $transaksi->status_transaksi ?? 'Unknown',
+                        'items' => $transaksi->keranjang->detailKeranjang->map(function ($detail) {
+                            $barang = $detail->itemKeranjang->barang;
+                            return [
+                                'nama_barang' => $barang->nama_barang ?? 'Unknown',
+                                'harga_barang' => $barang->harga_barang ?? 0,
+                                'rating' => $barang->rating ?? null,
+                                'gambar' => $barang->gambar->isNotEmpty() && file_exists(storage_path('app/public/' . $barang->gambar->first()->gambar_barang))
+                                    ? asset('storage/' . $barang->gambar->first()->gambar_barang)
+                                    : null,
+                            ];
+                        })->toArray(),
+                    ];
+                });
+
+            Log::info('Purchase history fetched', ['id_pembeli' => $id, 'count' => count($riwayat)]);
+            return response()->json($riwayat);
+        } catch (\Exception $e) {
+            Log::error('Error fetching purchase history by ID', [
+                'id_pembeli' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json(['message' => 'Error fetching purchase history'], 500);
+        }
+    }
+
+    /**
+     * Update status barang yang lewat 7 hari dari tanggal_berakhir
+     * dan masih 'menunggu pengambilan penitip' jadi 'barang untuk donasi'
+     */
+    protected function updateExpiredConsignmentItems()
+    {
+        try {
+            $sevenDaysAgo = Carbon::now()->subDays(7);
+
+            // Ambil barang yang memenuhi syarat
+            $expiredItems = Barang::where('status_barang', 'menunggu pengambilan penitip')
+                ->where('tanggal_berakhir', '<=', $sevenDaysAgo)
+                ->get();
+
+            if ($expiredItems->isEmpty()) {
+                Log::info('No expired consignment items found for donation update.');
+                return;
+            }
+
+            // Update status barang
+            $updatedCount = 0;
+            foreach ($expiredItems as $item) {
+                $item->status_barang = 'barang untuk donasi';
+                $item->save();
+                $updatedCount++;
+
+                Log::info("Updated item to donation: id_barang={$item->id_barang}, nama_barang={$item->nama_barang}, tanggal_berakhir={$item->tanggal_berakhir}");
+            }
+
+            Log::info("Updated {$updatedCount} expired consignment items to 'barang untuk donasi'.");
+        } catch (\Exception $e) {
+            Log::error("Error updating expired consignment items: {$e->getMessage()}");
+        }
+    }
+
+    public function indextop()
+    {
+        // Panggil fungsi update status barang
+        $this->updateExpiredConsignmentItems();
+
+        // Ambil barang terbatas (logika existing)
+        $barangTerbatas = \App\Models\Barang::with('gambar')
+            ->where('status_barang', 'tersedia')
+            ->take(12) // Contoh limit
+            ->get();
+
+        // Ambil Top Seller
+        $lastMonthStart = Carbon::now()->subMonth()->startOfMonth();
+        $lastMonthEnd = Carbon::now()->subMonth()->endOfMonth();
+        $lastMonth = Carbon::now()->subMonth()->format('Y-m');
+
+        $topSeller = Penitip::where('badge', 1)->first();
+
+        $topSellerDetails = null;
+        if ($topSeller) {
+            $topSellerDetails = TransaksiPembelian::where('status_transaksi', 'Selesai')
+                ->whereBetween('tanggal_pembelian', [$lastMonthStart, $lastMonthEnd])
+                ->join('keranjang', 'transaksi_pembelian.id_keranjang', '=', 'keranjang.id_keranjang')
+                ->join('detail_keranjang', 'keranjang.id_keranjang', '=', 'detail_keranjang.id_keranjang')
+                ->join('item_keranjang', 'detail_keranjang.id_item_keranjang', '=', 'item_keranjang.id_item_keranjang')
+                ->join('barang', 'item_keranjang.id_barang', '=', 'barang.id_barang')
+                ->join('transaksi_penitipan', 'barang.id_transaksi_penitipan', '=', 'transaksi_penitipan.id_transaksi_penitipan')
+                ->where('transaksi_penitipan.id_penitip', $topSeller->id_penitip)
+                ->select(
+                    'penitip.id_penitip',
+                    'penitip.nama_penitip',
+                    DB::raw('SUM(keranjang.banyak_barang) as sold_count'),
+                    DB::raw('SUM(barang.harga_barang * keranjang.banyak_barang) as total_sales')
+                )
+                ->join('penitip', 'transaksi_penitipan.id_penitip', '=', 'penitip.id_penitip')
+                ->groupBy('penitip.id_penitip', 'penitip.nama_penitip')
+                ->first();
+        }
+
+        return view('welcome', compact('barangTerbatas', 'topSeller', 'topSellerDetails', 'lastMonth'));
+    }
+
+    public function indextopapi()
+    {
+        // Ambil Top Seller
+        $lastMonthStart = Carbon::now()->subMonth()->startOfMonth();
+        $lastMonthEnd = Carbon::now()->subMonth()->endOfMonth();
+        $lastMonth = Carbon::now()->subMonth()->format('Y-m');
+
+        $topSeller = Penitip::where('badge', 1)->first();
+
+        $topSellerDetails = null;
+        if ($topSeller) {
+            $topSellerDetails = TransaksiPembelian::where('status_transaksi', 'Selesai')
+                ->whereBetween('tanggal_pembelian', [$lastMonthStart, $lastMonthEnd])
+                ->join('keranjang', 'transaksi_pembelian.id_keranjang', '=', 'keranjang.id_keranjang')
+                ->join('detail_keranjang', 'keranjang.id_keranjang', '=', 'detail_keranjang.id_keranjang')
+                ->join('item_keranjang', 'detail_keranjang.id_item_keranjang', '=', 'item_keranjang.id_item_keranjang')
+                ->join('barang', 'item_keranjang.id_barang', '=', 'barang.id_barang')
+                ->join('transaksi_penitipan', 'barang.id_transaksi_penitipan', '=', 'transaksi_penitipan.id_transaksi_penitipan')
+                ->where('transaksi_penitipan.id_penitip', $topSeller->id_penitip)
+                ->select(
+                    'penitip.id_penitip',
+                    'penitip.nama_penitip',
+                    'penitip.profil_pict',
+                    DB::raw('SUM(keranjang.banyak_barang) as sold_count'),
+                    DB::raw('SUM(barang.harga_barang * keranjang.banyak_barang) as total_sales')
+                )
+                ->join('penitip', 'transaksi_penitipan.id_penitip', '=', 'penitip.id_penitip')
+                ->groupBy('penitip.id_penitip', 'penitip.nama_penitip', 'penitip.profil_pict')
+                ->first();
+        }
+
+        $response = [
+            'last_month' => $lastMonth,
+            'top_seller' => $topSellerDetails ? [
+                'id_penitip' => $topSellerDetails->id_penitip,
+                'nama_penitip' => $topSellerDetails->nama_penitip,
+                'profil_pict' => $topSellerDetails->profil_pict ? asset('storage/' . $topSellerDetails->profil_pict) : null,
+                'sold_count' => (int) $topSellerDetails->sold_count,
+                'total_sales' => (float) $topSellerDetails->total_sales,
+            ] : null,
+        ];
+
+        return response()->json($response);
+    }
+}
     // ✅ Web: Riwayat transaksi untuk pembeli login
     public function riwayat()
     {

@@ -141,6 +141,7 @@ class TransaksiPembelianController extends Controller
         return response()->json(['message' => 'Transaksi pembelian deleted successfully']);
     }
 
+    // Membatalkan transaksi secara otomatis
     public function batalkanOtomatis($id)
     {
         $keranjang = Keranjang::with('detailKeranjang.itemKeranjang.barang')->find($id);
@@ -158,17 +159,20 @@ class TransaksiPembelianController extends Controller
             }
         }
 
+        // Hapus data keranjang dan detail
         DetailKeranjang::where('id_keranjang', $keranjang->id_keranjang)->delete();
         $keranjang->delete();
 
         return redirect()->route('pembeli.cart')->with('success', 'Checkout dibatalkan otomatis karena melewati batas waktu.');
     }
 
+    // Proses pembayaran
     public function bayar(Request $request)
     {
         Log::info('Bayar Request:', $request->all());
 
         try {
+            // Validasi input
             $request->validate([
                 'bukti_pembayaran' => 'required|image|mimes:jpeg,png,jpg|max:2048',
                 'poin_ditukar' => 'nullable|integer|min:0',
@@ -183,6 +187,7 @@ class TransaksiPembelianController extends Controller
             $idAlamat = $metodePengiriman === 'ambil' ? null : session('checkout_id_alamat');
             $totalHarga = session('checkout_total_harga');
 
+            // Validasi session
             if (!$keranjangId || !$metodePengiriman || !$totalHarga) {
                 Log::error('Missing session data', [
                     'keranjangId' => $keranjangId,
@@ -192,17 +197,20 @@ class TransaksiPembelianController extends Controller
                 return redirect()->back()->with('error', 'Data checkout tidak lengkap.');
             }
 
+            // Validasi keranjang
             $keranjang = Keranjang::find($keranjangId);
             if (!$keranjang) {
                 Log::error('Keranjang not found', ['keranjangId' => $keranjangId]);
                 return redirect()->back()->with('error', 'Keranjang tidak ditemukan.');
             }
 
+            // Validasi alamat (jika metode bukan 'ambil')
             if ($metodePengiriman === 'kurir' && $idAlamat && !Alamat::find($idAlamat)) {
                 Log::error('Alamat not found', ['idAlamat' => $idAlamat]);
                 return redirect()->back()->with('error', 'Alamat tidak ditemukan.');
             }
 
+            // Simpan bukti pembayaran
             $buktiTf = null;
             if ($request->hasFile('bukti_pembayaran')) {
                 try {
@@ -217,8 +225,10 @@ class TransaksiPembelianController extends Controller
                 return redirect()->back()->with('error', 'Bukti pembayaran tidak ditemukan.');
             }
 
+            // Hitung ongkir
             $ongkir = ($totalHarga >= 1500000 || $metodePengiriman !== 'kurir') ? 0 : 100000;
 
+            // Generate nomor resi
             $tahun = now()->format('Y');
             $bulan = now()->format('m');
             $jumlahTransaksiBulanIni = TransaksiPembelian::whereYear('created_at', $tahun)
@@ -227,6 +237,7 @@ class TransaksiPembelianController extends Controller
             $nomorUrut = str_pad($jumlahTransaksiBulanIni + 1, 3, '0', STR_PAD_LEFT);
             $noResi = $tahun . '.' . $bulan . '.' . $nomorUrut;
 
+            // Simpan transaksi dalam transaksi database
             DB::beginTransaction();
             $transaksi = TransaksiPembelian::create([
                 'id_keranjang' => $keranjangId,
@@ -245,6 +256,7 @@ class TransaksiPembelianController extends Controller
                 'poin_penitip' => 0,
             ]);
 
+            // Update poin pembeli
             $pembeli = Pembeli::find($idPembeli);
             $newPoin = ($pembeli->poin_pembeli - ($request->poin_ditukar ?? 0)) + ($request->bonus_poin ?? 0);
             if ($newPoin < 0) {
@@ -255,13 +267,15 @@ class TransaksiPembelianController extends Controller
 
            ItemKeranjang::whereIn('id_item_keranjang', session('checkout_selected_items'))->update(['is_selected' => true]);
 
+            // Commit transaksi
             DB::commit();
 
+            // Clear session
             session()->forget(['checkout_keranjang_id', 'checkout_selected_items', 'checkout_metode_pengiriman', 'checkout_id_alamat', 'checkout_total_harga']);
 
             Log::info('Transaksi created:', $transaksi->toArray());
 
-            return redirect()->route('pembeli.riwayat')->with('success', 'Pembayaran berhasil! Menunggu konfirmasi admin.');
+            return redirect()->route('pembeli.purchase')->with('success', 'Pembayaran berhasil! Menunggu konfirmasi admin.');
         } catch (\Illuminate\Validation\ValidationException $e) {
             DB::rollBack();
             Log::error('Validation failed in bayar', ['errors' => $e->errors()]);
@@ -273,6 +287,7 @@ class TransaksiPembelianController extends Controller
         }
     }
 
+    // Upload bukti transfer
     public function uploadBukti(Request $request, $id)
     {
         $request->validate(['bukti_tf' => 'required|image|mimes:jpeg,png,jpg|max:2048']);
@@ -289,10 +304,11 @@ class TransaksiPembelianController extends Controller
         return back()->with('success', 'Bukti transfer berhasil diupload.');
     }
 
+    // Menampilkan daftar transaksi untuk CS
     public function show()
     {
         $transaksi = TransaksiPembelian::with([
-            'keranjang.detailKeranjang.itemKeranjang.barang.transaksiPenitipan.penitip',
+            'keranjang.detailKeranjang.itemKeranjang.barang.penitip',
             'keranjang.detailKeranjang.itemKeranjang.pembeli'
         ])
             ->orderBy('tanggal_pembelian', 'desc')
@@ -301,6 +317,7 @@ class TransaksiPembelianController extends Controller
         return view('cs.transaksi-pembelian.index', compact('transaksi'));
     }
 
+    // Verifikasi transaksi
     public function verify(Request $request, $id_pembelian)
     {
         try {
@@ -410,11 +427,12 @@ class TransaksiPembelianController extends Controller
         }
     }
 
+    // Pencarian transaksi
     public function search(Request $request)
     {
         $query = $request->query('q', '');
         $transaksi = TransaksiPembelian::with([
-            'keranjang.detailKeranjang.itemKeranjang.barang.transaksiPenitipan.penitip',
+            'keranjang.detailKeranjang.itemKeranjang.barang.penitip',
             'keranjang.detailKeranjang.itemKeranjang.pembeli'
         ])
             ->where('no_resi', 'LIKE', "%{$query}%")
@@ -427,6 +445,7 @@ class TransaksiPembelianController extends Controller
         return view('cs.verifikasi_transaksi_table', compact('transaksi'))->render();
     }
 
+    // Menampilkan riwayat transaksi pembeli
     public function riwayat(Request $request)
     {
         $user = session('user');
@@ -455,6 +474,7 @@ class TransaksiPembelianController extends Controller
         return view('pembeli.history', compact('transaksi'));
     }
 
+    // Menampilkan detail transaksi
     public function detail($id)
     {
         $user = session('user');
@@ -487,6 +507,7 @@ class TransaksiPembelianController extends Controller
         return view('pembeli.transaksi_detail', compact('transaksi'));
     }
 
+    // Mengupdate status pengiriman
     public function updateDeliveryStatus(Request $request, $id)
     {
         $request->validate([
@@ -517,6 +538,7 @@ class TransaksiPembelianController extends Controller
         return response()->json(['message' => 'Delivery status updated']);
     }
 
+    // Validasi pembayaran
     public function validatePayment(Request $request, $transactionId)
     {
         $transaction = TransaksiPembelian::findOrFail($transactionId);
@@ -539,6 +561,7 @@ class TransaksiPembelianController extends Controller
             }
         }
 
+        // Kirim notifikasi ke penitip
         foreach ($penitipIds as $penitipId) {
             Http::post($this->baseUrl . '/send-notification', [
                 'user_id' => $penitipId,
@@ -550,6 +573,7 @@ class TransaksiPembelianController extends Controller
             ]);
         }
 
+        // Kirim notifikasi ke pembeli
         Http::post($this->baseUrl . '/send-notification', [
             'user_id' => $keranjang->id_pembeli,
             'role' => 'pembeli',
@@ -562,6 +586,7 @@ class TransaksiPembelianController extends Controller
         return response()->json(['message' => 'Payment validated']);
     }
 
+    // Membuat jadwal pengiriman
     public function createDeliverySchedule(Request $request)
     {
         $request->validate([
@@ -594,6 +619,7 @@ class TransaksiPembelianController extends Controller
         return response()->json(['message' => 'Delivery schedule created']);
     }
 
+    // Membuat jadwal pengambilan barang
     public function createPickupSchedule(Request $request)
     {
         $request->validate([

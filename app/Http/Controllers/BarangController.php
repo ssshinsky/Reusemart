@@ -190,28 +190,65 @@ class BarangController extends Controller
     // Detail barang untuk frontend (umum.show)
     public function show($id)
     {
-        try {
-            $barang = Barang::with(['kategori', 'gambar'])->findOrFail($id);
+        Log::info('Entering BarangController::show for product ID: ' . $id);
 
+        try {
+            Log::debug('Attempting to fetch product for ID: ' . $id);
+            $barang = Barang::with(['kategori', 'gambar', 'transaksiPenitipan.penitip', 'diskusiProduk'])->findOrFail($id);
+            Log::info('Successfully fetched product: ' . $barang->nama_barang . ' (ID: ' . $barang->id_barang . ')');
+            Log::debug('Product data: ' . json_encode([
+                'id_barang' => $barang->id_barang,
+                'nama_barang' => $barang->nama_barang,
+                'id_kategori' => $barang->id_kategori,
+                'kategori' => $barang->kategori ? [
+                    'id_kategori' => $barang->kategori->id_kategori,
+                    'nama_kategori' => $barang->kategori->nama_kategori
+                ] : null,
+                'gambar_count' => $barang->gambar->count(),
+                'gambar_files' => $barang->gambar->pluck('gambar_barang')->toArray(),
+                'tanggal_garansi' => $barang->tanggal_garansi ? $barang->tanggal_garansi->toDateTimeString() : null,
+                'status_garansi' => $barang->status_garansi,
+                'transaksi_penitipan' => $barang->transaksiPenitipan ? [
+                    'id_transaksi_penitipan' => $barang->transaksiPenitipan->id_transaksi_penitipan,
+                    'penitip' => $barang->transaksiPenitipan->penitip ? [
+                        'id_penitip' => $barang->transaksiPenitipan->penitip->id_penitip,
+                        'nama_penitip' => $barang->transaksiPenitipan->penitip->nama_penitip
+                    ] : null
+                ] : null,
+            ], JSON_PRETTY_PRINT));
+
+            Log::debug('Fetching discussions for product ID: ' . $id);
             $diskusi = DiskusiProduk::with(['pembeli', 'pegawai'])
                 ->where('id_barang', $id)
                 ->orderBy('created_at', 'desc')
                 ->get();
+            Log::info('Fetched ' . $diskusi->count() . ' discussions for product ID: ' . $id);
 
+            Log::debug('Checking warranty status for product ID: ' . $id);
             $statusGaransi = $barang->status_garansi;
             $garansiBerlaku = false;
             if ($statusGaransi === 'garansi' && $barang->tanggal_garansi) {
-                $tanggalGaransi = Carbon::parse($barang->tanggal_garansi);
+                Log::debug('Warranty exists, date: ' . $barang->tanggal_garansi);
+                $tanggalGaransi = $barang->tanggal_garansi;
                 $tanggalSekarang = Carbon::now();
                 $garansiBerlaku = $tanggalGaransi->gte($tanggalSekarang);
+                Log::info('Warranty status for product ID: ' . $id . ' - Valid: ' . ($garansiBerlaku ? 'Yes' : 'No'));
+            } else {
+                Log::info('No warranty or invalid warranty date for product ID: ' . $id);
             }
 
+            Log::debug('Processing discussion collection for product ID: ' . $id);
             $diskusi = $diskusi->isEmpty() ? collect([]) : $diskusi;
+            Log::info('Discussion collection processed, count: ' . $diskusi->count());
 
+            Log::info('Rendering view umum.show for product ID: ' . $id);
             return view('umum.show', compact('barang', 'diskusi', 'statusGaransi', 'garansiBerlaku'));
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            Log::error('Product not found for ID: ' . $id . ' | Error: ' . $e->getMessage() . ' | Stack: ' . $e->getTraceAsString());
+            return redirect()->route('welcome')->with('error', 'Produk tidak ditemukan.');
         } catch (\Exception $e) {
-            \Log::error('Error in BarangController@show: ' . $e->getMessage() . ' | Stack: ' . $e->getTraceAsString());
-            dd($e->getMessage(), $e->getTraceAsString()); // Tampilkan error di browser
+            Log::error('Unexpected error in BarangController::show for product ID: ' . $id . ' | Error: ' . $e->getMessage() . ' | Stack: ' . $e->getTraceAsString());
+            return redirect()->route('welcome')->with('error', 'Terjadi kesalahan saat menampilkan detail produk.');
         }
     }
 

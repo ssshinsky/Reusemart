@@ -124,7 +124,7 @@ class TransaksiPenitipanController extends Controller
                     'berat_barang' => $item['berat_barang'],
                     'deskripsi_barang' => $item['deskripsi_barang'],
                     'status_garansi' => $statusGaransi,
-                    'status_barang' => 'tersedia',
+                    'status_barang' => 'Available',
                     'tanggal_garansi' => $item['status_garansi'] === 'berlaku' ? $item['tanggal_garansi'] : null,
                     'tanggal_berakhir' => Carbon::parse($request->tanggal_masuk)->addDays(30),
                     'perpanjangan' => 0,
@@ -140,9 +140,9 @@ class TransaksiPenitipanController extends Controller
                             if ($image && $image->isValid()) {
                                 $originalName = pathinfo($image->getClientOriginalName(), PATHINFO_FILENAME);
                                 $fileName = strtolower(str_replace(' ', '_', $originalName)) . "_" . $imageIndex . "_" . time() . '.' . $image->getClientOriginalExtension();
-                                $fullPath = storage_path('app/public/gambar/' . $fileName);
+                                $fullPath = storage_path('app/public/gambar_barang/' . $fileName);
 
-                                $directory = storage_path('app/public/gambar');
+                                $directory = storage_path('app/public/gambar_barang');
                                 if (!file_exists($directory)) {
                                     if (!mkdir($directory, 0755, true)) {
                                         Log::error('Gagal membuat folder', ['directory' => $directory]);

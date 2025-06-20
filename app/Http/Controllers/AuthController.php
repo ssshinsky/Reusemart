@@ -23,8 +23,8 @@ class AuthController extends Controller
         }
 
         // Log isi session SEBELUM invalidate (jika kamu mau debug)
-        logger('User before invalidate: ' . json_encode(session('user')));
-        logger('Role before invalidate: ' . json_encode(session('role')));
+        // logger('User before invalidate: ' . json_encode(session('user')));
+        // logger('Role before invalidate: ' . json_encode(session('role')));
 
         session()->forget(['user', 'role']);
         $request->session()->invalidate();        // Ini menghapus semua data session
@@ -77,7 +77,7 @@ class AuthController extends Controller
                 'role' => 'penitip',
             ]);
             $request->session()->regenerate();
-            return redirect('/');
+            return redirect('/penitip/myProduct');
         }
 
         // 3. Cek Pembeli
@@ -109,7 +109,7 @@ class AuthController extends Controller
                 ],
                 'role' => 'organisasi',
             ]);
-            return redirect('/');
+            return redirect('/organisasi');
         }
 
         return back()->with('error', 'Email atau password salah.');
@@ -120,6 +120,10 @@ class AuthController extends Controller
         $request->validate([
             'email' => 'required|email',
             'password' => 'required|string'
+            ], [
+            'email.required' => 'Email tidak boleh kosong.',
+            'email.email' => 'Format email tidak valid.',
+            'password.required' => 'Password tidak boleh kosong.',
         ]);
 
         $email = $request->email;
@@ -201,16 +205,16 @@ class AuthController extends Controller
     }
 
     public function profileKurir(Request $request)
-{
-    $user = $request->user();
-    if ($user instanceof Pegawai && $user->id_role == 5) {
-        return response()->json([
-            'status' => 'success',
-            'user' => $user,
-        ]);
+    {
+        $user = $request->user();
+        if ($user instanceof Pegawai && $user->id_role == 5) {
+            return response()->json([
+                'status' => 'success',
+                'user' => $user,
+            ]);
+        }
+        return response()->json(['status' => 'error', 'message' => 'Unauthorized'], 403);
     }
-    return response()->json(['status' => 'error', 'message' => 'Unauthorized'], 403);
-}
 
 }
 

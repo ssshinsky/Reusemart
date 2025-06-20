@@ -44,7 +44,6 @@ class PembeliController extends Controller
         return view('pembeli.purchase');
     }
 
-
     // Web: Halaman form tambah
     public function create()
     {

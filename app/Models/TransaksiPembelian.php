@@ -69,4 +69,34 @@ class TransaksiPembelian extends Model
     {
         return $this->hasMany(Komisi::class, 'id_pembelian', 'id_pembelian');
     }
+    
+    public function detailPembelians()
+    {
+        return $this->hasMany(DetailPembelian::class, 'id_transaksi');
+    }
+
+    public function detailKeranjangs()
+    {
+        return $this->hasMany(DetailKeranjang::class, 'id_keranjang', 'id_keranjang');
+    }
+
+    public function kurir()
+    {
+        return $this->belongsTo(Pegawai::class, 'id_kurir', 'id_pegawai');
+    }
+
+    public function pengirimanDanPengambilanList()
+    {
+        $this->ensureGudang();
+
+        $transaksi = TransaksiPembelian::with([
+            'keranjang.detailKeranjang.itemKeranjang.pembeli', // relasi berantai
+            'detailKeranjangs.itemKeranjang.barang.gambar',
+        ])
+        ->whereIn('status_transaksi', ['Ready for Pickup', 'In Delivery'])
+        ->orderBy('tanggal_pembelian', 'asc')
+        ->get();
+
+        return view('gudang.transaksi_pengiriman', compact('transaksi'));
+    }
 }

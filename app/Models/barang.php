@@ -15,24 +15,31 @@ class Barang extends Model
     public $timestamps = true;
     protected $dateFormat = 'Y-m-d H:i:s';
     protected $casts = [
-        'tanggal_garansi' => 'datetime',
-        'tanggal_berakhir' => 'datetime',
+        'tanggal_garansi' => 'date',
+        'tanggal_berakhir' => 'date',
+        'tanggal_konfirmasi_pengambilan' => 'datetime', 
+        'batas_pengambilan' => 'datetime',             
+        'created_at' => 'datetime',                    
+        'updated_at' => 'datetime',
         'rating' => 'integer',
     ];
     protected $fillable = [
         'id_kategori',
         'id_transaksi_penitipan',
-        'kode_barang',
-        'nama_barang',
-        'harga_barang',
-        'berat_barang',
-        'deskripsi_barang',
-        'status_garansi',
-        'status_barang',
-        'rating',
+        'kode_barang', 
+        'nama_barang', 
+        'harga_barang', 
+        'berat_barang', 
+        'deskripsi_barang', 
+        'status_garansi', 
+        'status_barang', 
         'tanggal_garansi',
         'tanggal_berakhir',
         'perpanjangan',
+        'batas_pengambilan',
+        'tanggal_konfirmasi_pengambilan',
+        'updated_at',
+        'created_at',
     ];
 
     

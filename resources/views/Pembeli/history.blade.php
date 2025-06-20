@@ -1,65 +1,104 @@
 @extends('layouts.main')
 
 @section('content')
-    <div class="container my-5">
-        <h2 class="mb-4 text-center fw-bold">Riwayat Pembelian</h2>
+<div class="container py-4">
+    <h2 class="mb-4 text-success fw-bold border-bottom pb-2" style="text-shadow: 1px 1px 2px rgba(0,0,0,0.1);">Riwayat Pembelian</h2>
 
-        @if (session('success'))
-            <div class="alert alert-success alert-dismissible fade show" role="alert">
-                {{ session('success') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        @endif
+    @if (session('success'))
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            {{ session('success') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
+    @if (session('error'))
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            {{ session('error') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
+    @if (session('info'))
+        <div class="alert alert-info alert-dismissible fade show" role="alert">
+            {{ session('info') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
 
-        @forelse ($transaksi as $item)
-            <div class="card mb-4 shadow-sm border-0">
-                <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">Transaksi #{{ $item->id }}</h5>
-                    <span class="badge 
-                        @if ($item->status_transaksi == 'Menunggu Konfirmasi') bg-warning 
-                        @elseif ($item->status_transaksi == 'Disiapkan') bg-info 
-                        @elseif ($item->status_transaksi == 'Dikirim') bg-primary 
-                        @elseif ($item->status_transaksi == 'Selesai') bg-success 
-                        @elseif ($item->status_transaksi == 'Dibatalkan') bg-danger 
-                        @else bg-secondary @endif">
-                        {{ ucfirst($item->status_transaksi) }}
-                    </span>
+    @forelse ($riwayat as $transaksi)
+        <div class="card mb-4 shadow-sm border-0 rounded-3">
+            <div class="card-body p-4 bg-light">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="card-title text-dark fw-bold">Transaksi #{{ $transaksi->id_pembelian }}</h5>
+                    <span class="badge bg-success text-white">{{ ucfirst($transaksi->status_transaksi) }}</span>
                 </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <p class="mb-1"><strong>Tanggal:</strong> {{ $item->created_at->format('d M Y, H:i') }}</p>
-                            <p class="mb-1"><strong>Total:</strong> Rp {{ number_format($item->total_harga, 0, ',', '.') }}</p>
-                            <p class="mb-1"><strong>Metode Pengiriman:</strong> {{ ucfirst($item->metode_pengiriman ?? 'N/A') }}</p>
-                        </div>
-                        <div class="col-md-6 text-md-end">
-                            <a href="{{ route('pembeli.transaksi.detail', $item->id) }}" class="btn btn-outline-primary btn-sm">
-                                Lihat Detail
-                            </a>
-                        </div>
+                <p class="card-text text-muted">
+                    Tanggal: <span class="fw-medium">{{ $transaksi->created_at->format('d M Y') }}</span><br>
+                    Total: <span class="fw-medium text-success">Rp {{ number_format($transaksi->total_harga, 0, ',', '.') }}</span><br>
+                    Pengiriman: <span class="fw-medium">{{ ucfirst($transaksi->metode_pengiriman) }}</span>
+                </p>
+                <h6 class="mt-3 text-primary">Item:</h6>
+                <ul class="list-group list-group-flush">
+                    @foreach ($transaksi->keranjang->detailKeranjang as $detail)
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <span>{{ $detail->itemKeranjang->barang->nama_barang }}</span>
+                                @if ($detail->itemKeranjang->barang->rating)
+                                    <div class="text-warning">
+                                        @for ($i = 1; $i <= 5; $i++)
+                                            <i class="fas fa-star {{ $i <= $detail->itemKeranjang->barang->rating ? 'text-warning' : 'text-muted' }}"></i>
+                                        @endfor
+                                        <span class="text-muted small">({{ $detail->itemKeranjang->barang->rating }}/5)</span>
+                                    </div>
+                                @else
+                                    <div class="text-muted small">Belum dirating</div>
+                                @endif
+                            </div>
+                            <span class="text-success">Rp {{ number_format($detail->itemKeranjang->barang->harga_barang, 0, ',', '.') }}</span>
+                        </li>
+                    @endforeach
+                </ul>
+                @if ($transaksi->status_transaksi === 'selesai' && $transaksi->keranjang->detailKeranjang->contains(function ($detail) {
+                    return is_null($detail->itemKeranjang->barang->rating);
+                }))
+                    <div class="mt-3">
+                        <a href="{{ route('pembeli.rating', $transaksi->id_pembelian) }}" class="btn btn-primary btn-sm">Beri Rating</a>
                     </div>
-                    <hr>
-                    <h6 class="fw-bold">Daftar Barang:</h6>
-                    <ul class="list-group list-group-flush">
-                        @foreach ($item->detail as $detail)
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                <span>{{ $detail->barang->nama_barang }} (x{{ $detail->jumlah ?? 1 }})</span>
-                                <span>Rp {{ number_format($detail->barang->harga_barang, 0, ',', '.') }}</span>
-                            </li>
-                        @endforeach
-                    </ul>
-                </div>
+                @endif
             </div>
-        @empty
-            <div class="alert alert-info text-center">
-                Belum ada riwayat pembelian.
-            </div>
-        @endforelse
+        </div>
+    @empty
+        <div class="alert alert-info text-center py-5">Belum ada transaksi pembelian.</div>
+    @endforelse
+</div>
+@endsection
 
-        @if ($transaksi->hasPages())
-            <div class="d-flex justify-content-center mt-4">
-                {{ $transaksi->links() }}
-            </div>
-        @endif
-    </div>
+@section('styles')
+<style>
+    .card {
+        transition: all 0.3s ease;
+    }
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    }
+    .badge {
+        font-size: 0.9rem;
+        padding: 0.25rem 0.75rem;
+    }
+    .list-group-item {
+        background-color: transparent;
+        border: none;
+        padding: 0.5rem 0;
+    }
+    .btn-primary {
+        background-color: #007bff;
+        border-color: #007bff;
+    }
+    .btn-primary:hover {
+        background-color: #0056b3;
+        border-color: #0056b3;
+    }
+    .fa-star {
+        font-size: 0.9rem;
+    }
+</style>
 @endsection

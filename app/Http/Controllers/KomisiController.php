@@ -35,7 +35,6 @@ class KomisiController extends Controller
             'komisi_hunter' => 'nullable|numeric',
             'komisi_penitip' => 'nullable|numeric',
             'komisi_reusemart' => 'nullable|numeric',
-            'bonus_penitip_terjual_cepat' => 'nullable|numeric'
         ]);
 
         $komisi = Komisi::create([
@@ -46,7 +45,6 @@ class KomisiController extends Controller
             'komisi_hunter' => $request->komisi_hunter,
             'komisi_penitip' => $request->komisi_penitip,
             'komisi_reusemart' => $request->komisi_reusemart,
-            'bonus_penitip_terjual_cepat' => $request->bonusPenitipTerjualCepat,
         ]);
 
         return response()->json($komisi, 201);

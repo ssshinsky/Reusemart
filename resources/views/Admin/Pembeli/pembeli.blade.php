@@ -5,9 +5,9 @@
 @section('content')
 <h2>Customer Management</h2>
 
-{{-- <div style="margin-bottom: 1rem; display: flex; gap: 0.5rem; align-items: center;">
+<div style="margin-bottom: 1rem; display: flex; gap: 0.5rem; align-items: center;">
     <input type="text" id="searchInput" placeholder="🔍 Search Customers" class="input-search" style="width: 100%;">
-</div> --}}
+</div>
 
 <div class="table-container">
     <div class="table-scroll-x">

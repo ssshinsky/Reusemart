@@ -3,13 +3,16 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PegawaiController;
+use App\Http\Controllers\PenitipController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\BarangController;
+use App\Http\Controllers\KurirController;
+use App\Http\Controllers\KeranjangController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\PembeliController;
+use App\Http\Controllers\TransaksiPembelianController;
 use App\Http\Controllers\FcmTokenController;
 use App\Http\Controllers\NotificationController;
-
-// dd('API Route File Loaded');
 
 Route::post('/login', [AuthController::class, 'loginapi']);
 Route::middleware('auth:sanctum')->post('/logout', [AuthController::class, 'logoutapi']);
@@ -17,14 +20,31 @@ Route::middleware('auth:sanctum')->post('/logout', [AuthController::class, 'logo
 Route::middleware('auth:sanctum')->post('/save-fcm-token', [FcmTokenController::class, 'saveToken']);
 Route::middleware('auth:sanctum')->post('/send-notification', [NotificationController::class, 'sendNotification']);
 
+
+    // Route tanpa autentikasi
+    Route::get('/penitip/{id}', [PenitipController::class, 'getPenitipById']);
+    Route::get('/penitip/{id}/history', [PenitipController::class, 'getConsignmentHistoryById']);
+    Route::get('/penitip/profile', [PenitipController::class, 'getProfile']);
+    Route::get('/penitip/history', [PenitipController::class, 'getConsignmentHistory']);
+
+
+    // Route pembeli tanpa autentikasi
+    Route::get('/pembeli/{id}', [PembeliController::class, 'getPembeliById']);
+    Route::get('/pembeli/{id}/history', [TransaksiPembelianController::class, 'getPurchaseHistoryById']);
+    Route::get('/pembeli/profile', [PembeliController::class, 'getProfile']);
+    Route::get('/pembeli/history', [TransaksiPembelianController::class, 'getPurchaseHistory']);
+
+    
 Route::post('/pegawai/register', [PegawaiController::class, 'register']);
 Route::post('/pegawai/login', [PegawaiController::class, 'login']);
 Route::get('/barang/{id}', [BarangController::class, 'show'])->name('barang.show');
 // Route::post('/diskusi/store', [DiskusiProdukController::class, 'store'])->name('diskusi.store')->middleware('auth:pembeli');
 
+// Route::get('/top-seller', [PenitipController::class, 'getTopSeller']);
 Route::get('/barang', [BarangController::class, 'apiIndex']);
 Route::get('/barang/{id}', [BarangController::class, 'apiShow']);
 Route::get('/kategori', [BarangController::class, 'getKategoriApi']);
+Route::get('/top-seller', [TransaksiPembelianController::class, 'indextopapi'])->name('api.top-seller');
 
 Route::middleware('auth:api')->group(function () {
     // Logout Pegawai
@@ -47,10 +67,13 @@ Route::middleware('auth:api')->group(function () {
     Route::delete('/role/delete/{id}', [RoleController::class, 'destroy']);
     
 });
+// Route::prefix('kurir')->middleware(['auth:sanctum', 'api_pegawai.role:5'])->group(function () {
 
-Route::prefix('kurir')->middleware(['auth:pegawai', 'pegawai.role:5'])->group(function () {
-    Route::get('/deliveries', [KurirController::class, 'getDeliveries']);
-    Route::post('/deliveries/update', [KurirController::class, 'updateDeliveryStatus']);
+Route::prefix('kurir')->group(function () {
+    Route::get('/profile', [AuthController::class, 'profileKurir']);
+    Route::get('/kelola-transaksi/kurir/{idPegawai}', [KurirController::class, 'getDeliveries']);
+    Route::get('/active-deliveries/{idPegawai}', [KurirController::class, 'getActiveDeliveries']);
+    Route::put('/transaksi-pembelian/{idPembelian}/status/transaksi', [KurirController::class, 'updateStatusTransaksi']);
 });
 
 Route::middleware('auth:api')->group(function () {

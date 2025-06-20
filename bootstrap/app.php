@@ -3,11 +3,7 @@
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
-use Illuminate\Console\Scheduling\Schedule;
-use Illuminate\Foundation\Configuration\Configuration;
-use App\Console\Commands\UpdateExpiredItems;
-use App\Console\Commands\UpdateTransaksiStatus;
-use App\Console\Commands\CekTransaksiHangus;
+use Illuminate\Support\Facades\Log;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -20,20 +16,6 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'pegawai.role' => \App\Http\Middleware\PegawaiRoleMiddleware::class,
         ]);
-
-        $middleware->api(prepend: [
-            \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
-        ]);
-    })
-    ->withSchedule(function (Schedule $schedule) {
-        // Job lama: setiap 1 menit
-        $schedule->command(UpdateExpiredItems::class)->everyMinute();
-
-        // Job baru: setiap 1 menit
-        $schedule->command('transaksi:update-status')->everyMinute();
-
-        // Cek Hangus
-        $schedule->command(CekTransaksiHangus::class)->everyMinute();
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

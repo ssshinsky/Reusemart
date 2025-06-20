@@ -28,6 +28,7 @@ class Penitip extends Authenticatable
         'poin_penitip',
         'profil_pict',
         'badge',
+        'banyak_rating',
         'foto_ktp',
     ];
 
@@ -39,6 +40,7 @@ class Penitip extends Authenticatable
         'rata_rating' => 'float',
         'saldo_penitip' => 'double',
         'badge' => 'boolean',
+        'banyak_rating' => 'integer',
     ];
 
     // Relasi ke Komisi
@@ -54,9 +56,14 @@ class Penitip extends Authenticatable
     }
 
     public function barang()
-{
-    return $this->belongsToMany(Barang::class, 'transaksi_penitipan', 'id_penitip', 'id_barang');
-}
+    {
+        return $this->belongsToMany(Barang::class, 'transaksi_penitipan', 'id_penitip', 'id_barang');
+    }
+
+    // public function fcmTokens()
+    // {
+    //     return $this->hasMany(FcmToken::class, 'id_penitip');
+    // }
 
     public function fcmTokens()
     {

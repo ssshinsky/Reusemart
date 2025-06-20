@@ -27,6 +27,6 @@ class Keranjang extends Model
     // Relasi ke Transaksi Pembelian
     public function transaksiPembelian()
     {
-        return $this->hasMany(TransaksiPembelian::class, 'id_keranjang');
+        return $this->hasOne(TransaksiPembelian::class, 'id_keranjang', 'id_keranjang');
     }
 }

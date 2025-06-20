@@ -5,14 +5,14 @@
 @section('content')
 <h2>Merchandise Management</h2>
 
-{{-- <div style="margin: 1rem 0; display: flex; gap: 1rem;">
+<div style="margin: 1rem 0; display: flex; gap: 1rem;">
     <a href="{{ route('admin.merchandise.create') }}" class="btn-action" id="addBtn">➕ Add Merchandise</a>
     <button class="btn-action" id="editToggle">✏️ Edit Merchandise</button>
 </div>
 
 <div style="margin-bottom: 1rem; display: flex; gap: 0.5rem; align-items: center;">
     <input type="text" id="searchInput" placeholder="🔍 Search Merchandise" class="input-search" style="width: 100%;">
-</div> --}}
+</div>
 
 <div class="table-container">
     <div class="table-scroll-x">

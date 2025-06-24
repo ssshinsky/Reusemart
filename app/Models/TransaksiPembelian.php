@@ -53,10 +53,15 @@ class TransaksiPembelian extends Model
     }
 
     // Relasi ke model Pembeli (melalui Keranjang)
+    // public function pembeli()
+    // {
+    //     return $this->hasOneThrough(Pembeli::class, Keranjang::class, 'id_keranjang', 'id_pembeli');
+    // }
     public function pembeli()
     {
-        return $this->hasOneThrough(Pembeli::class, Keranjang::class, 'id_keranjang', 'id_pembeli');
+        return $this->belongsTo(Pembeli::class, 'id_pembeli', 'id_pembeli');
     }
+
 
     // Relasi ke KelolaTransaksi
     public function kelolaTransaksi()
@@ -85,18 +90,4 @@ class TransaksiPembelian extends Model
         return $this->belongsTo(Pegawai::class, 'id_kurir', 'id_pegawai');
     }
 
-    public function pengirimanDanPengambilanList()
-    {
-        $this->ensureGudang();
-
-        $transaksi = TransaksiPembelian::with([
-            'keranjang.detailKeranjang.itemKeranjang.pembeli', // relasi berantai
-            'detailKeranjangs.itemKeranjang.barang.gambar',
-        ])
-        ->whereIn('status_transaksi', ['Ready for Pickup', 'In Delivery'])
-        ->orderBy('tanggal_pembelian', 'asc')
-        ->get();
-
-        return view('gudang.transaksi_pengiriman', compact('transaksi'));
-    }
 }

@@ -11,9 +11,6 @@
         </div>
     </div>
     
-    {{-- =============================================== --}}
-    {{-- Bagian Baru: Barang Titipan yang Siap Diambil Pemilik --}}
-    {{-- =============================================== --}}
     <h3 class="fw-bold text-dark mb-3 mt-5">Items Ready for Owner Pickup</h3>
     <div class="row g-4">
         {{-- Pastikan variabel $barangReadyForPickup dikirim dari controller --}}
@@ -80,9 +77,6 @@
         @endforelse
     </div>
 
-    {{-- =============================================== --}}
-    {{-- Bagian yang Sudah Ada: Transaksi Pembelian --}}
-    {{-- =============================================== --}}
     <h3 class="fw-bold text-dark mb-3 mt-5">Purchase Transactions (Delivery & Buyer Pick-up)</h3>
     <div class="row g-4">
         @forelse ($transaksi as $item)
@@ -145,7 +139,7 @@
                             <a href="{{ route('gudang.transaksi.schedule', ['id' => $item->id_pembelian]) }}" class="btn btn-sm btn-outline-primary rounded-pill">
                                 <i class="fas fa-calendar-plus me-1"></i> Schedule
                             </a>
-                            @if($item->status_transaksi == 'Ready for Pickup')
+                            @if($item->status_transaksi == 'Ready for Pickup' && $item->kurir == Null)
                                 <form action="{{ route('gudang.transaksi.confirmPickup', ['id' => $item->id_pembelian]) }}" method="POST">
                                     @csrf
                                     <button type="submit" class="btn btn-sm btn-outline-primary rounded-pill">

@@ -109,7 +109,7 @@ class AuthController extends Controller
                 ],
                 'role' => 'organisasi',
             ]);
-            return redirect('/');
+            return redirect('/organisasi');
         }
 
         return back()->with('error', 'Email atau password salah.');
@@ -201,16 +201,15 @@ class AuthController extends Controller
     }
 
     public function profileKurir(Request $request)
-{
-    $user = $request->user();
-    if ($user instanceof Pegawai && $user->id_role == 5) {
-        return response()->json([
-            'status' => 'success',
-            'user' => $user,
-        ]);
+    {
+        $user = $request->user();
+        if ($user instanceof Pegawai && $user->id_role == 5) {
+            return response()->json([
+                'status' => 'success',
+                'user' => $user,
+            ]);
+        }
+        return response()->json(['status' => 'error', 'message' => 'Unauthorized'], 403);
     }
-    return response()->json(['status' => 'error', 'message' => 'Unauthorized'], 403);
-}
-
 }
 

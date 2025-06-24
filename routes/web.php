@@ -83,33 +83,38 @@ Route::prefix('penitip')->middleware('auth:penitip')->group(function () {
 });
 
 // Pembeli Routes
-Route::prefix('pembeli')->middleware('auth:pembeli')->group(function () {
-    Route::get('/profile', [PembeliController::class, 'profile'])->name('pembeli.profile');
-    Route::get('/{id}/edit', [PembeliController::class, 'editProfile'])->name('pembeli.edit');
-    Route::put('/{id}/update', [PembeliController::class, 'updateProfile'])->name('pembeli.update');
-    Route::get('/history', [TransaksiPembelianController::class, 'history'])->name('pembeli.purchase');
-    Route::get('/pembeli/rating/{id}', [TransaksiPembelianController::class, 'showRatingPage'])->name('pembeli.rating');
-    Route::post('/pembeli/rate/{id}', [TransaksiPembelianController::class, 'rateTransaction'])->name('pembeli.rate');
-    // Route::get('/riwayat', [TransaksiPembelianController::class, 'riwayat'])->name('pembeli.riwayat');
-    Route::get('/transaksi150', [TransaksiPembelianController::class, 'transaksi150k'])->name('pembeli.transaksi')->middleware('auth');
-    Route::get('/pembelian', [TransaksiPembelianController::class, 'index'])->name('pembeli.pembelian');
-    // Route::get('/purchase', [PembeliController::class, 'purchase'])->name('pembeli.purchase');
-    
-    // Route::get('/history', [TransaksiPembelianController::class, 'history'])->name('pembeli.purchase');
-    Route::get('/reward', [PembeliController::class, 'reward'])->name('pembeli.reward');
-    Route::get('/process-payment', [ItemKeranjangController::class, 'processPayment'])->name('pembeli.processPayment');
-    Route::post('/bayar', [TransaksiPembelianController::class, 'bayar'])->name('pembeli.bayar');
-    Route::get('/batal-checkout/{id}', [TransaksiPembelianController::class, 'batalkanOtomatis'])->name('pembeli.batalCheckout');
-    Route::post('/rate/{id}', [TransaksiPembelianController::class, 'rateTransaction'])->name('pembeli.rate');
-    // Route::get('/reset-password', [ResetPasswordController::class, 'showResetForm'])->name('pembeli.password');
+Route::prefix('pembeli')->middleware('auth:pembeli')->name('pembeli.')->group(function () {
+    // 🔐 Profil dan Reward
+    Route::get('/profile', [PembeliController::class, 'profile'])->name('profile');
+    Route::get('/profile/{id}/edit', [PembeliController::class, 'editProfile'])->name('profile.edit');
+    Route::put('/profile/{id}/update', [PembeliController::class, 'updateProfile'])->name('update');
+    Route::get('/reward', [PembeliController::class, 'reward'])->name('reward');
 
-    Route::get('/transaksi/{id}', [TransaksiPembelianController::class, 'detail'])->name('pembeli.transaksi.detail');
-    Route::get('/alamat', [AlamatController::class, 'alamatPembeli'])->name('pembeli.alamat');
-    Route::post('/alamat', [AlamatController::class, 'store'])->name('pembeli.alamat.store');
-    Route::put('/alamat/{id}', [AlamatController::class, 'update'])->name('pembeli.alamat.update');
-    Route::delete('/alamat/{id}', [AlamatController::class, 'destroy'])->name('pembeli.alamat.destroy');
-    Route::post('/alamat/{id}/set-default', [AlamatController::class, 'setDefault'])->name('pembeli.alamat.set_default');
-    Route::get('/keranjang', [ItemKeranjangController::class, 'index'])->name('pembeli.cart');
+    // 🧾 Riwayat Transaksi Pembelian
+    Route::get('/riwayat', [TransaksiPembelianController::class, 'riwayat'])->name('riwayat');
+    Route::get('/riwayat/{id}', [TransaksiPembelianController::class, 'detail'])->name('riwayat.detail');
+
+    // 💳 Transaksi & Pembayaran
+    Route::get('/purchase', [PembeliController::class, 'purchase'])->name('purchase');
+    Route::get('/process-payment', [ItemKeranjangController::class, 'processPayment'])->name('processPayment');
+    Route::post('/bayar', [TransaksiPembelianController::class, 'bayar'])->name('bayar');
+    Route::get('/batal-checkout/{id}', [TransaksiPembelianController::class, 'batalkanOtomatis'])->name('batalCheckout');
+
+    // 🔒 Reset Password
+    Route::get('/reset-password', [ResetPasswordController::class, 'showResetForm'])->name('password');
+
+    // 📦 Alamat Pengiriman
+    Route::get('/alamat', [AlamatController::class, 'alamatPembeli'])->name('alamat');
+    Route::post('/alamat', [AlamatController::class, 'store'])->name('alamat.store');
+    Route::put('/alamat/{id}', [AlamatController::class, 'update'])->name('alamat.update');
+    Route::delete('/alamat/{id}', [AlamatController::class, 'destroy'])->name('alamat.destroy');
+    Route::post('/alamat/{id}/set-default', [AlamatController::class, 'setDefault'])->name('alamat.set_default');
+
+    // 🛒 Keranjang
+    Route::get('/keranjang', [KeranjangController::class, 'index'])->name('cart');
+
+    // (Optional) 📢 Diskusi Produk
+    // Route::post('/diskusi/store', [DiskusiProdukController::class, 'store'])->name('diskusi.store');
 });
 
 // Organisasi Routes
@@ -165,6 +170,7 @@ Route::prefix('admin')->middleware(['auth:pegawai', 'pegawai.role:2'])->group(fu
     Route::put('/employees/{id}/reset-password', [PegawaiController::class, 'resetPassword'])->name('admin.employees.reset-password');
     Route::put('/employees/{id}/deactivate', [PegawaiController::class, 'deactivate'])->name('admin.employees.deactivate');
     Route::put('/employees/{id}/reactivate', [PegawaiController::class, 'reactivate'])->name('admin.employees.reactivate');
+
     Route::get('/roles', [RoleController::class, 'index'])->name('admin.roles.index');
     Route::get('/roles/add', [RoleController::class, 'create'])->name('admin.roles.create');
     Route::post('/roles', [RoleController::class, 'store'])->name('admin.roles.store');
@@ -173,6 +179,7 @@ Route::prefix('admin')->middleware(['auth:pegawai', 'pegawai.role:2'])->group(fu
     Route::put('/roles/{id}/deactivate', [RoleController::class, 'deactivate'])->name('admin.roles.deactivate');
     Route::put('/roles/{id}/reactivate', [RoleController::class, 'reactivate'])->name('admin.roles.reactivate');
     Route::get('/roles/search', [RoleController::class, 'search'])->name('admin.roles.search');
+
     Route::get('/item-owners', [PenitipController::class, 'index'])->name('admin.penitip.index');
     Route::get('/item-owners/add', [PenitipController::class, 'create'])->name('admin.penitip.create');
     Route::post('/item-owners', [PenitipController::class, 'store'])->name('admin.penitip.store');
@@ -181,6 +188,7 @@ Route::prefix('admin')->middleware(['auth:pegawai', 'pegawai.role:2'])->group(fu
     Route::put('/item-owners/{id}', [PenitipController::class, 'update'])->name('admin.penitip.update');
     Route::put('/item-owners/{id}/deactivate', [PenitipController::class, 'deactivate'])->name('admin.penitip.deactivate');
     Route::put('/item-owners/{id}/reactivate', [PenitipController::class, 'reactivate'])->name('admin.penitip.reactivate');
+
     Route::get('/customers', [PembeliController::class, 'index'])->name('admin.pembeli.index');
     Route::get('/customers/add', [PembeliController::class, 'create'])->name('admin.pembeli.create');
     Route::post('/customers', [PembeliController::class, 'store'])->name('admin.pembeli.store');
@@ -189,6 +197,7 @@ Route::prefix('admin')->middleware(['auth:pegawai', 'pegawai.role:2'])->group(fu
     Route::put('/customers/{id}', [PembeliController::class, 'update'])->name('admin.pembeli.update');
     Route::put('/customers/{id}/deactivate', [PembeliController::class, 'deactivate'])->name('admin.pembeli.deactivate');
     Route::put('/customers/{id}/reactivate', [PembeliController::class, 'reactivate'])->name('admin.pembeli.reactivate');
+
     Route::get('/organizations', [OrganisasiController::class, 'index'])->name('admin.organisasi.index');
     Route::get('/organizations/add', [OrganisasiController::class, 'create'])->name('admin.organisasi.create');
     Route::post('/organizations', [OrganisasiController::class, 'store'])->name('admin.organisasi.store');
@@ -198,6 +207,7 @@ Route::prefix('admin')->middleware(['auth:pegawai', 'pegawai.role:2'])->group(fu
     Route::put('/organizations/{id}/deactivate', [OrganisasiController::class, 'deactivate'])->name('admin.organisasi.deactivate');
     Route::put('/organizations/{id}/reactivate', [OrganisasiController::class, 'reactivate'])->name('admin.organisasi.reactivate');
     Route::delete('/organizations/{id}', [OrganisasiController::class, 'destroy'])->name('admin.organisasi.destroy');
+
     Route::get('/products', [BarangController::class, 'index'])->name('admin.produk.index');
     Route::get('/products/add', [BarangController::class, 'create'])->name('admin.produk.create');
     Route::post('/products', [BarangController::class, 'store'])->name('admin.produk.store');
@@ -206,6 +216,7 @@ Route::prefix('admin')->middleware(['auth:pegawai', 'pegawai.role:2'])->group(fu
     Route::put('/products/{id}', [BarangController::class, 'update'])->name('admin.produk.update');
     Route::put('/products/{id}/deactivate', [BarangController::class, 'deactivate'])->name('admin.produk.deactivate');
     Route::put('/products/{id}/reactivate', [BarangController::class, 'reactivate'])->name('admin.produk.reactivate');
+
     Route::get('/merchandise', [MerchandiseController::class, 'index'])->name('admin.merch.index');
     Route::get('/merchandise/add', [MerchandiseController::class, 'create'])->name('admin.merchandise.create');
     Route::post('/merchandise', [MerchandiseController::class, 'store'])->name('admin.merchandise.store');
@@ -213,7 +224,6 @@ Route::prefix('admin')->middleware(['auth:pegawai', 'pegawai.role:2'])->group(fu
     Route::get('/merchandise/{id}/edit', [MerchandiseController::class, 'edit'])->name('admin.merchandise.edit');
     Route::put('/merchandise/{id}', [MerchandiseController::class, 'update'])->name('admin.merchandise.update');
 
-    
     // Route baru untuk Process Top Seller
     Route::post('/process-top-seller', [TransaksiPembelianController::class, 'processTopSeller'])->name('admin.process-top-seller');
 });

@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use App\Models\Pembeli;
 use App\Models\TransaksiPembelian;
+use Illuminate\Support\Facades\Storage;
 // use App\Http\Controllers\TransaksiPembelianController;
 
 class PembeliController extends Controller
@@ -41,7 +42,8 @@ class PembeliController extends Controller
 
     public function purchase()
     {
-        return view('pembeli.purchase');
+        
+        return view('pembeli.history');
     }
 
 
@@ -105,20 +107,30 @@ class PembeliController extends Controller
     // Web: Update pembeli
     public function updateProfile(Request $request, $id)
     {
-        // $this->ensureAdmin();
-        
         $pembeli = Pembeli::findOrFail($id);
 
         $request->validate([
-            'nama_pembeli' => 'required|string',
-            'email_pembeli' => 'required|email|unique:pembeli,email_pembeli,' . $id . ',id_pembeli',
-            'tanggal_lahir' => 'required|date',
+            'nama' => 'required|string',
+            'email' => 'required|email',
             'nomor_telepon' => 'required|string',
         ]);
 
-        $pembeli->update($request->only(['nama_pembeli', 'email_pembeli', 'tanggal_lahir', 'nomor_telepon']));
+        $pembeli->nama_pembeli = $request->nama;
+        $pembeli->email_pembeli = $request->email;
+        $pembeli->nomor_telepon = $request->nomor_telepon;
 
-        return redirect()->route('admin.pembeli.index')->with('success', 'Data pembeli diperbarui');
+        if ($request->hasFile('profil_pict')) {
+            $file = $request->file('profil_pict');
+            $fileName = time() . '_' . $file->getClientOriginalName();
+            
+            Storage::disk('public')->putFileAs('foto_pembeli', $file, $fileName);
+
+            $pembeli->profil_pict = $fileName;
+        }
+
+        $pembeli->save();
+
+        return redirect()->route('pembeli.profile')->with('success', 'Profil berhasil diperbarui.');
     }
 
     // Web: Nonaktifkan akun

@@ -5,14 +5,14 @@
 @section('content')
 <h2>Product Management</h2>
 
-<div style="margin: 1rem 0; display: flex; gap: 1rem;">
+{{-- <div style="margin: 1rem 0; display: flex; gap: 1rem;">
     <a href="{{ route('admin.produk.create') }}" class="btn-action" id="addBtn">➕ Add Product</a>
     <button class="btn-action" id="editToggle">✏️ Edit Product</button>
-</div>
+</div> --}}
 
-<div style="margin-bottom: 1rem; display: flex; gap: 0.5rem; align-items: center;">
+{{-- <div style="margin-bottom: 1rem; display: flex; gap: 0.5rem; align-items: center;">
     <input type="text" id="searchInput" placeholder="🔍 Search Products" class="input-search" style="width: 100%;">
-</div>
+</div> --}}
 
 <div class="table-container">
     <div class="table-scroll-x">

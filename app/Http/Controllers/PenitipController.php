@@ -56,7 +56,7 @@ class PenitipController extends Controller
             'rata_rating'     => 0,
         ]);
         $pegawai = Auth::guard('pegawai')->user();
-        $prefix = $pegawai->id_role == 3 ? 'admin' : 'cs';
+        $prefix = $pegawai->id_role == 3 ? 'cs' : 'admin';
 
         return redirect()->route($prefix . '.penitip.index')->with('success', 'Penitip berhasil ditambahkan.');
     }
@@ -236,7 +236,7 @@ class PenitipController extends Controller
             'email_penitip' => 'required|email|unique:penitip,email_penitip,' . $id . ',id_penitip',
             'no_telp' => 'required|string',
             'alamat' => 'required|string',
-            'profil_pict' => 'nullable|image|mimes:jpeg,png,jpg',
+            'profil_pict' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ]);
 
         // Handle file upload

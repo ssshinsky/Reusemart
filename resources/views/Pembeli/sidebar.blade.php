@@ -16,7 +16,7 @@
 
         <div class="small fw-bold text-uppercase px-3 pt-3 text-secondary">My Purchase</div>
         <a href="{{ route('pembeli.purchase') }}"
-            class="list-group-item list-group-item-action {{ request()->routeIs('pembeli.purchase') ? 'active' : '' }}">
+            class="list-group-item list-group-item-action {{ request()->routeIs('pembeli.history') ? 'active' : '' }}">
             Purchase History
         </a>
 

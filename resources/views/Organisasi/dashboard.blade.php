@@ -162,7 +162,7 @@
             </span>
 
             <div class="dropdown-content" id="dropdownContent">
-                <form method="POST" action="{{ route('logout') }}">
+                <form method="POST" action="{{ route('logout.submit') }}">
                     @csrf
                     <button type="submit">🔓 Logout</button>
                 </form>

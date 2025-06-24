@@ -12,10 +12,10 @@
                 <div class="card shadow-sm">
                     <div class="card-body">
                         <div class="row g-4 align-items-center">
-                            <div class="col-md-3 text-center">
-                                <img src="{{ asset('images/default-avatar.png') }}" alt="Profile Photo"
-                                    class="rounded-circle img-fluid"
-                                    style="width: 120px; height: 120px; object-fit: cover;">
+                            <div class="col-md-3 text-center mb-3 mb-md-0">
+                                <img src="{{ asset('storage/foto_pembeli/' . ($pembeli->profil_pict ?? 'default.png')) }}"
+                                    alt="Profile Photo" class="rounded" width="120" height="120"
+                                    style="object-fit: cover;">
                             </div>
 
                             <div class="col-md-9">
@@ -24,20 +24,25 @@
 
                                 <div class="mb-3">
                                     <label class="form-label fw-semibold">Username</label>
-                                    <input type="text" class="form-control"
-                                        value="{{ session('customer.nama_pembeli') ?? 'User' }}" disabled>
+                                    <input type="text" class="form-control" value="{{ $pembeli->nama_pembeli }}"
+                                        disabled>
                                 </div>
 
                                 <div class="mb-3">
                                     <label class="form-label fw-semibold">Email</label>
-                                    <input type="email" class="form-control" value="{{ session('user.email') ?? '' }}"
+                                    <input type="email" class="form-control" value="{{ $pembeli->email_pembeli }}"
                                         disabled>
                                 </div>
 
                                 <div class="mb-3">
                                     <label class="form-label fw-semibold">Phone</label>
-                                    <input type="text" class="form-control" value="{{ session('user.no_telp') ?? '' }}"
+                                    <input type="text" class="form-control" value="{{ $pembeli->nomor_telepon }}"
                                         disabled>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Poin Reward</label>
+                                    <input type="text" class="form-control" value="{{ $pembeli->poin_pembeli ?? 0 }}" disabled>
                                 </div>
 
                                 <div class="text-end">
@@ -58,7 +63,7 @@
             aria-hidden="true">
             <div class="modal-dialog modal-lg modal-dialog-centered">
                 <div class="modal-content">
-                    <form action="{{ route('pembeli.update', ['id' => auth('pembeli')->id()]) }}" method="POST"
+                    <form action="{{ route('pembeli.update', $pembeli->id_pembeli) }}" method="POST"
                         enctype="multipart/form-data">
                         @csrf
                         @method('PUT')
@@ -73,29 +78,30 @@
                                 <div class="col-md-6">
                                     <label for="nama" class="form-label">Name</label>
                                     <input type="text" id="nama" name="nama" class="form-control"
-                                        value="{{ session('user.nama') ?? '' }}" required>
+                                        value="{{ $pembeli->nama_pembeli }}" required>
                                 </div>
 
                                 <div class="col-md-6">
                                     <label for="nomor_telepon" class="form-label">Phone Number</label>
                                     <input type="text" id="nomor_telepon" name="nomor_telepon" class="form-control"
-                                        value="{{ session('user.no_telp') ?? '' }}" required>
+                                        value="{{ $pembeli->nomor_telepon }}" required>
                                 </div>
 
                                 <div class="col-12">
                                     <label for="email" class="form-label">Email</label>
                                     <input type="email" id="email" name="email" class="form-control"
-                                        value="{{ session('user.email') ?? '' }}" required>
+                                        value="{{ $pembeli->email_pembeli }}" required>
                                 </div>
 
-                                <div class="col-12 d-flex align-items-center gap-3 mt-2">
-                                    <img src="{{ asset('images/default-avatar.png') }}" alt="Current Photo"
-                                        class="rounded-circle" width="80" height="80" style="object-fit: cover;">
-                                    <div class="flex-grow-1">
-                                        <label for="profile_pict" class="form-label">Profile Photo</label>
-                                        <input type="file" id="profile_pict" name="profile_pict" accept=".jpg,.jpeg,.png"
+                                <div class="mb-3 d-flex align-items-center">
+                                    <img src="{{ asset('storage/foto_pembeli/' . ($pembeli->profil_pict ?? 'default.png')) }}"
+                                        alt="Profile Photo" class="rounded-circle me-3" width="80" height="80"
+                                        style="object-fit: cover;">
+                                    <div>
+                                        <label for="profil_pict" class="form-label d-block">Profile Photo</label>
+                                        <input type="file" id="profil_pict" name="profil_pict" accept=".jpg,.jpeg,.png"
                                             class="form-control">
-                                        <small class="text-muted d-block">Max 1MB - JPG/PNG only</small>
+                                        <small class="text-muted">File max 1MB, JPG/PNG</small>
                                     </div>
                                 </div>
                             </div>

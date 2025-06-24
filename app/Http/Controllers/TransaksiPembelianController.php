@@ -487,6 +487,25 @@ class TransaksiPembelianController extends Controller
         return view('pembeli.transaksi_detail', compact('transaksi'));
     }
 
+    public function riwayatPembelian()
+    {
+        $riwayat = TransaksiPembelian::with('keranjang.detailKeranjang.itemKeranjang.barang')
+            ->where('id_pembeli', Auth::guard('pembeli')->id())
+            ->latest()
+            ->get();
+
+        return view('pembeli.riwayat', compact('riwayat'));
+    }
+
+    public function detailPembelian($id)
+    {
+        $transaksi = TransaksiPembelian::with('keranjang.detailKeranjang.itemKeranjang.barang', 'alamat')
+            ->where('id_pembeli', Auth::guard('pembeli')->id())
+            ->findOrFail($id);
+
+        return view('pembeli.riwayat_detail', compact('transaksi'));
+    }
+
     public function updateDeliveryStatus(Request $request, $id)
     {
         $request->validate([

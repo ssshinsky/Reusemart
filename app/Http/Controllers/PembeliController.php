@@ -42,7 +42,6 @@ class PembeliController extends Controller
 
     public function purchase()
     {
-        
         return view('pembeli.history');
     }
 

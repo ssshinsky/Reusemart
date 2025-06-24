@@ -20,10 +20,10 @@
             Purchase History
         </a>
 
-        <div class="small fw-bold text-uppercase px-3 pt-3 text-secondary">ReuseMart Coins</div>
+        {{-- <div class="small fw-bold text-uppercase px-3 pt-3 text-secondary">ReuseMart Coins</div>
         <a href="{{ route('pembeli.reward') }}"
             class="list-group-item list-group-item-action {{ request()->routeIs('pembeli.reward') ? 'active' : '' }}">
             Reward Coins
-        </a>
+        </a> --}}
     </div>
 </div>

@@ -37,8 +37,8 @@
                 <tbody>
                     @php $subtotal = 0; @endphp
                     {{-- UBAH BAGIAN INI --}}
-                    @if($transaksi->keranjang && !$transaksi->keranjang->detailKeranjangs->isEmpty())
-                        @foreach($transaksi->keranjang->detailKeranjangs as $detailKeranjang)
+                    @if($transaksi->keranjang && $transaksi->keranjang->detailKeranjang && !$transaksi->keranjang->detailKeranjang->isEmpty())
+                        @foreach($transaksi->keranjang->detailKeranjang as $detailKeranjang)
                             @if($detailKeranjang->itemKeranjang && $detailKeranjang->itemKeranjang->barang)
                             <tr>
                                 <td>{{ $detailKeranjang->itemKeranjang->barang->nama_barang }}</td>

@@ -91,11 +91,11 @@ Route::prefix('pembeli')->middleware('auth:pembeli')->name('pembeli.')->group(fu
     Route::get('/reward', [PembeliController::class, 'reward'])->name('reward');
 
     // 🧾 Riwayat Transaksi Pembelian
-    Route::get('/riwayat', [TransaksiPembelianController::class, 'riwayat'])->name('riwayat');
-    Route::get('/riwayat/{id}', [TransaksiPembelianController::class, 'detail'])->name('riwayat.detail');
+    Route::get('/riwayat', [TransaksiPembelianController::class, 'riwayatPembelian'])->name('riwayat');
+    Route::get('/riwayat/{id}', [TransaksiPembelianController::class, 'detailPembelian'])->name('riwayat.detail');
 
     // 💳 Transaksi & Pembayaran
-    Route::get('/purchase', [PembeliController::class, 'purchase'])->name('purchase');
+    Route::get('/purchase', [TransaksiPembelianController::class, 'riwayatPembelian'])->name('purchase');
     Route::get('/process-payment', [ItemKeranjangController::class, 'processPayment'])->name('processPayment');
     Route::post('/bayar', [TransaksiPembelianController::class, 'bayar'])->name('bayar');
     Route::get('/batal-checkout/{id}', [TransaksiPembelianController::class, 'batalkanOtomatis'])->name('batalCheckout');

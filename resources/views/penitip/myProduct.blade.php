@@ -16,40 +16,7 @@
                 </div>
 
                 <div class="row">
-                    @forelse ($products as $product)
-                        <div class="col-lg-4 col-md-6 mb-4">
-                            <div class="card h-100 shadow-sm border-0 hover-shadow">
-                                <img src="{{ asset('storage/' . ($product->gambar->first()->nama_file ?? 'default.jpg')) }}"
-                                    class="card-img-top rounded-top" style="height: 220px; object-fit: cover;"
-                                    alt="{{ $product->nama_barang }}">
-                                <div class="card-body">
-                                    <h5 class="card-title text-truncate">{{ $product->nama_barang }}</h5>
-                                    <p class="mb-0">
-                                        Status:
-                                        @php
-                                            $status = [
-                                                'tersedia' => ['label' => 'Available', 'class' => 'success'],
-                                                'sold' => ['label' => 'Sold Out', 'class' => 'danger'],
-                                                'didonasikan' => ['label' => 'Donated', 'class' => 'warning text-dark'],
-                                                'diambil' => ['label' => 'Collected', 'class' => 'primary'],
-                                            ];
-                                            $badge = $status[$product->status_barang] ?? [
-                                                'label' => 'Unknown',
-                                                'class' => 'secondary',
-                                            ];
-                                        @endphp
-                                        <span class="badge bg-{{ $badge['class'] }}">{{ $badge['label'] }}</span>
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    @empty
-                        <div class="col-12">
-                            <div class="alert alert-info text-center">
-                                Belum ada produk tersedia.
-                            </div>
-                        </div>
-                    @endforelse
+                    @include('penitip.partials.product_grid')
                 </div>
             </div>
         </div>

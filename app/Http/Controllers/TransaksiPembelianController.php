@@ -986,7 +986,7 @@ class TransaksiPembelianController extends Controller
             // Update status barang
             $updatedCount = 0;
             foreach ($expiredItems as $item) {
-                $item->status_barang = 'barang untuk donasi';
+                $item->status_barang = 'For Donation';
                 $item->save();
                 $updatedCount++;
 

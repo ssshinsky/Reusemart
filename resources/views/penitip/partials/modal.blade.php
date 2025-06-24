@@ -49,7 +49,7 @@
                             <p><strong>Garansi:</strong> {{ $product->status_garansi }}</p>
                             @if(strtolower($product->status_garansi) === 'warranty')
                                 <p><strong>Tanggal Garansi Berakhir:</strong> 
-                                    {{ \Carbon\Carbon::parse($product->tanggal_garansi_berakhir)->translatedFormat('d F Y') }}
+                                    {{ \Carbon\Carbon::parse($product->tanggal_garansi)->translatedFormat('d F Y') }}
                                 </p>
                             @endif
                         @endif

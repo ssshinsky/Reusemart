@@ -130,5 +130,130 @@ class MerchandiseController extends Controller
 
         return response($html);
     }
+    
+    public function indexApi() 
+    {
+        $merchandise = Merchandise::where('stok', '>', 0)->get();
 
+        $formattedMerchandise = $merchandise->map(function($merch) {
+            // >>> Perubahan di sini: Hanya kembalikan nama file gambar <<<
+            // Flutter akan menggabungkan dengan base URL storage
+            return [
+                'id_merchandise' => $merch->id_merchandise,
+                'id_pegawai' => $merch->id_pegawai, // Pastikan id_pegawai juga dikirim
+                'nama_merch' => $merch->nama_merch,
+                'poin' => $merch->poin,
+                'stok' => $merch->stok,
+                'gambar_merch' => $merch->gambar_merch, // Mengirimkan nama file gambar saja
+            ];
+        });
+
+        return response()->json([
+            'success' => true, // Tambahkan 'success' key
+            'message' => 'Daftar merchandise berhasil diambil.',
+            'data' => $formattedMerchandise
+        ], 200);
+    }
+
+    public function showApi($id)
+    {
+        $merchandise = Merchandise::find($id);
+
+        if (!$merchandise || $merchandise->stok <= 0) {
+            return response()->json(['success' => false, 'message' => 'Merchandise not found or out of stock.'], 404); // Tambahkan 'success' key
+        }
+
+        // >>> Perubahan di sini: Hanya kembalikan nama file gambar <<<
+        $formattedMerch = [
+            'id_merchandise' => $merchandise->id_merchandise,
+            'id_pegawai' => $merchandise->id_pegawai, // Pastikan id_pegawai juga dikirim
+            'nama_merch' => $merchandise->nama_merch,
+            'poin' => $merchandise->poin,
+            'stok' => $merchandise->stok,
+            'gambar_merch' => $merchandise->gambar_merch, // Mengirimkan nama file gambar saja
+        ];
+
+        return response()->json([
+            'success' => true, // Tambahkan 'success' key
+            'message' => 'Detail merchandise berhasil diambil.',
+            'data' => $formattedMerch
+        ], 200);
+    }
+
+    public function claimMerchandise(Request $request)
+    {
+        $pembeli = $request->user();
+
+        // if (!$pembeli || !$pembeli instanceof Pembeli) { 
+        //     return response()->json(['message' => 'Unauthorized. Only buyers can claim merchandise.'], 403);
+        // }
+
+        $request->validate([
+            'merchandise_id' => 'required|exists:merchandise,id_merchandise',
+            'pembeli_id' => 'required|exists:pembeli,id_pembeli',
+        ]);
+
+        $merchandiseId = $request->merchandise_id;
+        $pembeliId = $request->pembeli_id;
+        $jumlahKlaim = 1; 
+
+        $pembeli = Pembeli::find($pembeliId);
+
+        if (!$pembeli) { 
+            return response()->json(['success' => false, 'message' => 'Data pembeli tidak ditemukan.'], 404);
+        }
+
+        $merchandise = Merchandise::find($merchandiseId);
+
+        if (!$merchandise) {
+            return response()->json(['message' => 'Merchandise not found.'], 404);
+        }
+
+        DB::beginTransaction();
+
+        try {
+            // 1. Cek Stok Merchandise
+            if ($merchandise->stok < $jumlahKlaim) {
+                DB::rollBack();
+                return response()->json(['message' => 'Stok merchandise tidak mencukupi.'], 400);
+            }
+
+            // 2. Cek Poin Pembeli
+            if ($pembeli->poin_pembeli < ($merchandise->poin * $jumlahKlaim)) {
+                DB::rollBack();
+                return response()->json(['message' => 'Poin tidak mencukupi untuk klaim merchandise ini.'], 400);
+            }
+
+            // 3. Kurangi Poin Pembeli
+            $pembeli->poin_pembeli -= ($merchandise->poin * $jumlahKlaim);
+            $pembeli->save();
+
+            // 4. Kurangi Stok Merchandise
+            $merchandise->stok -= $jumlahKlaim;
+            $merchandise->save(); // Poin 3: Mengurangi stok otomatis
+
+            // 5. Simpan Transaksi Klaim Merchandise
+            TransaksiMerchandise::create([
+                'id_merchandise' => $merchandise->id_merchandise,
+                'id_pembeli' => $pembeli->id_pembeli,
+                'jumlah' => $jumlahKlaim,
+                'total_poin_penukaran' => ($merchandise->poin * $jumlahKlaim),
+                'tanggal_klaim' => Carbon::now(), // Tanggal klaim tercatat
+                'status_transaksi' => 'belum diambil', // Status awal klaim
+            ]);
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Merchandise berhasil diklaim!',
+                'current_poin_pembeli' => $pembeli->poin_pembeli,
+                'merchandise_claimed' => $merchandise->nama_merch,
+            ], 200);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['message' => 'Gagal klaim merchandise: ' . $e->getMessage()], 500);
+        }
+    }
 }

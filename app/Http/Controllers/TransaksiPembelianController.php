@@ -165,11 +165,13 @@ class TransaksiPembelianController extends Controller
         return redirect()->route('pembeli.cart')->with('success', 'Checkout dibatalkan otomatis karena melewati batas waktu.');
     }
 
+    // Proses pembayaran
     public function bayar(Request $request)
     {
         Log::info('Bayar Request:', $request->all());
 
         try {
+            // Validasi input
             $request->validate([
                 'bukti_pembayaran' => 'required|image|mimes:jpeg,png,jpg|max:2048',
                 'poin_ditukar' => 'nullable|integer|min:0',
@@ -184,6 +186,7 @@ class TransaksiPembelianController extends Controller
             $idAlamat = $metodePengiriman === 'ambil' ? null : session('checkout_id_alamat');
             $totalHarga = session('checkout_total_harga');
 
+            // Validasi session
             if (!$keranjangId || !$metodePengiriman || !$totalHarga) {
                 Log::error('Missing session data', [
                     'keranjangId' => $keranjangId,
@@ -193,17 +196,20 @@ class TransaksiPembelianController extends Controller
                 return redirect()->back()->with('error', 'Data checkout tidak lengkap.');
             }
 
+            // Validasi keranjang
             $keranjang = Keranjang::find($keranjangId);
             if (!$keranjang) {
                 Log::error('Keranjang not found', ['keranjangId' => $keranjangId]);
                 return redirect()->back()->with('error', 'Keranjang tidak ditemukan.');
             }
 
+            // Validasi alamat (jika metode bukan 'ambil')
             if ($metodePengiriman === 'kurir' && $idAlamat && !Alamat::find($idAlamat)) {
                 Log::error('Alamat not found', ['idAlamat' => $idAlamat]);
                 return redirect()->back()->with('error', 'Alamat tidak ditemukan.');
             }
 
+            // Simpan bukti pembayaran
             $buktiTf = null;
             if ($request->hasFile('bukti_pembayaran')) {
                 try {
@@ -218,8 +224,10 @@ class TransaksiPembelianController extends Controller
                 return redirect()->back()->with('error', 'Bukti pembayaran tidak ditemukan.');
             }
 
+            // Hitung ongkir
             $ongkir = ($totalHarga >= 1500000 || $metodePengiriman !== 'kurir') ? 0 : 100000;
 
+            // Generate nomor resi
             $tahun = now()->format('Y');
             $bulan = now()->format('m');
             $jumlahTransaksiBulanIni = TransaksiPembelian::whereYear('created_at', $tahun)
@@ -228,6 +236,7 @@ class TransaksiPembelianController extends Controller
             $nomorUrut = str_pad($jumlahTransaksiBulanIni + 1, 3, '0', STR_PAD_LEFT);
             $noResi = $tahun . '.' . $bulan . '.' . $nomorUrut;
 
+            // Simpan transaksi dalam transaksi database
             DB::beginTransaction();
             $transaksi = TransaksiPembelian::create([
                 'id_keranjang' => $keranjangId,
@@ -246,6 +255,7 @@ class TransaksiPembelianController extends Controller
                 'poin_penitip' => 0,
             ]);
 
+            // Update poin pembeli
             $pembeli = Pembeli::find($idPembeli);
             $newPoin = ($pembeli->poin_pembeli - ($request->poin_ditukar ?? 0)) + ($request->bonus_poin ?? 0);
             if ($newPoin < 0) {
@@ -256,13 +266,15 @@ class TransaksiPembelianController extends Controller
 
            ItemKeranjang::whereIn('id_item_keranjang', session('checkout_selected_items'))->update(['is_selected' => true]);
 
+            // Commit transaksi
             DB::commit();
 
+            // Clear session
             session()->forget(['checkout_keranjang_id', 'checkout_selected_items', 'checkout_metode_pengiriman', 'checkout_id_alamat', 'checkout_total_harga']);
 
             Log::info('Transaksi created:', $transaksi->toArray());
 
-            return redirect()->route('pembeli.riwayat')->with('success', 'Pembayaran berhasil! Menunggu konfirmasi admin.');
+            return redirect()->route('pembeli.purchase')->with('success', 'Pembayaran berhasil! Menunggu konfirmasi admin.');
         } catch (\Illuminate\Validation\ValidationException $e) {
             DB::rollBack();
             Log::error('Validation failed in bayar', ['errors' => $e->errors()]);
@@ -1007,7 +1019,7 @@ class TransaksiPembelianController extends Controller
 
         // Ambil barang terbatas (logika existing)
         $barangTerbatas = \App\Models\Barang::with('gambar')
-            ->where('status_barang', 'Available')
+            ->where('status_barang', 'tersedia')
             ->take(12) // Contoh limit
             ->get();
 

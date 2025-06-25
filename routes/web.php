@@ -97,10 +97,11 @@ Route::prefix('pembeli')->middleware('auth:pembeli')->name('pembeli.')->group(fu
 
     // 🧾 Riwayat Transaksi Pembelian
     Route::get('/riwayat', [TransaksiPembelianController::class, 'riwayatPembelian'])->name('riwayat');
+    Route::get('/history', [TransaksiPembelianController::class, 'history'])->name('pembeli.purchase');
     Route::get('/riwayat/{id}', [TransaksiPembelianController::class, 'detailPembelian'])->name('riwayat.detail');
 
     // 💳 Transaksi & Pembayaran
-    Route::get('/purchase', [TransaksiPembelianController::class, 'riwayatPembelian'])->name('purchase');
+    Route::get('/purchase', [TransaksiPembelianController::class, 'history'])->name('purchase');
     Route::get('/process-payment', [ItemKeranjangController::class, 'processPayment'])->name('processPayment');
     Route::post('/bayar', [TransaksiPembelianController::class, 'bayar'])->name('bayar');
     Route::get('/batal-checkout/{id}', [TransaksiPembelianController::class, 'batalkanOtomatis'])->name('batalCheckout');
@@ -116,7 +117,7 @@ Route::prefix('pembeli')->middleware('auth:pembeli')->name('pembeli.')->group(fu
     Route::post('/alamat/{id}/set-default', [AlamatController::class, 'setDefault'])->name('alamat.set_default');
 
     // 🛒 Keranjang
-    Route::get('/keranjang', [KeranjangController::class, 'index'])->name('cart');
+    Route::get('/keranjang', [ItemKeranjangController::class, 'index'])->name('cart');
 
     // (Optional) 📢 Diskusi Produk
     // Route::post('/diskusi/store', [DiskusiProdukController::class, 'store'])->name('diskusi.store');

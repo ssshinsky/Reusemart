@@ -265,7 +265,7 @@
         <h5 class="mb-3 fw-bold">ALL PRODUCT</h5>
         <div class="row row-cols-2 row-cols-sm-3 row-cols-md-4 row-cols-lg-6 g-3">
             @foreach ($barangTerbatas as $item)
-                @if ($item->status_barang == 'Available')
+                @if ($item->status_barang == 'tersedia')
                     <div class="col">
                         <div class="card h-100 text-center p-2">
                             <img src="{{ asset('storage/gambar_barang/' . ($item->gambar->first()->gambar_barang ?? 'default.png')) }}"

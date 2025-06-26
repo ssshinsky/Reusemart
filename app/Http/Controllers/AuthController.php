@@ -136,6 +136,7 @@ class AuthController extends Controller
                     'id' => $pegawai->id_pegawai,
                     'nama' => $pegawai->nama_pegawai,
                     'email' => $pegawai->email_pegawai,
+                    'id_role' => $pegawai->id_role,
                 ],
                 'role' => 'pegawai',
             ]);

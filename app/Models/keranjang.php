@@ -29,4 +29,16 @@ class Keranjang extends Model
     {
         return $this->hasOne(TransaksiPembelian::class, 'id_keranjang', 'id_keranjang');
     }
+
+    public function itemKeranjangs()
+    {
+        return $this->hasManyThrough(
+            ItemKeranjang::class,
+            DetailKeranjang::class,
+            'id_keranjang',
+            'id_item_keranjang',
+            'id_keranjang',
+            'id_item_keranjang'
+        );
+    }
 }

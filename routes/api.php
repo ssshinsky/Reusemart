@@ -13,28 +13,26 @@ use App\Http\Controllers\PembeliController;
 use App\Http\Controllers\TransaksiPembelianController;
 use App\Http\Controllers\FcmTokenController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\MerchandiseController;
+use App\Http\Controllers\HunterController;
 
 Route::post('/login', [AuthController::class, 'loginapi']);
 Route::middleware('auth:sanctum')->post('/logout', [AuthController::class, 'logoutapi']);
-
 Route::middleware('auth:sanctum')->post('/save-fcm-token', [FcmTokenController::class, 'saveToken']);
 Route::middleware('auth:sanctum')->post('/send-notification', [NotificationController::class, 'sendNotification']);
 
+// Route tanpa autentikasi
+Route::get('/penitip/{id}', [PenitipController::class, 'getPenitipById']);
+Route::get('/penitip/{id}/history', [PenitipController::class, 'getConsignmentHistoryById']);
+Route::get('/penitip/profile', [PenitipController::class, 'getProfile']);
+Route::get('/penitip/history', [PenitipController::class, 'getConsignmentHistory']);
 
-    // Route tanpa autentikasi
-    Route::get('/penitip/{id}', [PenitipController::class, 'getPenitipById']);
-    Route::get('/penitip/{id}/history', [PenitipController::class, 'getConsignmentHistoryById']);
-    Route::get('/penitip/profile', [PenitipController::class, 'getProfile']);
-    Route::get('/penitip/history', [PenitipController::class, 'getConsignmentHistory']);
+// Route pembeli tanpa autentikasi
+Route::get('/pembeli/{id}', [PembeliController::class, 'getPembeliById']);
+Route::get('/pembeli/{id}/history', [TransaksiPembelianController::class, 'getPurchaseHistoryById']);
+Route::get('/pembeli/profile', [PembeliController::class, 'getProfile']);
+Route::get('/pembeli/history', [TransaksiPembelianController::class, 'getPurchaseHistory']);
 
-
-    // Route pembeli tanpa autentikasi
-    Route::get('/pembeli/{id}', [PembeliController::class, 'getPembeliById']);
-    Route::get('/pembeli/{id}/history', [TransaksiPembelianController::class, 'getPurchaseHistoryById']);
-    Route::get('/pembeli/profile', [PembeliController::class, 'getProfile']);
-    Route::get('/pembeli/history', [TransaksiPembelianController::class, 'getPurchaseHistory']);
-
-    
 Route::post('/pegawai/register', [PegawaiController::class, 'register']);
 Route::post('/pegawai/login', [PegawaiController::class, 'login']);
 Route::get('/barang/{id}', [BarangController::class, 'show'])->name('barang.show');
@@ -45,6 +43,27 @@ Route::get('/barang', [BarangController::class, 'apiIndex']);
 Route::get('/barang/{id}', [BarangController::class, 'apiShow']);
 Route::get('/kategori', [BarangController::class, 'getKategoriApi']);
 Route::get('/top-seller', [TransaksiPembelianController::class, 'indextopapi'])->name('api.top-seller');
+
+// Rute Merchandise (untuk Pembeli)
+Route::get('/merchandise', [MerchandiseController::class, 'indexApi']);
+Route::get('/merchandise/{id}', [MerchandiseController::class, 'showApi']);
+Route::post('/merchandise/claim', [MerchandiseController::class, 'claimMerchandise']);
+
+// Rute Hunter
+Route::get('/hunter/{id}/profile-and-commission', [HunterController::class, 'getHunterProfileAndTotalCommission']);
+Route::get('/hunter/{id}/commission-history', [HunterController::class, 'getCommissionHistory']);
+Route::get('/hunter/commission-detail/{hunterId}/{commissionId}', [HunterController::class, 'getCommissionDetail']);
+
+Route::post('/pegawai/logout', [PegawaiController::class, 'logout']); 
+Route::get('/pegawai', [PegawaiController::class, 'index']); 
+Route::get('/pegawai/{id}', [PegawaiController::class, 'show']); 
+Route::post('/pegawai/create', [PegawaiController::class, 'store']); 
+Route::post('/pegawai/update/{id}', [PegawaiController::class, 'update']); 
+Route::delete('/pegawai/delete/{id}', [PegawaiController::class, 'destroy']); 
+
+Route::post('/logout-test', function () {
+    return response()->json(['message' => 'Test logout route reached successfully']);
+});
 
 Route::middleware('auth:api')->group(function () {
     // Logout Pegawai
@@ -84,5 +103,4 @@ Route::middleware('auth:api')->group(function () {
     Route::post('/pickup-schedule', [TransaksiPembelianController::class, 'createPickupSchedule']);
     Route::post('/update-delivery-status/{id}', [TransaksiPembelianController::class, 'updateDeliveryStatus']);
     Route::get('/keranjang/{id}/barang', [KeranjangController::class, 'getBarangByKeranjang']);
-
 });

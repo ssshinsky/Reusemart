@@ -2,9 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Pembeli;
 use App\Models\Merchandise;
+use App\Models\TransaksiMerchandise;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon;
+
 
 class MerchandiseController extends Controller
 {
@@ -182,12 +187,6 @@ class MerchandiseController extends Controller
 
     public function claimMerchandise(Request $request)
     {
-        $pembeli = $request->user();
-
-        // if (!$pembeli || !$pembeli instanceof Pembeli) { 
-        //     return response()->json(['message' => 'Unauthorized. Only buyers can claim merchandise.'], 403);
-        // }
-
         $request->validate([
             'merchandise_id' => 'required|exists:merchandise,id_merchandise',
             'pembeli_id' => 'required|exists:pembeli,id_pembeli',
@@ -195,51 +194,51 @@ class MerchandiseController extends Controller
 
         $merchandiseId = $request->merchandise_id;
         $pembeliId = $request->pembeli_id;
-        $jumlahKlaim = 1; 
+        $jumlahKlaim = 1;
 
         $pembeli = Pembeli::find($pembeliId);
-
-        if (!$pembeli) { 
+        if (!$pembeli) {
             return response()->json(['success' => false, 'message' => 'Data pembeli tidak ditemukan.'], 404);
         }
 
         $merchandise = Merchandise::find($merchandiseId);
-
         if (!$merchandise) {
             return response()->json(['message' => 'Merchandise not found.'], 404);
         }
 
+        // Fungsi ini membutuhkan "use Illuminate\Support\Facades\DB;"
         DB::beginTransaction();
 
         try {
-            // 1. Cek Stok Merchandise
             if ($merchandise->stok < $jumlahKlaim) {
                 DB::rollBack();
                 return response()->json(['message' => 'Stok merchandise tidak mencukupi.'], 400);
             }
-
-            // 2. Cek Poin Pembeli
+            
+            // ================== PERUBAHAN FINAL DI SINI ==================
+            // Menggunakan nama kolom 'poin_pembeli' sesuai dengan struktur database Anda
             if ($pembeli->poin_pembeli < ($merchandise->poin * $jumlahKlaim)) {
                 DB::rollBack();
                 return response()->json(['message' => 'Poin tidak mencukupi untuk klaim merchandise ini.'], 400);
             }
 
-            // 3. Kurangi Poin Pembeli
+            // Menggunakan nama kolom 'poin_pembeli'
             $pembeli->poin_pembeli -= ($merchandise->poin * $jumlahKlaim);
+            // =============================================================
             $pembeli->save();
 
-            // 4. Kurangi Stok Merchandise
             $merchandise->stok -= $jumlahKlaim;
-            $merchandise->save(); // Poin 3: Mengurangi stok otomatis
-
-            // 5. Simpan Transaksi Klaim Merchandise
+            $merchandise->save();
+            
+            // Fungsi ini membutuhkan "use App\Models\TransaksiMerchandise;"
+            // dan "use Carbon\Carbon;"
             TransaksiMerchandise::create([
                 'id_merchandise' => $merchandise->id_merchandise,
                 'id_pembeli' => $pembeli->id_pembeli,
                 'jumlah' => $jumlahKlaim,
                 'total_poin_penukaran' => ($merchandise->poin * $jumlahKlaim),
-                'tanggal_klaim' => Carbon::now(), // Tanggal klaim tercatat
-                'status_transaksi' => 'belum diambil', // Status awal klaim
+                'tanggal_klaim' => Carbon::now(),
+                'status_transaksi' => 'belum diambil',
             ]);
 
             DB::commit();
@@ -247,6 +246,7 @@ class MerchandiseController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Merchandise berhasil diklaim!',
+                // Mengirimkan nilai poin terbaru dari kolom yang benar
                 'current_poin_pembeli' => $pembeli->poin_pembeli,
                 'merchandise_claimed' => $merchandise->nama_merch,
             ], 200);

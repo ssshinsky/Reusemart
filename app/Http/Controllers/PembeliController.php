@@ -236,7 +236,6 @@ class PembeliController extends Controller
         return $this->update($request, $id);
     }
 
-
     // ====== New API Methods ======
     public function getPembeliById($id)
     {

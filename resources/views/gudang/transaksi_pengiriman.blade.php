@@ -57,7 +57,7 @@
                                     <i class="fas fa-check-circle me-1"></i> Confirm Owner Pickup
                                 </button>
                             </form>
-                            <a href="{{ route('gudang.barang.detail', ['id' => $barangItem->id_barang]) }}" class="btn btn-sm btn-outline-success rounded-pill">
+                            <a href="{{ route('gudang.barang.detail', ['id' => $barangItem->id_barang]) }}" class="btn btn-sm btn-outline-primary rounded-pill">
                                 <i class="fas fa-eye me-1"></i> Detail Item
                             </a>
                         </div>
@@ -85,6 +85,7 @@
                 $noNota = $tanggal->format('y.m') . '.' . $item->id_pembelian;
                 $firstDetail = $item->detailKeranjangs->first();
                 $barang = $firstDetail ? $firstDetail->itemKeranjang->barang : null;
+                $pembeli = $firstDetail->itemKeranjang->pembeli;
             @endphp
             <div class="col-12 col-md-6 col-lg-4">
                 <div class="card h-100 shadow-lg border-0 transition-all card-hover">
@@ -95,7 +96,7 @@
                         
                         <div class="d-flex flex-column gap-2">
                             {{-- Perhatikan: Logika ini untuk transaksi pembelian, jadi selalu Buyer --}}
-                            <p class="card-text mb-1"><i class="fas fa-user me-2"></i><strong>Buyer:</strong> {{ $item->pembeli->nama_pembeli ?? '-' }}</p>
+                            <p class="card-text mb-1"><i class="fas fa-user me-2"></i><strong>Buyer:</strong> {{ $pembeli->nama_pembeli ?? '-' }}</p>
                             <p class="card-text mb-1"><i class="fas fa-calendar-alt me-2"></i><strong>Order Date:</strong> {{ \Carbon\Carbon::parse($item->tanggal_pembelian)->format('d M Y, H:i') }}</p>
                             <p class="card-text mb-1"><i class="fas fa-truck me-2"></i><strong>Shipping Method:</strong> {{ ucfirst($item->metode_pengiriman) }}</p>
                             <p class="card-text mb-1"><i class="fas fa-info-circle me-2"></i><strong>Status:</strong> <span class="badge bg-warning text-dark">{{ $item->status_transaksi }}</span></p>

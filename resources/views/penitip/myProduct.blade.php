@@ -60,7 +60,7 @@
                     // 💬 Tentukan konten alert berdasarkan status_barang
                     let alertContent = '';
 
-                    if (data.status_barang === 'Available') {
+                    if (data.status_barang === 'Available' || data.status_barang === 'tersedia') {
                         alertContent = `
                             <p>If you confirm this action, the item will no longer be available for sale and must be picked up within the next 7 days.</p>
                             <p><strong>Pickup Deadline:</strong> ${data.pickup_deadline}</p>

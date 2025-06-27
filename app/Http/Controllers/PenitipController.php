@@ -166,7 +166,6 @@ class PenitipController extends Controller
     public function myproduct()
     {
         $id_user = session('user.id');
-
         $penitip = \App\Models\Penitip::where('id_penitip', $id_user)->first();
 
         if (!$penitip) {
@@ -174,8 +173,19 @@ class PenitipController extends Controller
         }
 
         $transaksiIds = \App\Models\TransaksiPenitipan::where('id_penitip', $penitip->id_penitip)->pluck('id_transaksi_penitipan');
-        $produkSaya = \App\Models\Barang::whereIn('id_transaksi_penitipan', $transaksiIds)->get();
-        $products = $produkSaya;
+        $products = Barang::with('transaksiPenitipan')->whereIn('id_transaksi_penitipan', $transaksiIds)->get();
+
+        // Otomatis ubah status jika masa penitipan sudah habis
+        foreach ($products as $product) {
+            $transaksi = $product->transaksiPenitipan;
+            if (($product->status_barang === 'Available' || $product->status_barang === 'tersedia') && $transaksi && now()->gt($product->tanggal_berakhir)) {
+                $product->update([
+                    'status_barang' => 'Awaiting Owner Pickup',
+                    'batas_pengambilan' => $product->tanggal_berakhir->copy()->addDays(7),
+                ]);
+            }
+        }
+
         return view('penitip.myproduct', compact('products'));
     }
 
@@ -553,29 +563,32 @@ class PenitipController extends Controller
     {
         $barang = Barang::findOrFail($id);
 
-        if (strtolower($barang->status_barang) !== 'available' || $barang->perpanjangan == 1) {
+        if (strtolower($barang->status_barang) === 'available' || strtolower($barang->status_barang) === 'tersedia' && $barang->perpanjangan == 0) {
+            
+            
+            $transaksi = $barang->transaksiPenitipan;
+            
+            if (!$transaksi || !$barang->tanggal_berakhir) {
+                return back()->with('error', 'Transaksi atau tanggal berakhir tidak valid.');
+            }
+            
+            $tanggalBaru = Carbon::parse($barang->tanggal_berakhir)->addDays(30);
+            $barang->update(['tanggal_berakhir' => $tanggalBaru]);
+            
+            $barang->update(['perpanjangan' => 1]);
+            
+            return back()->with('success', 'Penitipan berhasil diperpanjang 30 hari.');
+            
+        } else {
             return back()->with('error', 'Barang tidak dapat diperpanjang.');
         }
-
-        $transaksi = $barang->transaksiPenitipan;
-
-        if (!$transaksi || !$barang->tanggal_berakhir) {
-            return back()->with('error', 'Transaksi atau tanggal berakhir tidak valid.');
-        }
-
-        $tanggalBaru = Carbon::parse($barang->tanggal_berakhir)->addDays(30);
-        $barang->update(['tanggal_berakhir' => $tanggalBaru]);
-
-        $barang->update(['perpanjangan' => 1]);
-
-        return back()->with('success', 'Penitipan berhasil diperpanjang 30 hari.');
     }
 
     public function confirmPickup($id)
     {
         $barang = Barang::findOrFail($id);
 
-        if (!in_array($barang->status_barang, ['Available', 'Awaiting Owner Pickup'])) {
+        if (!in_array($barang->status_barang, ['Available', 'Awaiting Owner Pickup', 'tersedia'])) {
             return response()->json([
                 'message' => 'This item is not eligible for pickup.'
             ], 422);
@@ -591,10 +604,10 @@ class PenitipController extends Controller
         }
 
         if ($barang->status_barang === 'Available' && $now->lt($tanggalBerakhir)) {
-            // Picked up *before* end of storage
+            // Ambil sebelum waktu penitipan habis
             $batasAmbil = $now->copy()->addDays(7);
         } else {
-            // Picked up *after* end of storage
+            // Ambil Setelah waktu penitipan habis
             $batasAmbil = Carbon::parse($tanggalBerakhir)->addDays(7);
 
             if ($now->gt($batasAmbil)) {

@@ -28,7 +28,7 @@
         </div>
     </div>
 
-    @if($transaksi->status_transaksi == 'Preparing' || $transaksi->status_transaksi == 'Ready for Pickup' && $transaksi->tanggal_pengambilan == NULL)
+    @if($transaksi->status_transaksi == 'Disiapkan' || $transaksi->status_transaksi == 'Preparing' || $transaksi->status_transaksi == 'Ready for Pickup' && $transaksi->tanggal_pengambilan == NULL)
     <form method="POST" action="{{ route('gudang.transaksi.jadwalkanPengiriman', $transaksi->id_pembelian) }}">
         @csrf
         <div class="card shadow-lg border-0 mb-4">
@@ -36,7 +36,7 @@
                 <h5 class="fw-bold mb-3 text-primary">Schedule Information</h5>
                 
                 <div class="mb-3">
-                    @if($transaksi->metode_pengiriman == 'Courier')
+                    @if($transaksi->metode_pengiriman == 'Courier' || $transaksi->metode_pengiriman == 'Kurir')
                         <label for="tanggal_pengiriman" class="form-label">Delivery Date</label>
                         <input type="datetime-local" class="form-control" id="tanggal_pengiriman" name="tanggal_pengiriman" required>
                     @else
@@ -45,7 +45,7 @@
                     @endif
                 </div>
 
-                @if($transaksi->status_transaksi == 'Preparing' && $transaksi->metode_pengiriman == 'Courier')
+                @if($transaksi->status_transaksi == 'Disiapkan' || $transaksi->status_transaksi == 'Preparing' && $transaksi->metode_pengiriman == 'Courier' || $transaksi->metode_pengiriman == 'Kurir')
                     <div class="mb-3">
                         <label for="id_kurir" class="form-label">Pilih Kurir</label>
                         <select class="form-control" id="id_kurir" name="id_kurir" required>

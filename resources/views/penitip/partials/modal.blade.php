@@ -43,6 +43,7 @@
                         <p><strong>Harga:</strong> Rp {{ number_format($product->harga_barang, 0, ',', '.') }}</p>
                         <p><strong>Berat:</strong> {{ $product->berat_barang }} kg</p>
                         <p><strong>Status:</strong> {{ $product->status_barang }}</p>
+                        <p><strong>Tanggal penitipan berakhir:</strong> {{ $product->tanggal_berakhir }}</p>
                         <p><strong>Deskripsi:</strong><br>{{ $product->deskripsi_barang }}</p>
 
                         @if ($product->id_kategori == 1)
@@ -65,7 +66,7 @@
                             $hariIni = now();
                             $hMinus3 = $tanggalBerakhir ? Carbon::parse($tanggalBerakhir)->subDays(3) : null;
 
-                            $bolehPerpanjang = strtolower($product->status_barang) === 'available' &&
+                            $bolehPerpanjang = (strtolower($product->status_barang) === 'available' || strtolower($product->status_barang) === 'tersedia') &&
                                             $product->perpanjangan == 0 &&
                                             $tanggalBerakhir &&
                                             $hariIni->greaterThanOrEqualTo($hMinus3);
@@ -80,7 +81,7 @@
                             </form>
                         @endif
 
-                        @if(in_array($product->status_barang, ['Available', 'Awaiting Owner Pickup']))
+                        @if(in_array($product->status_barang, ['Available', 'Awaiting Owner Pickup', 'tersedia']))
                             <button class="btn btn-primary" onclick="confirmPickup({{ $product->id_barang }})">
                                 Pick Up Item
                             </button>

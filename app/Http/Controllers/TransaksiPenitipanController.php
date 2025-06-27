@@ -626,7 +626,7 @@ class TransaksiPenitipanController extends Controller
             'detailKeranjangs.itemKeranjang.barang.transaksiPenitipan.penitip',
 
         ])
-        ->whereIn('status_transaksi', ['Ready for Pickup', 'Preparing', 'In Delivery']) 
+        ->whereIn('status_transaksi', ['Ready for Pickup', 'Preparing', 'In Delivery', 'Disiapkan']) 
         ->orderBy('tanggal_pembelian', 'asc')
         ->get();
 

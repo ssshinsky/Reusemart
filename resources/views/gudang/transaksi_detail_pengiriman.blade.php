@@ -47,7 +47,7 @@
 
     <!-- Button for Create Invoice -->
     <div class="mt-3">
-        @if($transaksi->metode_pengiriman == 'Courier')
+        @if($transaksi->metode_pengiriman == 'Courier' || $transaksi->metode_pengiriman == 'kurir')
             <a href="{{ route('gudang.transaksi.printInvoice', ['id' => $transaksi->id_pembelian]) }}" class="btn btn-primary">
                     <i class="fas fa-file-pdf me-2"></i> Create Invoice
             </a>

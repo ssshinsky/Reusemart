@@ -14,6 +14,7 @@
                         <span class="badge bg-{{ 
                             match(strtolower($product->status_barang)) {
                                 'available' => 'success',
+                                'tersedia' => 'success',
                                 'sold' => 'danger',
                                 'donated' => 'warning',
                                 'returned' => 'primary',

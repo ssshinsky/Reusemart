@@ -697,10 +697,11 @@ class TransaksiPenitipanController extends Controller
         $transaksi = TransaksiPembelian::findOrFail($id);
 
         $isSelfPickup = $transaksi->metode_pengiriman === 'Self Pick-Up';
+        $isAmbil = $transaksi->metode_pengiriman === 'ambil';
         
         // Validasi input
         $rules = ['tanggal_pengiriman' => 'required|date|after_or_equal:today'];
-        if (!$isSelfPickup) {
+        if ($transaksi->metode_pengiriman === 'kurir' || $transaksi->metode_pengiriman === 'Courier') {
             $rules['id_kurir'] = 'required|exists:pegawai,id_pegawai';
         }
         $request->validate($rules);
@@ -715,8 +716,8 @@ class TransaksiPenitipanController extends Controller
         }
 
         // Logika Update berdasarkan status transaksi
-        if ($transaksi->status_transaksi === 'Preparing') {
-            if ($isSelfPickup) {
+        if ($transaksi->status_transaksi === 'Preparing' || $transaksi->status_transaksi === 'Disiapkan') {
+            if ($isSelfPickup || $isAmbil) {
                 // Self Pick-Up
                 $transaksi->update([
                     'tanggal_pengambilan' => $request->tanggal_pengiriman,

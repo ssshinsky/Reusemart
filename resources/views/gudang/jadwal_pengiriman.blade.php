@@ -7,6 +7,8 @@
     @php
         $tanggal = \Carbon\Carbon::parse($transaksi->waktu_pembayaran);
         $noNota = $tanggal->format('y.m') . '.' . $transaksi->id_pembelian;
+        $firstDetail = $transaksi->detailKeranjangs->first();
+        $pembeli = $firstDetail->itemKeranjang->pembeli;
     @endphp
     <h2 class="fw-bold mb-3 text-dark">
         @if($transaksi->metode_pengiriman == 'Courier')
@@ -19,7 +21,7 @@
     <div class="card shadow-lg border-0 mb-4">
         <div class="card-body">
             <h5 class="fw-bold mb-3 text-primary">Buyer Information</h5>
-            <p><strong>Name:</strong> {{ $transaksi->pembeli->nama_pembeli ?? '-' }}</p>
+            <p><strong>Name:</strong> {{ $pembeli->nama_pembeli ?? '-' }}</p>
             <p><strong>Order Date:</strong> {{ \Carbon\Carbon::parse($transaksi->tanggal_pembelian)->translatedFormat('d F Y, H:i') }}</p>
             <p><strong>Shipping Method:</strong> {{ ucfirst($transaksi->metode_pengiriman) }}</p>
             <p><strong>Status:</strong> 
@@ -28,7 +30,7 @@
         </div>
     </div>
 
-    @if($transaksi->status_transaksi == 'Disiapkan' || $transaksi->status_transaksi == 'Preparing' || $transaksi->status_transaksi == 'Ready for Pickup' && $transaksi->tanggal_pengambilan == NULL)
+    @if(($transaksi->status_transaksi == 'Disiapkan' || $transaksi->status_transaksi == 'Preparing' || $transaksi->status_transaksi == 'Ready for Pickup') && $transaksi->tanggal_pengambilan == NULL)
     <form method="POST" action="{{ route('gudang.transaksi.jadwalkanPengiriman', $transaksi->id_pembelian) }}">
         @csrf
         <div class="card shadow-lg border-0 mb-4">
@@ -45,7 +47,7 @@
                     @endif
                 </div>
 
-                @if($transaksi->status_transaksi == 'Disiapkan' || $transaksi->status_transaksi == 'Preparing' && $transaksi->metode_pengiriman == 'Courier' || $transaksi->metode_pengiriman == 'Kurir')
+                @if(($transaksi->status_transaksi == 'Disiapkan' && $transaksi->metode_pengiriman == 'kurir') || ($transaksi->metode_pengiriman == 'Courier' && $transaksi->status_transaksi == 'Preparing' ))
                     <div class="mb-3">
                         <label for="id_kurir" class="form-label">Pilih Kurir</label>
                         <select class="form-control" id="id_kurir" name="id_kurir" required>

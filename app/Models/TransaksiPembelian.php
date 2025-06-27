@@ -31,6 +31,7 @@ class TransaksiPembelian extends Model
         'total_harga_barang',
         'metode_pengiriman',
         'ongkir',
+        'tanggal_pengambilan',
         'tanggal_ambil',
         'tanggal_pengiriman',
         'total_harga',

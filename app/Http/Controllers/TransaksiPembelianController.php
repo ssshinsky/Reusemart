@@ -670,13 +670,15 @@ class TransaksiPembelianController extends Controller
             Log::error('Pembeli not found', ['id_pembeli' => $idPembeli]);
             return redirect()->back()->with('error', 'Data pembeli tidak ditemukan.');
         }
-
-        $riwayat = TransaksiPembelian::with(['keranjang.detailKeranjang.itemKeranjang.barang.transaksiPenitipan.penitip'])
+        
+        $riwayatQuery = TransaksiPembelian::with(['keranjang.detailKeranjang.itemKeranjang.barang.transaksiPenitipan.penitip'])
             ->whereHas('keranjang.detailKeranjang.itemKeranjang', function ($query) use ($idPembeli) {
                 $query->where('id_pembeli', $idPembeli);
-            })
-            ->get();
+            });
+        
+        $riwayatQuery->latest();
 
+        $riwayat = $riwayatQuery->get();
         $topSeller = Penitip::where('badge', 1)->first();
 
         return view('Pembeli.history', compact('riwayat', 'topSeller'));

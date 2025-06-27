@@ -60,7 +60,7 @@ Route::post('/diskusi/store', [DiskusiProdukController::class, 'store'])->name('
 Route::post('/keranjang/tambah/{id}', [ItemKeranjangController::class, 'tambah'])->name('cart.add');
 Route::delete('/keranjang/hapus/{id}', [ItemKeranjangController::class, 'hapus'])->name('cart.remove');
 Route::post('/keranjang/toggle/{id}', [ItemKeranjangController::class, 'toggleSelect'])->name('cart.toggle');
-Route::post('/keranjang/checkout', [ItemKeranjangController::class, 'checkout'])->name('cart.checkout');
+Route::post('/keranjang/checkout', [ItemKeranjangController::class, 'checkout'])->name('cart.checkout'); //ambil sendiri
 
 // Reset Password Routes
 Route::get('/reset-password', [ResetPasswordController::class, 'showEmailForm'])->name('password.reset');

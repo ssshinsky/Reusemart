@@ -506,6 +506,9 @@ class TransaksiPenitipanController extends Controller
             $tanggal_selesai = $request->input('tanggal_selesai');
             $query->where('tanggal_penitipan', '<=', $tanggal_selesai);
         }
+        
+        // membuat agar transaksi ditampilkan dari yang terbaru ke yang terlama
+        $query->latest(); 
 
         $transactions = $query->get();
         return view('gudang.transaction_list', compact('transactions'));

@@ -92,6 +92,9 @@ class BarangController extends Controller
             $query->where('tanggal_berakhir', '<=', $tanggal_selesai);
         }
 
+        // Menampilkan barang dari yang baru diinput ke yang terlama
+        $query->latest(); 
+
         $barangs = $query->get();
         return view('gudang.item_list', compact('barangs'));
     }

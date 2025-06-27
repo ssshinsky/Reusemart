@@ -4,7 +4,7 @@
             style="cursor: pointer;" 
             data-bs-toggle="modal" 
             data-bs-target="#detailModal{{ $product->id_barang }}">
-            <img src="{{ asset('storage/gambar_barang/' . ($product->gambar->first()->gambar_barang ?? 'default.jpg')) }}"
+            <img src="{{ asset('storage/gambar/' . ($product->gambar->first()->gambar_barang ?? 'default.jpg')) }}"
                 class="card-img-top rounded-top" style="height: 220px; object-fit: cover;"
                 alt="{{ $product->nama_barang }}">
             <div class="card-body">

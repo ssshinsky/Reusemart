@@ -53,7 +53,7 @@
                     <div class="row g-2">
                         @forelse ($barang->gambar as $gambar)
                             <div class="col-6">
-                                <img src="{{ asset('storage/gambar_barang/' . $gambar->gambar_barang) }}" class="img-fluid rounded shadow-sm" alt="Gambar {{ $barang->nama_barang }}" style="height: 120px; object-fit: cover;">
+                                <img src="{{ asset('storage/gambar/' . $gambar->gambar_barang) }}" class="img-fluid rounded shadow-sm" alt="Gambar {{ $barang->nama_barang }}" style="height: 120px; object-fit: cover;">
                             </div>
                         @empty
                             <div class="col-12">

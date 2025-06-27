@@ -24,7 +24,7 @@
                     <div class="slider-container" id="slider-container">
                         @if ($barang->gambar && $barang->gambar->isNotEmpty())
                             @foreach ($barang->gambar as $gambar)
-                                <img src="{{ asset('storage/gambar_barang/' . $gambar->gambar_barang) }}" alt="{{ $barang->nama_barang ?? 'Gambar barang' }}" class="slide">
+                                <img src="{{ asset('storage/gambar/' . $gambar->gambar_barang) }}" alt="{{ $barang->nama_barang ?? 'Gambar barang' }}" class="slide">
                             @endforeach
                         @else
                             <p class="text-muted text-sm">Tidak ada gambar</p>

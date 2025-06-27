@@ -30,7 +30,7 @@
                         <div class="border rounded p-3 h-100 bg-light">
                             <h6 class="fw-bold text-dark mb-2">{{ $barang->nama_barang }}</h6>
                             @foreach ($barang->gambar->take(2) as $gambar)
-                                <img src="{{ asset('storage/gambar_barang/' . $gambar->gambar_barang) }}" alt="Gambar Barang" class="img-fluid rounded mb-2" style="height: 120px; object-fit: cover;">
+                                <img src="{{ asset('storage/gambar/' . $gambar->gambar_barang) }}" alt="Gambar Barang" class="img-fluid rounded mb-2" style="height: 120px; object-fit: cover;">
                             @endforeach
                             <p class="mb-1"><strong>Price:</strong> Rp{{ number_format($barang->harga_barang, 0, ',', '.') }}</p>
                             <p class="mb-1"><strong>Weight:</strong> {{ $barang->berat_barang }} kg</p>

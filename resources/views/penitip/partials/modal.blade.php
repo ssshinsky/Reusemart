@@ -14,7 +14,7 @@
                             <div class="carousel-inner">
                                 @foreach ($product->gambar as $index => $gambar)
                                     <div class="carousel-item {{ $index === 0 ? 'active' : '' }}">
-                                        <img src="{{ asset('storage/gambar_barang/' . $gambar->gambar_barang) }}"
+                                        <img src="{{ asset('storage/gambar/' . $gambar->gambar_barang) }}"
                                             class="d-block w-100 rounded shadow"
                                             style="height: 300px; object-fit: contain;"
                                             alt="{{ $product->nama_barang }}">

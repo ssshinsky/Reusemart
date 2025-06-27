@@ -34,7 +34,7 @@
                                     <h6 class="fw-bold text-dark mb-2">{{ $barangItem->nama_barang ?? 'N/A' }}</h6>
                                     @if($barangItem->gambar->isNotEmpty())
                                         @foreach ($barangItem->gambar->take(2) as $gambar)
-                                            <img src="{{ asset('storage/gambar_barang/' . $gambar->gambar_barang) }}" alt="gambar" class="img-fluid rounded mb-2" style="height: 120px; object-fit: cover;">
+                                            <img src="{{ asset('storage/gambar/' . $gambar->gambar_barang) }}" alt="gambar" class="img-fluid rounded mb-2" style="height: 120px; object-fit: cover;">
                                         @endforeach
                                     @else
                                         <p>No image available</p>
@@ -120,7 +120,7 @@
                                     <h6 class="fw-bold text-dark mb-2">{{ $barang->nama_barang ?? 'N/A' }}</h6>
                                     @if($barang && $barang->gambar->isNotEmpty())
                                         @foreach ($barang->gambar->take(2) as $gambar)
-                                            <img src="{{ asset('storage/gambar_barang/' . $gambar->gambar_barang) }}" alt="gambar" class="img-fluid rounded mb-2" style="height: 120px; object-fit: cover;">
+                                            <img src="{{ asset('storage/gambar/' . $gambar->gambar_barang) }}" alt="gambar" class="img-fluid rounded mb-2" style="height: 120px; object-fit: cover;">
                                         @endforeach
                                     @else
                                         <p>No image available</p>

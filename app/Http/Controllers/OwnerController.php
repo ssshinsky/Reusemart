@@ -67,7 +67,7 @@ class OwnerController extends Controller
         $this->ensureOwner();
 
         $organisasi = Organisasi::all();
-        $items = Barang::where('status_barang', 'barang untuk donasi')->get();
+        $items = Barang::whereIn('status_barang', ['barang untuk donasi', 'For Donation'])->get();
         $requestId = $request->query('id_request');
 
         $selectedOrganisasi = null;
@@ -76,7 +76,7 @@ class OwnerController extends Controller
         if ($requestId) {
             $requestDonasi = RequestDonasi::where('id_request', $requestId)
                 ->where('status_request', 'belum di proses')
-                ->orwhere('status_request', 'Pending')
+                ->orwhere('status_request', 'Pending') // baru tambah
                 ->whereNotNull('id_organisasi')
                 ->with('organisasi')
                 ->first();
@@ -85,7 +85,7 @@ class OwnerController extends Controller
                 $selectedOrganisasi = $requestDonasi->id_organisasi;
                 $requests = RequestDonasi::where('id_organisasi', $selectedOrganisasi)
                     ->where('status_request', 'belum di proses')
-                    ->orwhere('status_request', 'Pending')
+                    ->orwhere('status_request', 'Pending') // baru tambah
                     ->whereNotNull('id_organisasi')
                     ->with('organisasi')
                     ->get();
@@ -100,8 +100,10 @@ class OwnerController extends Controller
         $this->ensureOwner();
 
         $requests = RequestDonasi::where('id_organisasi', $request->id_organisasi)
-            ->where('status_request', 'belum di proses')
-            ->orwhere('status_request', 'Pending')
+            ->where(function ($query) {
+                $query->where('status_request', 'belum di proses')
+                      ->orWhere('status_request', 'Pending');
+            })
             ->with('organisasi')
             ->get()
             ->map(function ($req) {
@@ -157,6 +159,7 @@ class OwnerController extends Controller
 
         $barang = Barang::where('id_barang', $request->id_barang)
             ->where('status_barang', 'barang untuk donasi')
+            ->orWhere('status_barang', 'For Donation')
             ->with('transaksiPenitipan.penitip')
             ->first();
 
@@ -237,7 +240,7 @@ class OwnerController extends Controller
             'id_donasi' => 'required|exists:donasi,id_donasi',
             'tanggal_donasi' => 'required|date',
             'nama_penerima' => 'required|string',
-            'status_barang' => 'required|in:barang untuk donasi,didonasikan',
+            'status_barang' => 'required|in:barang untuk donasi,didonasikan,For Donation',
         ]);
 
         $donasi = Donasi::with('barang')->find($request->id_donasi);

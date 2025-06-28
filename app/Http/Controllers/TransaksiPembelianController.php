@@ -55,7 +55,7 @@ class TransaksiPembelianController extends Controller
             'tanggal_ambil' => 'nullable|date',
             'tanggal_pengiriman' => 'nullable|date',
             'total_harga' => 'nullable|numeric',
-            'status_transaksi' => 'nullable|in:Menunggu Pembayaran,Menunggu Konfirmasi,Disiapkan,Dikirim,Selesai,Dibatalkan',
+            'status_transaksi' => 'nullable|in:Menunggu Pembayaran,Menunggu Konfirmasi,Disiapkan,Dikirim,Selesai,Dibatalkan,Done',
             'poin_terpakai' => 'nullable|integer|min:0',
             'poin_pembeli' => 'nullable|integer|min:0',
             'poin_penitip' => 'nullable|integer|min:0',
@@ -103,7 +103,7 @@ class TransaksiPembelianController extends Controller
             'tanggal_ambil' => 'nullable|date',
             'tanggal_pengiriman' => 'nullable|date',
             'total_harga' => 'nullable|numeric',
-            'status_transaksi' => 'nullable|in:Menunggu Pembayaran,Menunggu Konfirmasi,Disiapkan,Dikirim,Selesai,Dibatalkan',
+            'status_transaksi' => 'nullable|in:Menunggu Pembayaran,Menunggu Konfirmasi,Disiapkan,Dikirim,Selesai,Dibatalkan,Done',
             'poin_terpakai' => 'nullable|integer|min:0',
             'poin_pembeli' => 'nullable|integer|min:0',
             'poin_penitip' => 'nullable|integer|min:0',
@@ -695,7 +695,7 @@ class TransaksiPembelianController extends Controller
         $idPembeli = $user['id'];
         $transaksi = TransaksiPembelian::with('keranjang.detailKeranjang.itemKeranjang.barang.transaksiPenitipan.penitip')
             ->where('id_pembelian', $id)
-            ->where('status_transaksi', 'selesai')
+            ->whereIn('status_transaksi', ['Done', 'selesai'])
             ->whereHas('keranjang.detailKeranjang.itemKeranjang', function ($query) use ($idPembeli) {
                 $query->where('id_pembeli', $idPembeli);
             })
@@ -723,7 +723,7 @@ class TransaksiPembelianController extends Controller
         $idPembeli = $user['id'];
         $transaksi = TransaksiPembelian::with('keranjang.detailKeranjang.itemKeranjang.barang.transaksiPenitipan.penitip')
             ->where('id_pembelian', $id)
-            ->where('status_transaksi', 'selesai')
+            ->whereIn('status_transaksi', ['Done', 'selesai'])
             ->whereHas('keranjang.detailKeranjang.itemKeranjang', function ($query) use ($idPembeli) {
                 $query->where('id_pembeli', $idPembeli);
             })
@@ -812,7 +812,7 @@ class TransaksiPembelianController extends Controller
 
             Penitip::where('badge', 1)->update(['badge' => 0]);
 
-            $topSeller = TransaksiPembelian::where('status_transaksi', 'Selesai')
+            $topSeller = TransaksiPembelian::where('status_transaksi', 'Done')
                 ->whereBetween('tanggal_pembelian', [$lastMonthStart, $lastMonthEnd])
                 ->join('keranjang', 'transaksi_pembelian.id_keranjang', '=', 'keranjang.id_keranjang')
                 ->join('detail_keranjang', 'keranjang.id_keranjang', '=', 'detail_keranjang.id_keranjang')
@@ -835,7 +835,7 @@ class TransaksiPembelianController extends Controller
                 return redirect()->back()->with('error', 'Tidak ada transaksi selesai bulan lalu untuk memilih Top Seller.');
             }
 
-            $totalSales = TransaksiPembelian::where('status_transaksi', 'Selesai')
+            $totalSales = TransaksiPembelian::where('status_transaksi', 'Done')
                 ->whereBetween('tanggal_pembelian', [$lastMonthStart, $lastMonthEnd])
                 ->join('keranjang', 'transaksi_pembelian.id_keranjang', '=', 'keranjang.id_keranjang')
                 ->join('detail_keranjang', 'keranjang.id_keranjang', '=', 'detail_keranjang.id_keranjang')
@@ -1034,7 +1034,7 @@ class TransaksiPembelianController extends Controller
 
         $topSellerDetails = null;
         if ($topSeller) {
-            $topSellerDetails = TransaksiPembelian::where('status_transaksi', 'Selesai')
+            $topSellerDetails = TransaksiPembelian::where('status_transaksi', 'Done')
                 ->whereBetween('tanggal_pembelian', [$lastMonthStart, $lastMonthEnd])
                 ->join('keranjang', 'transaksi_pembelian.id_keranjang', '=', 'keranjang.id_keranjang')
                 ->join('detail_keranjang', 'keranjang.id_keranjang', '=', 'detail_keranjang.id_keranjang')
@@ -1067,7 +1067,7 @@ class TransaksiPembelianController extends Controller
 
         $topSellerDetails = null;
         if ($topSeller) {
-            $topSellerDetails = TransaksiPembelian::where('status_transaksi', 'Selesai')
+            $topSellerDetails = TransaksiPembelian::where('status_transaksi', 'Done')
                 ->whereBetween('tanggal_pembelian', [$lastMonthStart, $lastMonthEnd])
                 ->join('keranjang', 'transaksi_pembelian.id_keranjang', '=', 'keranjang.id_keranjang')
                 ->join('detail_keranjang', 'keranjang.id_keranjang', '=', 'detail_keranjang.id_keranjang')

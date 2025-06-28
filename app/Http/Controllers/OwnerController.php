@@ -279,7 +279,7 @@ class OwnerController extends Controller
         $tanggalCetak = Carbon::now()->format('d F Y');
 
         $soldItems = Barang::whereHas('itemKeranjangs.detailKeranjangs.keranjang.transaksiPembelian', function ($query) use ($month, $year) {
-            $query->where('status_transaksi', 'selesai')
+            $query->whereIn('status_transaksi', ['Done', 'selesai'])
                 ->whereMonth('tanggal_pembelian', $month)
                 ->whereYear('tanggal_pembelian', $year);
         })->with(['transaksiPenitipan' => function ($query) {
@@ -350,7 +350,7 @@ class OwnerController extends Controller
         return view('owner.monthly_sales_report', compact('formattedData', 'month', 'year', 'totalKomisiHunter', 'totalKomisiReUseMart', 'totalBonusPenitip', 'tanggalCetak', 'totalHargaJual')); // Tambahkan 'totalHargaJual'
     }
 
-        public function downloadMonthlySalesReport(Request $request)
+    public function downloadMonthlySalesReport(Request $request)
     {
         $this->ensureOwner();
 
@@ -360,7 +360,7 @@ class OwnerController extends Controller
 
         $soldItems = Barang::whereHas('itemKeranjangs', function ($query) use ($month, $year) {
             $query->whereHas('keranjang.transaksiPembelian', function ($q) use ($month, $year) {
-                $q->where('status_transaksi', 'selesai')
+                $q->whereIn('status_transaksi', ['Done', 'selesai'])
                 ->whereMonth('tanggal_pembelian', $month)
                 ->whereYear('tanggal_pembelian', $year);
             });
@@ -510,49 +510,49 @@ class OwnerController extends Controller
 
 
     public function monthlySalesOverview(Request $request)
-{
-    $this->ensureOwner();
+    {
+        $this->ensureOwner();
 
-    $date = $request->input('date', Carbon::now()->format('Y'));
-    $year = Carbon::createFromFormat('Y', $date)->year;
+        $date = $request->input('date', Carbon::now()->format('Y'));
+        $year = Carbon::createFromFormat('Y', $date)->year;
 
-    // Ambil data penjualan bulanan dari transaksi_pembelian dengan join ke keranjang
-    $salesData = TransaksiPembelian::selectRaw('MONTH(transaksi_pembelian.tanggal_pembelian) as month, SUM(keranjang.banyak_barang) as barang_terjual, SUM(transaksi_pembelian.total_harga) as total_penjualan')
-        ->join('keranjang', 'transaksi_pembelian.id_keranjang', '=', 'keranjang.id_keranjang')
-        ->whereYear('transaksi_pembelian.tanggal_pembelian', $year)
-        ->where('transaksi_pembelian.status_transaksi', 'selesai')
-        ->groupBy('month')
-        ->orderBy('month')
-        ->get()
-        ->map(function ($item) {
+        // Ambil data penjualan bulanan dari transaksi_pembelian dengan join ke keranjang
+        $salesData = TransaksiPembelian::selectRaw('MONTH(transaksi_pembelian.tanggal_pembelian) as month, SUM(keranjang.banyak_barang) as barang_terjual, SUM(transaksi_pembelian.total_harga) as total_penjualan')
+            ->join('keranjang', 'transaksi_pembelian.id_keranjang', '=', 'keranjang.id_keranjang')
+            ->whereYear('transaksi_pembelian.tanggal_pembelian', $year)
+            ->whereIn('transaksi_pembelian.status_transaksi', ['selesai', 'Done'])
+            ->groupBy('month')
+            ->orderBy('month')
+            ->get()
+            ->map(function ($item) {
+                return [
+                    'bulan' => Carbon::create()->month($item->month)->format('F'),
+                    'barang_terjual' => $item->barang_terjual ?? 0,
+                    'penjualan_kotor' => number_format($item->total_penjualan ?? 0, 0, ',', '.'),
+                    'penjualan_kotor_raw' => $item->total_penjualan ?? 0,
+                ];
+            });
+
+        // Tambahkan semua bulan (Jan-Dec) dengan default 0 kalau nggak ada data
+        $allMonths = collect(range(1, 12))->map(function ($month) use ($salesData) {
+            $monthName = Carbon::create()->month($month)->format('F');
+            $data = $salesData->firstWhere('bulan', $monthName);
             return [
-                'bulan' => Carbon::create()->month($item->month)->format('F'),
-                'barang_terjual' => $item->barang_terjual ?? 0,
-                'penjualan_kotor' => number_format($item->total_penjualan ?? 0, 0, ',', '.'),
-                'penjualan_kotor_raw' => $item->total_penjualan ?? 0,
+                'bulan' => $monthName,
+                'barang_terjual' => $data['barang_terjual'] ?? 0,
+                'penjualan_kotor' => $data['penjualan_kotor'] ?? '0',
+                'penjualan_kotor_raw' => $data['penjualan_kotor_raw'] ?? 0,
             ];
         });
 
-    // Tambahkan semua bulan (Jan-Dec) dengan default 0 kalau nggak ada data
-    $allMonths = collect(range(1, 12))->map(function ($month) use ($salesData) {
-        $monthName = Carbon::create()->month($month)->format('F');
-        $data = $salesData->firstWhere('bulan', $monthName);
-        return [
-            'bulan' => $monthName,
-            'barang_terjual' => $data['barang_terjual'] ?? 0,
-            'penjualan_kotor' => $data['penjualan_kotor'] ?? '0',
-            'penjualan_kotor_raw' => $data['penjualan_kotor_raw'] ?? 0,
-        ];
-    });
+        $totalBarang = $allMonths->sum('barang_terjual');
+        $totalPenjualan = $allMonths->sum('penjualan_kotor_raw');
 
-    $totalBarang = $allMonths->sum('barang_terjual');
-    $totalPenjualan = $allMonths->sum('penjualan_kotor_raw');
-
-    return view('owner.monthly_sales_overview', compact('allMonths', 'date', 'totalBarang', 'totalPenjualan'));
-}
+        return view('owner.monthly_sales_overview', compact('allMonths', 'date', 'totalBarang', 'totalPenjualan'));
+    }
 
 
-public function downloadMonthlySalesOverview(\Illuminate\Http\Request $request)
+    public function downloadMonthlySalesOverview(\Illuminate\Http\Request $request)
     {
         $this->ensureOwner();
 
@@ -562,7 +562,7 @@ public function downloadMonthlySalesOverview(\Illuminate\Http\Request $request)
         $salesData = TransaksiPembelian::selectRaw('MONTH(transaksi_pembelian.tanggal_pembelian) as month, SUM(keranjang.banyak_barang) as barang_terjual, SUM(transaksi_pembelian.total_harga) as total_penjualan')
             ->join('keranjang', 'transaksi_pembelian.id_keranjang', '=', 'keranjang.id_keranjang')
             ->whereYear('transaksi_pembelian.tanggal_pembelian', $year)
-            ->where('transaksi_pembelian.status_transaksi', 'selesai')
+            ->whereIn('transaksi_pembelian.status_transaksi', ['selesai', 'Done'])
             ->groupBy('month')
             ->orderBy('month')
             ->get()
@@ -759,9 +759,9 @@ public function downloadMonthlySalesOverview(\Illuminate\Http\Request $request)
             ->where('tpen.id_penitip', $id)
             ->whereMonth('tp.created_at', $bulanSekarang)
             ->whereYear('tp.created_at', $tahunSekarang)
-            ->where('b.status_barang', 'sold')
-            ->where('tp.status_transaksi', 'selesai')
-            ->orwhere('tp.status_transaksi', 'done')
+            ->where('b.status_barang', 'Sold')
+            ->where('tp.status_transaksi', 'Done')
+            // ->orwhere('tp.status_transaksi', 'done')
             ->select(
                 'b.kode_barang',
                 'b.nama_barang',

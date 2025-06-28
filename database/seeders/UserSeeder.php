@@ -13,7 +13,7 @@ class UserSeeder extends Seeder
         // Pembeli
         DB::table('pembeli')->insert([
             'nama_pembeli'    => 'Russel Pembeli',
-            'email_pembeli'   => 'russel.pembeli@gmail.com',
+            'email_pembeli'   => 'russelpembeli@gmail.com',
             'tanggal_lahir'   => '2001-01-01',
             'nomor_telepon'   => '0812300001',
             'password'        => Hash::make('1234567890'),
@@ -27,7 +27,7 @@ class UserSeeder extends Seeder
         DB::table('penitip')->insert([
             'nik_penitip'     => '220123',
             'nama_penitip'    => 'Russel Penitip',
-            'email_penitip'   => 'russel.penitip@gmail.com',
+            'email_penitip'   => 'russelpenitip@gmail.com',
             'password'        => Hash::make('1234567890'),
             'foto_ktp'        => null,
             'poin_penitip'    => 0,
@@ -47,7 +47,7 @@ class UserSeeder extends Seeder
             'nama_organisasi'   => 'Russel Organisasi',
             'alamat'            => 'Jl Percobaan',
             'kontak'            => '0812300003',
-            'email_organisasi'  => 'russel.organisasi@gmail.com',
+            'email_organisasi'  => 'russelorganisasi@gmail.com',
             'password'          => Hash::make('1234567890'),
             'status_organisasi' => 'Active',
             'created_at'        => now(),

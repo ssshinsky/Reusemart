@@ -8,10 +8,15 @@
         <i class="fas fa-receipt me-2"></i> Transaction Detail #{{ $transaksi->id_pembelian }}
     </h2>
 
+    @php
+        $firstDetail = $transaksi->detailKeranjangs->first();
+        $pembeli = $firstDetail->itemKeranjang->pembeli;
+    @endphp
+
     <div class="card shadow-lg border-0 mb-4">
         <div class="card-body">
             <h5 class="fw-bold mb-3 text-primary">Buyer Information</h5>
-            <p><strong>Name:</strong> {{ $transaksi->pembeli->nama_pembeli ?? '-' }}</p>
+            <p><strong>Name:</strong> {{ $pembeli->nama_pembeli ?? '-' }}</p>
             <p><strong>Order Date:</strong> {{ \Carbon\Carbon::parse($transaksi->tanggal_pembelian)->translatedFormat('d F Y, H:i') }}</p>
             <p><strong>Shipping Method:</strong> {{ ucfirst($transaksi->metode_pengiriman) }}</p>
             <p><strong>Status:</strong> 
@@ -51,7 +56,7 @@
             <a href="{{ route('gudang.transaksi.printInvoice', ['id' => $transaksi->id_pembelian]) }}" class="btn btn-primary">
                     <i class="fas fa-file-pdf me-2"></i> Create Invoice
             </a>
-        @elseif($transaksi->metode_pengiriman == 'Self Pick-Up')
+        @elseif($transaksi->metode_pengiriman == 'Self Pick-Up' || $transaksi->metode_pengiriman == 'ambil')
             <a href="{{ route('gudang.transaksi.printInvoicePickup', ['id' => $transaksi->id_pembelian]) }}" class="btn btn-primary">
                     <i class="fas fa-file-pdf me-2"></i> Create Invoice
             </a>

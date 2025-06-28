@@ -23,6 +23,7 @@
     </div>
 
     <div class="details">
+        <p><strong>Buyer:</strong> {{ $pembeli }}</p>
         <p><strong>Order Date:</strong> {{ $tanggal_pesan }}</p>
         <p><strong>Shipping Method:</strong> Pick Up</p>
     </div>

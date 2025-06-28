@@ -393,7 +393,7 @@ class TransaksiPembelianController extends Controller
                 foreach ($keranjang->detailKeranjang as $detail) {
                     $barang = $detail->itemKeranjang->barang;
                     if ($barang) {
-                        $barang->status = 'tersedia';
+                        $barang->status_barang = 'tersedia';
                         $barang->save();
                     }
                 }

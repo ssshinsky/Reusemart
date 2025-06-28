@@ -9,6 +9,7 @@ use App\Models\Gambar;
 use App\Models\Penitip;
 use App\Models\Pegawai;
 use App\Models\Kategori;
+use App\Models\KelolaTransaksi;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -297,7 +298,7 @@ class TransaksiPenitipanController extends Controller
                     }
                 },
             ],
-            'items.*.status_barang' => 'required|in:tersedia,selesai,sedang dikirim,menunggu pengambilan,diproses,dibatalkan,menunggu pembayaran,didonasikan,barang untuk donasi',
+            'items.*.status_barang' => 'required|in:tersedia,selesai,sedang dikirim,menunggu pengambilan,diproses,dibatalkan,menunggu pembayaran,didonasikan,barang untuk donasi,In Delivery',
             'items.*.images' => 'nullable|array',
             'items.*.images.*' => 'file|mimes:jpeg,png,jpg|max:2048',
             'items.*.delete_images' => 'nullable|array',
@@ -730,6 +731,16 @@ class TransaksiPenitipanController extends Controller
                     'id_kurir' => $request->id_kurir,
                     'status_transaksi' => 'In Delivery'
                 ]);
+
+                KelolaTransaksi::updateOrCreate(
+                    [
+                        'id_pembelian' => $transaksi->id_pembelian,
+                    ],
+                    [
+                        'id_pegawai'   => $request->id_kurir,
+                    ]
+                );
+
                 $transaksiPembelianController = new TransaksiPembelianController();
                 $transaksiPembelianController->processTransactionCompletion($id);
             }
@@ -839,6 +850,8 @@ class TransaksiPenitipanController extends Controller
 
         $tanggal = \Carbon\Carbon::parse($transaksi->waktu_pembayaran);
         $noNota = $tanggal->format('y.m') . '.' . $transaksi->id_pembelian;
+        $firstDetail = $transaksi->detailKeranjangs->first();
+        $pembeli = $firstDetail->itemKeranjang->pembeli;
 
         $subtotal = 0;
         foreach ($transaksi->detailKeranjangs as $detail) {
@@ -854,7 +867,7 @@ class TransaksiPenitipanController extends Controller
             'no_nota' => $noNota, 
             'tanggal_pesan' => \Carbon\Carbon::parse($transaksi->tanggal_pembelian)->format('d F Y, H:i'),
             'tanggal_kirim' => \Carbon\Carbon::parse($transaksi->tanggal_pengiriman)->format('d F Y'), 
-            'pembeli' => $transaksi->pembeli->nama_pembeli,
+            'pembeli' => $pembeli->nama_pembeli,
             'kurir' => $kurirName, 
             'items' => $transaksi->detailKeranjangs->map(function ($detail) {
                 $barang = $detail->itemKeranjang->barang;
@@ -885,6 +898,8 @@ class TransaksiPenitipanController extends Controller
 
         $tanggal = \Carbon\Carbon::parse($transaksi->waktu_pembayaran);
         $noNota = $tanggal->format('y.m') . '.' . $transaksi->id_pembelian;
+        $firstDetail = $transaksi->detailKeranjangs->first();
+        $pembeli = $firstDetail->itemKeranjang->pembeli;
 
         $total = 0;
         foreach ($transaksi->detailKeranjangs as $detail) {
@@ -892,12 +907,11 @@ class TransaksiPenitipanController extends Controller
             $total += $barang->harga_barang;
         }
 
-
         $invoiceData = [
             'no_nota' => $noNota, 
             'tanggal_pesan' => \Carbon\Carbon::parse($transaksi->tanggal_pembelian)->format('d F Y, H:i'),
             'tanggal_kirim' => \Carbon\Carbon::parse($transaksi->tanggal_pengiriman)->format('d F Y'), 
-            'pembeli' => $transaksi->pembeli->nama_pembeli,
+            'pembeli' => $pembeli->nama_pembeli,
             'items' => $transaksi->detailKeranjangs->map(function ($detail) {
                 $barang = $detail->itemKeranjang->barang;
                 return [

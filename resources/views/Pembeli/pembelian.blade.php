@@ -191,7 +191,7 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            startCountdown(600);
+            startCountdown(60);
 
             const checkbox = document.getElementById('usePointsCheckbox');
             const poinSection = document.getElementById('poinExchangeSection');

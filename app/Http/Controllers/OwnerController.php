@@ -42,7 +42,9 @@ class OwnerController extends Controller
     {
         $this->ensureOwner();
 
-        $totalRequests = RequestDonasi::where('status_request', 'belum di proses')->count();
+        $totalRequests = RequestDonasi::where('status_request', 'belum di proses')
+                                    ->orwhere('status_request', 'Pending')
+                                    ->count();
         $totalDonations = Donasi::count();
 
         return view('owner.dashboard', compact('totalRequests', 'totalDonations'));
@@ -53,6 +55,7 @@ class OwnerController extends Controller
         $this->ensureOwner();
 
         $requests = RequestDonasi::where('status_request', 'belum di proses')
+            ->orwhere('status_request', 'Pending')
             ->with(['organisasi', 'pegawai'])
             ->get();
 
@@ -73,6 +76,7 @@ class OwnerController extends Controller
         if ($requestId) {
             $requestDonasi = RequestDonasi::where('id_request', $requestId)
                 ->where('status_request', 'belum di proses')
+                ->orwhere('status_request', 'Pending')
                 ->whereNotNull('id_organisasi')
                 ->with('organisasi')
                 ->first();
@@ -81,6 +85,7 @@ class OwnerController extends Controller
                 $selectedOrganisasi = $requestDonasi->id_organisasi;
                 $requests = RequestDonasi::where('id_organisasi', $selectedOrganisasi)
                     ->where('status_request', 'belum di proses')
+                    ->orwhere('status_request', 'Pending')
                     ->whereNotNull('id_organisasi')
                     ->with('organisasi')
                     ->get();
@@ -96,6 +101,7 @@ class OwnerController extends Controller
 
         $requests = RequestDonasi::where('id_organisasi', $request->id_organisasi)
             ->where('status_request', 'belum di proses')
+            ->orwhere('status_request', 'Pending')
             ->with('organisasi')
             ->get()
             ->map(function ($req) {
@@ -720,6 +726,7 @@ public function downloadMonthlySalesOverview(\Illuminate\Http\Request $request)
         $this->ensureOwner();
 
         $requests = RequestDonasi::where('status_request', 'belum di proses')
+            ->orwhere('status_request', 'Pending')
             ->with(['organisasi', 'pegawai'])
             ->get();
 
@@ -751,6 +758,7 @@ public function downloadMonthlySalesOverview(\Illuminate\Http\Request $request)
             ->whereYear('tp.created_at', $tahunSekarang)
             ->where('b.status_barang', 'sold')
             ->where('tp.status_transaksi', 'selesai')
+            ->orwhere('tp.status_transaksi', 'done')
             ->select(
                 'b.kode_barang',
                 'b.nama_barang',

@@ -58,6 +58,7 @@ class KurirController extends Controller
                 ->join('transaksi_pembelian as tp', 'kt.id_pembelian', '=', 'tp.id_pembelian')
                 ->where('kt.id_pegawai', $idPegawai)
                 ->where('tp.status_transaksi', 'Sedang Dikirim')
+                ->orwhere('tp.status_transaksi', 'In Delivery')
                 ->select(
                     'tp.id_pembelian',
                     'tp.status_transaksi',
@@ -86,7 +87,7 @@ class KurirController extends Controller
         try {
             // Validasi input
             $request->validate([
-                'status_transaksi' => 'required|in:Menunggu Pengiriman,Sedang Dikirim,Selesai',
+                'status_transaksi' => 'required|in:Menunggu Pengiriman,Sedang Dikirim,Selesai,In Delivery',
             ]);
 
             // Validasi pegawai

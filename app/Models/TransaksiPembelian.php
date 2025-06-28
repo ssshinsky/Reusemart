@@ -24,6 +24,7 @@ class TransaksiPembelian extends Model
     protected $fillable = [
         'id_keranjang',
         'id_alamat',
+        'id_kurir',
         'no_resi',
         'tanggal_pembelian',
         'waktu_pembayaran',

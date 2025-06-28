@@ -48,6 +48,10 @@
                                     @endforelse
                                 </tbody>
                                 <tfoot>
+                                    <tr>
+                                        <td colspan="4" class="text-end fw-bold">Subtotal</td>
+                                        <td class="fw-bold">IDR {{ number_format($totalHarga, 0, ',', '.') }}</td>
+                                    </tr>
                                     @if ($metodePengiriman === 'kurir' && $totalHarga < 1500000)
                                         <tr>
                                             <td colspan="4" class="text-end fw-bold">Ongkir</td>
@@ -64,10 +68,6 @@
                                             <td class="fw-bold">IDR {{ number_format(0, 0, ',', '.') }}</td>
                                         </tr>
                                     @endif
-                                    <tr>
-                                        <td colspan="4" class="text-end fw-bold">Subtotal</td>
-                                        <td class="fw-bold">IDR {{ number_format($totalHarga, 0, ',', '.') }}</td>
-                                    </tr>
                                     <tr>
                                         <td colspan="4" class="text-end fw-bold">Total Setelah Poin</td>
                                         <td class="fw-bold" id="totalFinalDisplay">IDR
@@ -91,7 +91,7 @@
 
                 <div class="alert alert-info mt-4 p-3">
                     <strong>Poin Dimiliki:</strong> {{ $poinDimiliki }} poin<br>
-                    <small>Setiap pembelian Rp10.000 mendapatkan 1 Poin dan Bonus 20% poin untuk total di atas Rp500.000</small>
+                    <small>1 poin = Rp10.000 | Bonus 20% poin untuk total di atas Rp500.000</small>
                 </div>
 
                 <div class="alert alert-warning text-center mt-4">
@@ -200,7 +200,7 @@
             const poinDimiliki = parseInt({{ $poinDimiliki }});
             let totalHarga = {{ $totalHarga }};
             const ongkir = {{ $metodePengiriman === 'kurir' && $totalHarga < 1500000 ? 100000 : 0 }};
-            // totalHarga += ongkir;
+            totalHarga += ongkir;
             const totalFinalInput = document.getElementById('totalFinalInput');
             const totalFinalDisplay = document.getElementById('totalFinalDisplay');
 
@@ -222,7 +222,7 @@
             });
 
             function updateTotal(poin) {
-                let potongan = poin * 100;
+                let potongan = poin * 10000;
                 let finalTotal = totalHarga - potongan;
                 if (finalTotal < 0) finalTotal = 0;
 
@@ -243,6 +243,7 @@
                 }
             }
 
+            // Panggil updateTotal saat halaman dimuat
             updateTotal(0);
         });
     </script>

@@ -22,7 +22,7 @@ use Carbon\Carbon;
 
 class TransaksiPembelianController extends Controller
 {
-    private $baseUrl = 'http://10.53.9.31:8000/api';
+    private $baseUrl = 'https://store6.reuse-mart.com/api';
 
     private function ensureAdmin()
     {

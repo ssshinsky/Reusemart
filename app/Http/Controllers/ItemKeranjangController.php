@@ -41,7 +41,7 @@ class ItemKeranjangController extends Controller
             'alamat_count' => $alamatPembeli->count(),
         ]);
 
-        return view('pembeli.keranjang', compact('items', 'totalHarga', 'alamatPembeli'));
+        return view('Pembeli.keranjang', compact('items', 'totalHarga', 'alamatPembeli'));
     }
 
     public function tambah($id)
@@ -210,7 +210,7 @@ class ItemKeranjangController extends Controller
             'alamat' => $alamat,
         ]);
 
-        return view('pembeli.pembelian', [
+        return view('Pembeli.pembelian', [
             'items' => $items,
             'totalHarga' => $totalHarga,
             'poinDimiliki' => $poinDimiliki,

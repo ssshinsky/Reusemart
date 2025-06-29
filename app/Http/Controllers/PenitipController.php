@@ -81,7 +81,7 @@ class PenitipController extends Controller
     {
         $id = Auth::guard('penitip')->id();
         $produk = \App\Models\Barang::with('kategori')->where('id_penitip', $id)->get();
-        return view('Penitip.product', compact('produk'));
+        return view('penitip.product', compact('produk'));
     }
 
     public function transaction(Request $request)
@@ -160,7 +160,7 @@ class PenitipController extends Controller
 
         $transaksis = $query->get();
 
-        return view('Penitip.partials.table', compact('transaksis'));
+        return view('penitip.partials.table', compact('transaksis'));
     }
 
     public function myproduct()
@@ -186,7 +186,7 @@ class PenitipController extends Controller
             }
         }
 
-        return view('penitip.myproduct', compact('products'));
+        return view('penitip.myProduct', compact('products'));
     }
 
     public function rewards()

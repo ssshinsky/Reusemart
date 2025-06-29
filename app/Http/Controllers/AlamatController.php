@@ -130,7 +130,7 @@ class AlamatController extends Controller
 
         $alamatList = $query->get();
 
-        return view('pembeli.alamat', compact('alamatList', 'pembeli'));
+        return view('Pembeli.alamat', compact('alamatList', 'pembeli'));
     }
 
     // Web: Set alamat sebagai default

@@ -133,7 +133,7 @@ Route::prefix('organisasi')->middleware('auth:organisasi')->name('organisasi.')-
     Route::put('/request-donasi/{id}', [RequestDonasiController::class, 'update'])->name('request.update');
     Route::get('/request-donasi/search', [RequestDonasiController::class, 'search'])->name('request.search');
     Route::delete('/request-donasi/{id}', [RequestDonasiController::class, 'destroy'])->name('request.destroy');
-    Route::get('/profile', fn() => view('organisasi.profile'))->name('profile');
+    Route::get('/profile', fn() => view('Organisasi.profile'))->name('profile');
 });
 
 // Owner Routes

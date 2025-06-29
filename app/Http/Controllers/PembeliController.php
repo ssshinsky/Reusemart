@@ -28,7 +28,7 @@ class PembeliController extends Controller
         }
 
         $pembeli = Auth::guard('pembeli')->user();
-        return view('pembeli.profile', compact('pembeli'));
+        return view('Pembeli.profile', compact('pembeli'));
     }
 
     // Web: Menampilkan halaman daftar pembeli (admin panel)
@@ -42,7 +42,7 @@ class PembeliController extends Controller
 
     public function purchase()
     {
-        return view('pembeli.history');
+        return view('Pembeli.history');
     }
 
 

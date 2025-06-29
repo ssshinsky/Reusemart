@@ -465,7 +465,7 @@ class TransaksiPembelianController extends Controller
 
         Log::info('Riwayat results', ['count' => $transaksi->count(), 'data' => $transaksi->toArray()]);
 
-        return view('pembeli.history', compact('transaksi'));
+        return view('Pembeli.history', compact('transaksi'));
     }
 
     public function detail($id)
@@ -497,7 +497,7 @@ class TransaksiPembelianController extends Controller
 
         Log::info('Detail transaction', ['transaksi' => $transaksi->toArray()]);
 
-        return view('pembeli.transaksi_detail', compact('transaksi'));
+        return view('Pembeli.transaksi_detail', compact('transaksi'));
     }
 
     public function riwayatPembelian()
@@ -507,7 +507,7 @@ class TransaksiPembelianController extends Controller
             ->latest()
             ->get();
 
-        return view('pembeli.riwayat', compact('riwayat'));
+        return view('Pembeli.riwayat', compact('riwayat'));
     }
 
     public function detailPembelian($id)
@@ -516,7 +516,7 @@ class TransaksiPembelianController extends Controller
             ->where('id_pembeli', Auth::guard('pembeli')->id())
             ->findOrFail($id);
 
-        return view('pembeli.riwayat_detail', compact('transaksi'));
+        return view('Pembeli.riwayat_detail', compact('transaksi'));
     }
 
     public function updateDeliveryStatus(Request $request, $id)

@@ -39,7 +39,7 @@ class BarangController extends Controller
     public function allProduct()
     {
         $produk = Barang::with('gambar')->get();
-        return view('produk.allproduct', compact('produk'));
+        return view('Produk.allproduct', compact('produk'));
     }
 
     // Daftar barang titipan (termasuk pencarian)

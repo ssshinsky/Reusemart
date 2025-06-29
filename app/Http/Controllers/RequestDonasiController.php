@@ -40,7 +40,7 @@ class RequestDonasiController extends Controller
     
     public function create()
     {
-        return view('organisasi.add_request');
+        return view('Organisasi.add_request');
     }
 
 
@@ -50,7 +50,7 @@ class RequestDonasiController extends Controller
         $idOrganisasi = Auth::guard('organisasi')->id();
         $requestDonasi = RequestDonasi::where('id_organisasi', $idOrganisasi)->findOrFail($id);
 
-        return view('organisasi.edit_request', compact('requestDonasi'));
+        return view('Organisasi.edit_request', compact('requestDonasi'));
     }
 
     // Mengubah request donasi (hanya deskripsi oleh organisasi)

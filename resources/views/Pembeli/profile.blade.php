@@ -5,7 +5,7 @@
         <div class="row">
             {{-- Sidebar Pembeli --}}
             <div class="col-md-3 mb-4">
-                @include('pembeli.sidebar')
+                @include('Pembeli.sidebar')
             </div>
 
             <div class="col-md-9">

@@ -311,7 +311,7 @@ class TransaksiPembelianController extends Controller
             ->orderBy('tanggal_pembelian', 'desc')
             ->get();
 
-        return view('cs.transaksi-pembelian.index', compact('transaksi'));
+        return view('CS.transaksi-pembelian.index', compact('transaksi'));
     }
 
     public function verify(Request $request, $id_pembelian)
@@ -437,7 +437,7 @@ class TransaksiPembelianController extends Controller
             ->orderBy('tanggal_pembelian', 'desc')
             ->get();
 
-        return view('cs.verifikasi_transaksi_table', compact('transaksi'))->render();
+        return view('CS.verifikasi_transaksi_table', compact('transaksi'))->render();
     }
 
     public function riwayat(Request $request)

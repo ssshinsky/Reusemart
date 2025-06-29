@@ -53,14 +53,14 @@ class AuthController extends Controller
                 ],
                 'role' => 'admin',
             ]);
-            return match ($pegawai->id_role) {
+            return match ((int) $pegawai->id_role) {
                 1 => redirect('/owner/dashboard'),    
                 2 => redirect('/admin'),    
                 3 => redirect('/cs/dashboard'),       
                 4 => redirect('/gudang/dashboard'),
                 5 => redirect('/kurir'),
                 6 => redirect('/hunter'),
-                // default => redirect('/pegawai'),
+                default => redirect('/'),
             };
         }
 

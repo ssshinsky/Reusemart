@@ -23,7 +23,7 @@ class RedirectIfAuthenticated
                             4 => redirect('/gudang'),
                             5 => redirect('/kurir'),
                             6 => redirect('/hunter'),
-                            default => redirect('/pegawai'),
+                            // default => redirect('/pegawai'),
                         };
                     case 'penitip':
                         return redirect('/dashboard-penitip');

@@ -60,7 +60,7 @@ class AuthController extends Controller
                 4 => redirect('/gudang/dashboard'),
                 5 => redirect('/kurir'),
                 6 => redirect('/hunter'),
-                default => redirect('/pegawai'),
+                // default => redirect('/pegawai'),
             };
         }
 

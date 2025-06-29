@@ -65,7 +65,8 @@ class KurirController extends Controller
                     'tp.total_harga',
                     'tp.tanggal_pembelian',
                     'tp.metode_pengiriman',
-                    'tp.no_resi'
+                    'tp.no_resi',
+                    'tp.id_kurir'
                 )
                 ->get();
 
